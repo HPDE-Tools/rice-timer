@@ -1,0 +1,6 @@
+[submodule "components/arduino"]
+	path = components/arduino
+	url = https://github.com/summivox/arduino-esp32
+[submodule "arduino"]
+	path = components/arduino
+	url = https://github.com/summivox/arduino-esp32
