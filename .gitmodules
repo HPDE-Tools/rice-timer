@@ -1,6 +1,12 @@
 [submodule "components/arduino"]
 	path = components/arduino
 	url = https://github.com/summivox/arduino-esp32
-[submodule "arduino"]
-	path = components/arduino
-	url = https://github.com/summivox/arduino-esp32
+[submodule "components/adafruit-led-backpack/Adafruit_BusIO"]
+	path = components/adafruit-busio/Adafruit_BusIO
+	url = https://github.com/adafruit/Adafruit_BusIO
+[submodule "components/adafruit-gfx-library/Adafruit-GFX-Library"]
+	path = components/adafruit-gfx-library/Adafruit-GFX-Library
+	url = https://github.com/adafruit/Adafruit-GFX-Library
+[submodule "components/adafruit-led-backpack/Adafruit_LED_Backpack"]
+	path = components/adafruit-led-backpack/Adafruit_LED_Backpack
+	url = https://github.com/adafruit/Adafruit_LED_Backpack
