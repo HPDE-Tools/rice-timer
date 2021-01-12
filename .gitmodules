@@ -10,3 +10,9 @@
 [submodule "components/adafruit-led-backpack/Adafruit_LED_Backpack"]
 	path = components/adafruit-led-backpack/Adafruit_LED_Backpack
 	url = https://github.com/adafruit/Adafruit_LED_Backpack
+[submodule "components/adafruit-bno055/Adafruit_BNO055"]
+	path = components/adafruit-bno055/Adafruit_BNO055
+	url = https://github.com/adafruit/Adafruit_BNO055
+[submodule "components/adafruit-sensor/Adafruit_Sensor"]
+	path = components/adafruit-sensor/Adafruit_Sensor
+	url = https://github.com/adafruit/Adafruit_Sensor
