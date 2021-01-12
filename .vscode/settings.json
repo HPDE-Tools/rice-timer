@@ -9,5 +9,18 @@
   },
   "C_Cpp.intelliSenseEngine": "Tag Parser",
   "git.ignoreLimitWarning": true,
-  "idf.port": "/dev/ttyUSB0"
+  "idf.port": "/dev/ttyUSB0",
+  "files.associations": {
+    "array": "cpp",
+    "deque": "cpp",
+    "list": "cpp",
+    "string": "cpp",
+    "unordered_map": "cpp",
+    "unordered_set": "cpp",
+    "vector": "cpp",
+    "string_view": "cpp",
+    "initializer_list": "cpp",
+    "regex": "cpp"
+  },
+  "idf.flashType": "UART"
 }
