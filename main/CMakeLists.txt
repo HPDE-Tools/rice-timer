@@ -1,6 +1,5 @@
 set(srcs
 "app_main.cpp"
-"arduino_wrapper.cpp"
 )
 
 idf_component_register(
