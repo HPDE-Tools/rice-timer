@@ -1,27 +1,19 @@
 #include "Arduino.h"
 
+#include <optional>
+
 #include "Adafruit_BNO055.h"
 #include "Adafruit_GFX.h"
 #include "Adafruit_LEDBackpack.h"
 #include "driver/mcpwm.h"
 
+#include "capture_manager.hpp"
+#include "common.hpp"
 #include "gps.hpp"
 #include "nameof.hpp"
 
-#ifndef LED_BUILTIN
+constexpr char TAG[] = "main";
 #define LED_BUILTIN 13
-#endif  // LED_BUILTIN
-
-#define TRY(x)                                                     \
-  do {                                                             \
-    const esp_err_t xx = (x);                                      \
-    if (xx != ESP_OK) {                                            \
-      ESP_LOGE("", "TRY(" #x ") fail => %s", esp_err_to_name(xx)); \
-      return xx;                                                   \
-    }                                                              \
-  } while (0)
-
-constexpr char kLogTag[] = "main";
 
 Adafruit_AlphaNum4 alpha4 = Adafruit_AlphaNum4();
 Adafruit_BNO055 bno = Adafruit_BNO055(BNO055_ID, BNO055_ADDRESS_A, &Wire1);
@@ -39,7 +31,11 @@ void DisplayTask(void* /*unused*/) {
     const int level = (millis() / 100) % 10 < 8;
     digitalWrite(LED_BUILTIN, level);
 
-    vTaskDelayUntil(&last_wake_time, 10);
+    // debug
+    Serial.write("trig now: ");
+    Serial.println(CaptureManager::GetInstance(MCPWM_UNIT_0)->TriggerNow(MCPWM_SELECT_CAP1));
+
+    vTaskDelayUntil(&last_wake_time, pdMS_TO_TICKS(250));
   }
 }
 
@@ -57,56 +53,52 @@ void ImuTask(void* /*unused*/) {
   }
 }
 
+TaskHandle_t g_gps_task;
 esp_err_t GpsInit() {
-  mcpwm_unit_t unit = MCPWM_UNIT_0;
-  TRY(mcpwm_gpio_init(unit, MCPWM_CAP_0, GPIO_NUM_4));
-  TRY(mcpwm_capture_enable(unit, MCPWM_SELECT_CAP0, MCPWM_POS_EDGE, 0));
+  TRY(mcpwm_gpio_init(MCPWM_UNIT_0, MCPWM_CAP_0, GPIO_NUM_4));
   return ESP_OK;
 }
-
+void IRAM_ATTR GpsPpsCapture(CaptureManager* manager,
+                             mcpwm_capture_signal_t signal,
+                             uint32_t edge,
+                             uint32_t value) {
+  xTaskNotifyFromISR(g_gps_task, value, eSetValueWithOverwrite, nullptr);
+}
 void GpsTask(void* /*unused*/) {
-  uint32_t last_capture = 0;
-  TickType_t last_wake_time = xTaskGetTickCount();
+  CaptureManager::GetInstance(MCPWM_UNIT_0)
+      ->Subscribe(MCPWM_SELECT_CAP0, MCPWM_POS_EDGE, 0, GpsPpsCapture);
+  std::optional<uint32_t> last_capture{};
   while (true) {
-    const uint32_t curr_capture = mcpwm_capture_signal_get_value(MCPWM_UNIT_0, MCPWM_SELECT_CAP0);
-    Serial.printf("pps capture: %" PRIu32 ", diff = %" PRId32 "\n",
-                  curr_capture,
-                  static_cast<int32_t>(curr_capture - last_capture));
+    uint32_t curr_capture;
+    xTaskNotifyWait(0, 0, &curr_capture, pdMS_TO_TICKS(2000));
+    if (last_capture) {
+      Serial.printf("pps capture: %" PRIu32 ", diff = %" PRId32 "\n",
+                    curr_capture,
+                    static_cast<int32_t>(curr_capture - *last_capture));
+    }
     last_capture = curr_capture;
-    vTaskDelayUntil(&last_wake_time, 20);
   }
-}
-
-esp_err_t TryTestSub() {
-  TRY(ESP_ERR_INVALID_MAC);
-  return ESP_OK;
-}
-
-esp_err_t TryTest() {
-  TRY(ESP_OK);
-  TRY(TryTestSub());
-  TRY(ESP_OK);
-  return ESP_OK;
 }
 
 extern "C" void app_main(void) {
   Serial.begin(115200);
   Wire.begin(23, 22);
-  Wire1.begin(27, 12);
   pinMode(LED_BUILTIN, OUTPUT);
 
-  (void)TryTest();
-
   alpha4.begin(0x70);
+#if 0
   if (!bno.begin()) {
-    ESP_LOGE(kLogTag, "fail to init bno");
+    ESP_LOGE(TAG, "fail to init bno");
     while (true) {
     }
   }
+#endif
   ESP_ERROR_CHECK(GpsInit());
 
   xTaskCreatePinnedToCore(DisplayTask, "display", 1024, nullptr, 2, nullptr, APP_CPU_NUM);
+#if 0
   // xTaskCreatePinnedToCore(ImuTask, "imu", 1280, nullptr, 2, nullptr, APP_CPU_NUM);
-  xTaskCreatePinnedToCore(GpsTask, "gps", 1280, nullptr, 2, nullptr, APP_CPU_NUM);
+#endif
+  xTaskCreatePinnedToCore(GpsTask, "gps", 1280, nullptr, 2, &g_gps_task, APP_CPU_NUM);
   heap_caps_print_heap_info(MALLOC_CAP_8BIT);
 }

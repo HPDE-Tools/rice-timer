@@ -1,5 +1,6 @@
 set(srcs
 "app_main.cpp"
+"capture_manager.cpp"
 )
 
 idf_component_register(
@@ -7,4 +8,4 @@ idf_component_register(
     INCLUDE_DIRS ""
 )
 
-target_compile_options(${COMPONENT_LIB} PRIVATE -std=gnu++17)
+target_compile_options(${COMPONENT_LIB} PRIVATE -std=gnu++2a)
