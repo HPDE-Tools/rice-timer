@@ -13,11 +13,11 @@ CaptureManager::CaptureManager(mcpwm_unit_t unit, mcpwm_dev_t* dev) : unit_(unit
 }
 
 CaptureManager* CaptureManager::GetInstance(mcpwm_unit_t unit) {
-  static CaptureManager instances[]{
+  static CaptureManager instances[] = {
       {MCPWM_UNIT_0, &MCPWM0},
       {MCPWM_UNIT_1, &MCPWM1},
   };
-  CHECK(0 <= unit && unit < SOC_MCPWM_PERIPH_NUM);
+  CHECK(0 <= unit && unit < MCPWM_UNIT_MAX);
   return &instances[unit];
 }
 
@@ -34,13 +34,13 @@ esp_err_t CaptureManager::Subscribe(mcpwm_capture_signal_t signal,
   callbacks_[signal] = callback;
   switch (signal) {
     case MCPWM_SELECT_CAP0:
-      MCPWM0.int_ena.cap0_int_ena = true;
+      dev_->int_ena.cap0_int_ena = true;
       break;
     case MCPWM_SELECT_CAP1:
-      MCPWM0.int_ena.cap1_int_ena = true;
+      dev_->int_ena.cap1_int_ena = true;
       break;
     case MCPWM_SELECT_CAP2:
-      MCPWM0.int_ena.cap2_int_ena = true;
+      dev_->int_ena.cap2_int_ena = true;
       break;
   }
   return ESP_OK;
@@ -50,13 +50,13 @@ esp_err_t CaptureManager::Unsubscribe(mcpwm_capture_signal_t signal) {
   CHECK(0 <= signal && signal < 3);
   switch (signal) {
     case MCPWM_SELECT_CAP0:
-      MCPWM0.int_ena.cap0_int_ena = false;
+      dev_->int_ena.cap0_int_ena = false;
       break;
     case MCPWM_SELECT_CAP1:
-      MCPWM0.int_ena.cap1_int_ena = false;
+      dev_->int_ena.cap1_int_ena = false;
       break;
     case MCPWM_SELECT_CAP2:
-      MCPWM0.int_ena.cap2_int_ena = false;
+      dev_->int_ena.cap2_int_ena = false;
       break;
   }
   callbacks_[signal] = nullptr;
