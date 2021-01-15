@@ -1,6 +1,7 @@
 set(srcs
 "app_main.cpp"
 "capture_manager.cpp"
+"gps.cpp"
 )
 
 idf_component_register(

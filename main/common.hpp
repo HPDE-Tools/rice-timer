@@ -27,6 +27,7 @@
     if (result != ESP_OK) {                                                                      \
       ESP_LOGE(                                                                                  \
           "", "%s:%d CHECK_OK(" #x ") fail => %s", __FILE__, __LINE__, esp_err_to_name(result)); \
-      return result;                                                                             \
+      while (1) {                                                                                \
+      }                                                                                          \
     }                                                                                            \
   } while (0)
