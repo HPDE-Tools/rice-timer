@@ -19,3 +19,6 @@
 [submodule "components/adafruit-sh110x/Adafruit_SH110X"]
 	path = components/adafruit-sh110x/Adafruit_SH110X
 	url = https://github.com/adafruit/Adafruit_SH110X
+[submodule "components/fmtlib/fmt"]
+	path = components/fmtlib/fmt
+	url = https://github.com/fmtlib/fmt

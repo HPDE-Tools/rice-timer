@@ -1,4 +1,6 @@
 #include <optional>
+#include <string>
+#include "fmt/core.h"
 
 #include "Arduino.h"
 #include "HardwareSerial.h"
@@ -53,7 +55,7 @@ esp_err_t SetupFileSystem() {
 
 void TestFileSystem() {
   FILE* fout = fopen(FS_ROOT "/1.txt", "a");
-  fprintf(fout, "testing testing %" PRIu32 "\n", esp_random());
+  fmt::print(fout, "now with fmtlib: {:08X}\n", esp_random());
   fclose(fout);
 }
 
