@@ -6,6 +6,7 @@
 #include "driver/spi_common.h"
 #include "esp_vfs_fat.h"
 #include "freertos/FreeRTOS.h"
+#include "sdmmc_cmd.h"
 
 #include "capture_manager.hpp"
 #include "common.hpp"
@@ -16,7 +17,7 @@
 
 constexpr char TAG[] = "main";
 constexpr int kConsoleBaudHz = 115200;
-constexpr int kSdCardMaxFreqKhz = 40'000;
+constexpr int kSdCardMaxFreqKhz = 20'000;
 constexpr int kI2cMaxFreqHz = 400'000;
 
 #define FS_ROOT "/sdcard"
@@ -42,11 +43,18 @@ esp_err_t SetupFileSystem() {
       .sclk_io_num = 5,
       .quadwp_io_num = -1,
       .quadhd_io_num = -1,
-      .max_transfer_sz = 4000,
+      .max_transfer_sz = 0,
   };
   TRY(spi_bus_initialize(HSPI_HOST, &bus_cfg, HSPI_HOST));
   TRY(esp_vfs_fat_sdspi_mount(FS_ROOT, &host_config, &io_config, &mount_config, &g_sdcard));
+  sdmmc_card_print_info(stdout, g_sdcard);
   return ESP_OK;
+}
+
+void TestFileSystem() {
+  FILE* fout = fopen(FS_ROOT "/1.txt", "a");
+  fprintf(fout, "testing testing %" PRIu32 "\n", esp_random());
+  fclose(fout);
 }
 
 TaskHandle_t g_main_task{};
@@ -54,6 +62,7 @@ void MainTask(void* /* unused */) {
   heap_caps_print_heap_info(MALLOC_CAP_8BIT);
 
   SetupFileSystem();
+  TestFileSystem();
 
   // CHECK_OK(DisplayInit());
   // CHECK_OK(DisplayStart());
@@ -77,5 +86,5 @@ extern "C" void app_main(void) {
   InitI2cMutex();
 
   xTaskCreatePinnedToCore(
-      MainTask, "main", 2048, /*arg*/ nullptr, configMAX_PRIORITIES - 1, &g_main_task, APP_CPU_NUM);
+      MainTask, "main", 4096, /*arg*/ nullptr, configMAX_PRIORITIES - 1, &g_main_task, APP_CPU_NUM);
 }
