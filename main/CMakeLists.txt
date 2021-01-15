@@ -1,9 +1,12 @@
 set(srcs
 "app_main.cpp"
 "capture_manager.cpp"
+"common.cpp"
+"display.cpp"
 "gps.cpp"
+"imu.cpp"
+"pps.cpp"
 )
-
 idf_component_register(
     SRCS ${srcs}
     INCLUDE_DIRS ""

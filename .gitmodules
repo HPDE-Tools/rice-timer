@@ -16,3 +16,6 @@
 [submodule "components/adafruit-sensor/Adafruit_Sensor"]
 	path = components/adafruit-sensor/Adafruit_Sensor
 	url = https://github.com/adafruit/Adafruit_Sensor
+[submodule "components/adafruit-sh110x/Adafruit_SH110X"]
+	path = components/adafruit-sh110x/Adafruit_SH110X
+	url = https://github.com/adafruit/Adafruit_SH110X

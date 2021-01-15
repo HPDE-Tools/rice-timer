@@ -15,12 +15,16 @@ class CaptureManager {
   static CaptureManager* GetInstance(mcpwm_unit_t unit);
   esp_err_t Enable();
   esp_err_t Disable();
-  esp_err_t Subscribe(mcpwm_capture_signal_t signal, mcpwm_capture_on_edge_t edge, uint32_t prescaler, Callback callback);
+  esp_err_t Subscribe(mcpwm_capture_signal_t signal,
+                      mcpwm_capture_on_edge_t edge,
+                      uint32_t prescaler,
+                      Callback callback);
   esp_err_t Unsubscribe(mcpwm_capture_signal_t signal);
   uint32_t TriggerNow(mcpwm_capture_signal_t signal);
+  static uint32_t GetNominalFreqHz();
 
   mcpwm_unit_t unit() const { return unit_; }
-  mcpwm_dev_t* dev() const { return dev_; } 
+  mcpwm_dev_t* dev() const { return dev_; }
 
  private:
   mcpwm_unit_t unit_;

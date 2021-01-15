@@ -1,5 +1,7 @@
 #include "capture_manager.hpp"
 
+#include "esp32/clk.h"
+#include "esp_system.h"
 #include "esp_log.h"
 
 #include "common.hpp"
@@ -68,6 +70,8 @@ uint32_t CaptureManager::TriggerNow(mcpwm_capture_signal_t signal) {
   dev_->cap_cfg_ch[signal].sw = true;
   return dev_->cap_val_ch[signal];
 }
+
+uint32_t CaptureManager::GetNominalFreqHz() { return esp_clk_apb_freq(); }
 
 void CaptureManager::InterruptHandler(CaptureManager* self) {
   if (self->dev_->int_st.cap0_int_st) {
