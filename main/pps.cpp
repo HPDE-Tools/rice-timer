@@ -1,6 +1,7 @@
 #include "pps.hpp"
 
 #include <optional>
+#include "fmt/core.h"
 
 #include "Arduino.h"
 #include "driver/mcpwm.h"
@@ -9,6 +10,7 @@
 #include "capture_manager.hpp"
 #include "common.hpp"
 #include "display.hpp"
+#include "logger.hpp"
 
 constexpr char TAG[] = "pps";
 
@@ -53,23 +55,16 @@ void PpsTask(void* /*unused*/) {
       MCPWM_SELECT_CAP0, MCPWM_POS_EDGE, /*prescaler*/ 0, PpsCaptureCallback);
   std::optional<uint32_t> last_capture{};
   while (true) {
-    uint32_t curr_capture = 0;
-    if (xTaskNotifyWait(0, 0, &curr_capture, pdMS_TO_TICKS(5000)) == pdFALSE) {
+    uint32_t current_capture = 0;
+    if (xTaskNotifyWait(0, 0, &current_capture, pdMS_TO_TICKS(5000)) == pdFALSE) {
       Serial.println("pps TIMEOUT");
       continue;
     }
-    g_pps_latest_capture = curr_capture;
+    g_pps_latest_capture = current_capture;
 
-#if 0
-    Serial.printf("pps capture = %" PRIu32, curr_capture);
-    if (last_capture) {
-      int32_t diff = curr_capture - *last_capture;
-      Serial.printf(", diff = %" PRId32, diff);
-    }
-    Serial.println();
-    snprintf(g_display_content, 9, "%08X", curr_capture);
-#endif
+    // SendToLogger(fmt::format("p,{},{}", current_capture, diff));
+    SendToLogger(fmt::format("p,{}", current_capture));
 
-    last_capture = curr_capture;
+    last_capture = current_capture;
   }
 }

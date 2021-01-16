@@ -1,0 +1,18 @@
+menu "ShiftWatch on ESP32"
+    menu "File System"
+        config MOUNT_ROOT
+            string "Root path of the sdcard in VFS"
+            default "/sdcard"
+        
+        config ALLOCATION_UNIT
+            int "Allocation unit size"
+            default 4096
+    endmenu
+    menu "Logging"
+        config MAX_LINES_PER_FILE
+            int "Max lines written to a log file"
+            default 10000
+    endmenu
+    menu "Pinout"
+    endmenu
+endmenu

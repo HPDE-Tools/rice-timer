@@ -1,11 +1,14 @@
 #include "gps.hpp"
 
+#include "fmt/core.h"
+
 #include "Arduino.h"
 #include "driver/uart.h"
 #include "esp_log.h"
 
 #include "capture_manager.hpp"
 #include "common.hpp"
+#include "logger.hpp"
 
 constexpr char TAG[] = "gps";
 
@@ -42,6 +45,12 @@ esp_err_t GpsStart() {
              ? ESP_OK
              : ESP_FAIL;
 }
+void GpsStop() {
+  if (g_gps_task) {
+    vTaskDelete(g_gps_task);
+    g_gps_task = nullptr;
+  }
+}
 
 void GpsTask(void* /*unused*/) {
   // try detect presence and current baud rate
@@ -73,26 +82,14 @@ void GpsTask(void* /*unused*/) {
   Serial1.write("$PMTK314,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0*29\r\n");  // GPRMC
   // Serial1.write("$PMTK314,0,1,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0*28\r\n");  // GPRMC,GPGGA
 
-  static char buf[kGpsBufSize] = {};
+  static char buf[kGpsBufSize + 1] = {};
   while (true) {
     const int len = Serial1.readBytesUntil('\n', buf, kGpsBufSize);
-    const uint32_t current_capture =
-        CaptureManager::GetInstance(MCPWM_UNIT_0)->TriggerNow(MCPWM_SELECT_CAP2);
     if (len > 0) {
-      Serial.print(current_capture);
-
-#if 0  // TODO(summivox): GPS-PPS link will be pushed upwards thru e.g. callback
-      if (g_pps_latest_capture) {
-        const int32_t diff = current_capture - *g_pps_latest_capture;
-        const float diff_sec = diff * apb_period;
-        Serial.printf("(%+.3f)", diff_sec);
-      }
-#endif
-
-      Serial.write(':');
-      Serial.write(buf, len);
-      Serial.write('\n');
+      buf[len] = '\0';
+      const uint32_t current_capture =
+          CaptureManager::GetInstance(MCPWM_UNIT_0)->TriggerNow(MCPWM_SELECT_CAP2);
+      SendToLogger(fmt::format("g,{},{}", current_capture, buf));
     }
-    vPortYield();
   }
 }

@@ -43,6 +43,7 @@ esp_err_t DisplayStart() {
 void DisplayStop() {
   if (g_display_task) {
     vTaskDelete(g_display_task);
+    g_display_task = nullptr;
   }
 }
 

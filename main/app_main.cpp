@@ -15,14 +15,13 @@
 #include "display.hpp"
 #include "gps.hpp"
 #include "imu.hpp"
+#include "logger.hpp"
 #include "pps.hpp"
 
 constexpr char TAG[] = "main";
 constexpr int kConsoleBaudHz = 115200;
 constexpr int kSdCardMaxFreqKhz = 20'000;
 constexpr int kI2cMaxFreqHz = 400'000;
-
-#define FS_ROOT "/sdcard"
 
 sdmmc_card_t* g_sdcard{};
 esp_err_t SetupFileSystem() {
@@ -36,7 +35,7 @@ esp_err_t SetupFileSystem() {
   esp_vfs_fat_mount_config_t mount_config{
       .format_if_mount_failed = false,
       .max_files = 4,
-      .allocation_unit_size = 5,
+      .allocation_unit_size = CONFIG_WL_SECTOR_SIZE,
   };
 
   spi_bus_config_t bus_cfg = {
@@ -46,28 +45,30 @@ esp_err_t SetupFileSystem() {
       .quadwp_io_num = -1,
       .quadhd_io_num = -1,
       .max_transfer_sz = 0,
+      .flags = 0,
+      .intr_flags = 0,
   };
   TRY(spi_bus_initialize(HSPI_HOST, &bus_cfg, HSPI_HOST));
-  TRY(esp_vfs_fat_sdspi_mount(FS_ROOT, &host_config, &io_config, &mount_config, &g_sdcard));
+  TRY(esp_vfs_fat_sdspi_mount(
+      CONFIG_MOUNT_ROOT, &host_config, &io_config, &mount_config, &g_sdcard));
   sdmmc_card_print_info(stdout, g_sdcard);
   return ESP_OK;
 }
 
-void TestFileSystem() {
-  FILE* fout = fopen(FS_ROOT "/1.txt", "a");
-  fmt::print(fout, "now with fmtlib: {:08X}\n", esp_random());
-  fclose(fout);
-}
-
 TaskHandle_t g_main_task{};
 void MainTask(void* /* unused */) {
+  vTaskDelay(pdMS_TO_TICKS(2000));  // let monitor connect
+
   heap_caps_print_heap_info(MALLOC_CAP_8BIT);
+  CHECK_OK(SetupFileSystem());
 
-  SetupFileSystem();
-  TestFileSystem();
+  CHECK_OK(LoggerInit());
+  CHECK_OK(LoggerStart());
 
-  // CHECK_OK(DisplayInit());
-  // CHECK_OK(DisplayStart());
+#if 0  // FIXME(summivox): disable display for now to avoid interference with imu
+  CHECK_OK(DisplayInit());
+  CHECK_OK(DisplayStart());
+#endif
 
   CHECK_OK(PpsInit());
   CHECK_OK(ImuInit());

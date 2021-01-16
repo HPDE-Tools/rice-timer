@@ -2,6 +2,8 @@
 
 #include "esp_log.h"
 
+#include "scope_guard.hpp"
+
 #define TRY(x)                                                                                   \
   do {                                                                                           \
     const esp_err_t result = (x);                                                                \

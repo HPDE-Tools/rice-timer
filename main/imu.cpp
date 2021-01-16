@@ -39,6 +39,7 @@ void ImuStop() {
   if (g_imu_task) {
     // TODO(summivox): set up interrupt
     vTaskDelete(g_imu_task);
+    g_imu_task = nullptr;
   }
 }
 
