@@ -47,6 +47,7 @@ esp_err_t PpsStart() {
 void PpsStop() {
   if (g_pps_task) {
     vTaskDelete(g_pps_task);
+    g_pps_task = nullptr;
   }
 }
 

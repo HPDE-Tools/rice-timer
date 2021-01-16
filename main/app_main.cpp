@@ -10,6 +10,7 @@
 #include "freertos/FreeRTOS.h"
 #include "sdmmc_cmd.h"
 
+#include "can.hpp"
 #include "capture_manager.hpp"
 #include "common.hpp"
 #include "display.hpp"
@@ -66,13 +67,15 @@ void MainTask(void* /* unused */) {
   CHECK_OK(LoggerStart());
 
   CHECK_OK(PpsInit());
-  CHECK_OK(ImuInit());
   CHECK_OK(GpsInit());
+  CHECK_OK(ImuInit());
+  CHECK_OK(CanInit());
   CHECK_OK(DisplayInit());
 
   CHECK_OK(PpsStart());
-  CHECK_OK(ImuStart());
   CHECK_OK(GpsStart());
+  CHECK_OK(ImuStart());
+  CHECK_OK(CanStart());
   CHECK_OK(DisplayStart());
 
   vTaskDelete(nullptr);

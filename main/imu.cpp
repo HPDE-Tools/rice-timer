@@ -28,8 +28,10 @@ esp_err_t ImuInit() {
     return ESP_ERR_NOT_FOUND;
   }
   bno.setExtCrystalUse(true);
-  bno.setAxisRemap(Adafruit_BNO055::REMAP_CONFIG_P0);
-  bno.setAxisSign(Adafruit_BNO055::REMAP_SIGN_P0);
+  // TODO(summivox): figure out the right way to remap axes;
+  // for now we will have to post-process
+  // bno.setAxisRemap(Adafruit_BNO055::REMAP_CONFIG_P0);
+  // bno.setAxisSign(Adafruit_BNO055::REMAP_SIGN_P0);
   ReleaseArduinoMutex();
 
   // TODO(summivox): set up interrupt

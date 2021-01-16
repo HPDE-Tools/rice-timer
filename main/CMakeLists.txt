@@ -1,5 +1,6 @@
 set(srcs
 "app_main.cpp"
+"can.cpp"
 "capture_manager.cpp"
 "common.cpp"
 "display.cpp"

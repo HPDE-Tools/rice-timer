@@ -10,6 +10,8 @@
 #include "common.hpp"
 #include "logger.hpp"
 
+namespace {
+
 constexpr char TAG[] = "gps";
 
 constexpr uint32_t kGpsDetectTimeoutMs = 20000;
@@ -17,8 +19,6 @@ constexpr uint32_t kGpsDesiredBaudRate = 115200;
 constexpr uint32_t kGpsDesiredBaudRateTolerance = 100;
 constexpr uint32_t kGpsRetryMs = 2000;
 constexpr size_t kGpsBufSize = 128;
-
-namespace {
 
 bool TryDetectGps(uint32_t timeout_tick) {
   Serial1.end();

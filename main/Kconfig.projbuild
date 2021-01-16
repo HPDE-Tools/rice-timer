@@ -13,6 +13,11 @@ menu "ShiftWatch on ESP32"
             int "Max lines written to a log file"
             default 10000
     endmenu
+    menu "CAN"
+        config CAN_BAUD_RATE
+            int "baud rate of CAN bus input (unused for now)"
+            default 500000
+    endmenu
     menu "Pinout"
     endmenu
 endmenu

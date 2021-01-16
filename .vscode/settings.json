@@ -18,7 +18,9 @@
     "string_view": "cpp",
     "initializer_list": "cpp",
     "regex": "cpp",
-    "optional": "cpp"
+    "optional": "cpp",
+    "bitset": "cpp",
+    "*.ipp": "cpp"
   },
   "idf.flashType": "UART"
 }
