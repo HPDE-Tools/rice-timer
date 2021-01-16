@@ -4,7 +4,7 @@
             "name": "ESP-IDF",
             "compilerPath": "${default}",
             "cStandard": "c11",
-            "cppStandard": "c++17",
+            "cppStandard": "gnu++20",
             "includePath": [
                 "${config:idf.espIdfPath}/components/**",
                 "${workspaceFolder}/**"
