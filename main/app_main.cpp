@@ -19,7 +19,7 @@
 #include "pps.hpp"
 
 constexpr char TAG[] = "main";
-constexpr int kConsoleBaudHz = 115200;
+constexpr int kConsoleBaudHz = CONFIG_CONSOLE_UART_BAUDRATE;
 constexpr int kSdCardMaxFreqKhz = 20'000;
 constexpr int kI2cMaxFreqHz = 400'000;
 
@@ -86,7 +86,7 @@ extern "C" void app_main(void) {
 
   Serial.begin(kConsoleBaudHz);
   Wire.begin(23, 22, kI2cMaxFreqHz);
-  InitI2cMutex();
+  InitArduinoMutex();
 
   xTaskCreatePinnedToCore(
       MainTask, "main", 4096, /*arg*/ nullptr, configMAX_PRIORITIES - 1, &g_main_task, APP_CPU_NUM);

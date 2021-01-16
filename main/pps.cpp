@@ -3,7 +3,6 @@
 #include <optional>
 #include "fmt/core.h"
 
-#include "Arduino.h"
 #include "driver/mcpwm.h"
 #include "freertos/FreeRTOS.h"
 
@@ -32,6 +31,7 @@ CaptureManager* g_capture_manager;
 std::optional<uint32_t> g_pps_latest_capture{};
 
 esp_err_t PpsInit() {
+  esp_log_level_set(TAG, ESP_LOG_INFO);
   TRY(mcpwm_gpio_init(MCPWM_UNIT_0, MCPWM_CAP_0, GPIO_NUM_4));
   TRY(mcpwm_gpio_init(MCPWM_UNIT_1, MCPWM_CAP_0, GPIO_NUM_4));
   g_capture_manager = CaptureManager::GetInstance(MCPWM_UNIT_0);
@@ -39,7 +39,7 @@ esp_err_t PpsInit() {
 }
 
 esp_err_t PpsStart() {
-  return xTaskCreatePinnedToCore(PpsTask, "pps", 2048, nullptr, 2, &g_pps_task, APP_CPU_NUM)
+  return xTaskCreatePinnedToCore(PpsTask, "pps", 2560, nullptr, 2, &g_pps_task, APP_CPU_NUM)
              ? ESP_OK
              : ESP_FAIL;
 }
@@ -57,14 +57,12 @@ void PpsTask(void* /*unused*/) {
   while (true) {
     uint32_t current_capture = 0;
     if (xTaskNotifyWait(0, 0, &current_capture, pdMS_TO_TICKS(5000)) == pdFALSE) {
-      Serial.println("pps TIMEOUT");
+      ESP_LOGE(TAG, "PPS timeout");
       continue;
     }
     g_pps_latest_capture = current_capture;
-
-    // SendToLogger(fmt::format("p,{},{}", current_capture, diff));
     SendToLogger(fmt::format("p,{}", current_capture));
-
     last_capture = current_capture;
+    ESP_LOGI(TAG, "water %d", uxTaskGetStackHighWaterMark(nullptr));
   }
 }

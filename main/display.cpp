@@ -23,12 +23,12 @@ esp_err_t DisplayInit() {
   TRY(gpio_set_direction(GPIO_NUM_13, GPIO_MODE_OUTPUT));
   // TODO(summivox): display
 
-  TakeI2cMutex();
+  TakeArduinoMutex();
   display.begin();
   display.clearDisplay();
   display.display();
   display.setRotation(1);
-  ReleaseI2cMutex();
+  ReleaseArduinoMutex();
 
   return ESP_OK;
 }
@@ -54,14 +54,14 @@ void DisplayTask(void* /*unused*/) {
     digitalWrite(LED_BUILTIN, level);
 
 #if 0
-    TakeI2cMutex();
+    TakeArduinoMutex();
     display.clearDisplay();
     display.setTextSize(2);
     display.setTextColor(SH110X_WHITE);
     display.setCursor(16, 24);
     display.write(g_display_content);
     display.display();
-    ReleaseI2cMutex();
+    ReleaseArduinoMutex();
 #endif
 
     vTaskDelayUntil(&last_wake_time, pdMS_TO_TICKS(100));

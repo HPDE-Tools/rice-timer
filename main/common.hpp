@@ -36,6 +36,6 @@
 
 
 // TODO(summivox): experiment with I2C transaction-level mutex
-void InitI2cMutex();
-void TakeI2cMutex();
-void ReleaseI2cMutex();
+void InitArduinoMutex();
+void TakeArduinoMutex();
+void ReleaseArduinoMutex();

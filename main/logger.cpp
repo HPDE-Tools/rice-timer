@@ -26,8 +26,9 @@ constexpr char kSessionIdKey[] = "session_id";
 constexpr int kLoggerQueueSize = 32;
 constexpr int kSplitPrefixMod = 1'000;
 constexpr int kMaxNumSplits = 1'000'000;
-constexpr int64_t kFlushFreqLines = 13;
+constexpr int64_t kFlushFreqLines = 100;
 constexpr int64_t kMaxNumLinesPerSplit = CONFIG_MAX_LINES_PER_FILE;
+// constexpr int64_t kMaxNumLinesPerSplit = 1000;
 
 constexpr mode_t kFsMode = 0777;
 
@@ -119,7 +120,6 @@ esp_err_t SetupSessionDir(int64_t session_id, std::string* out_session_dir) {
 esp_err_t SetupSplitDir(int split_prefix,
                         const std::string& session_dir,
                         std::string* out_split_dir) {
-                          
   *out_split_dir = fmt::format("{}/{}", session_dir, split_prefix);
   return Mkdir(*out_split_dir);
 }
@@ -159,7 +159,7 @@ esp_err_t LoggerInit() {
 
 esp_err_t LoggerStart() {
   if (!xTaskCreatePinnedToCore(
-          LoggerTask, "logger", 4096, nullptr, 10, &g_logger_task, APP_CPU_NUM)) {
+          LoggerTask, "logger", 2560, nullptr, 10, &g_logger_task, APP_CPU_NUM)) {
     return ESP_FAIL;
   }
   return ESP_OK;
@@ -223,19 +223,23 @@ void LoggerTask(void* /*unused*/) {
     }
     while (file->num_lines < kMaxNumLinesPerSplit) {
       std::string line = PopFromQueue();
-      fmt::print("#{} gonna be: {}\n", file->num_lines, line);
       CHECK_OK(file->Writeln(line));
       if (file->num_lines % kFlushFreqLines == kFlushFreqLines - 1) {
         const int64_t num_lines = file->num_lines;
-        fmt::print("  -> reopen\n");
         file.reset();
         file = CreateSplitFile(split_id);
         if (!file) {
           return;
         }
         file->num_lines = num_lines;
+        {
+          static int k = 0;
+          if (++k == 10) {
+            k = 0;
+            ESP_LOGI(TAG, "water %d", uxTaskGetStackHighWaterMark(nullptr));
+          }
+        }
       }
-      fmt::print("  -> done\n");
     }
   }
   ESP_LOGE(TAG, "stopped after making too many (%d) splits", kMaxNumSplits);

@@ -31,28 +31,10 @@ void ConfigureBaud() {
   Serial1.write("$PMTK251,115200*1F\r\n");
 }
 
-}  // namespace
+void ConfigureGps() {
+  TakeArduinoMutex();
+  SCOPE_EXIT { ReleaseArduinoMutex(); };
 
-TaskHandle_t g_gps_task;
-
-esp_err_t GpsInit() {
-  // NOP --- we will autobaud later
-  return ESP_OK;
-}
-
-esp_err_t GpsStart() {
-  return xTaskCreatePinnedToCore(GpsTask, "gps", 2560, nullptr, 1, &g_gps_task, APP_CPU_NUM)
-             ? ESP_OK
-             : ESP_FAIL;
-}
-void GpsStop() {
-  if (g_gps_task) {
-    vTaskDelete(g_gps_task);
-    g_gps_task = nullptr;
-  }
-}
-
-void GpsTask(void* /*unused*/) {
   // try detect presence and current baud rate
   while (true) {
     ESP_LOGI(TAG, "GPS waiting for NMEA...");
@@ -81,7 +63,31 @@ void GpsTask(void* /*unused*/) {
   Serial1.write("$PMTK220,100*2F\r\n");                                    // 10 Hz
   Serial1.write("$PMTK314,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0*29\r\n");  // GPRMC
   // Serial1.write("$PMTK314,0,1,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0*28\r\n");  // GPRMC,GPGGA
+}
 
+}  // namespace
+
+TaskHandle_t g_gps_task;
+
+esp_err_t GpsInit() {
+  esp_log_level_set(TAG, ESP_LOG_INFO);
+  ConfigureGps();
+  return ESP_OK;
+}
+
+esp_err_t GpsStart() {
+  return xTaskCreatePinnedToCore(GpsTask, "gps", 2560, nullptr, 1, &g_gps_task, APP_CPU_NUM)
+             ? ESP_OK
+             : ESP_FAIL;
+}
+void GpsStop() {
+  if (g_gps_task) {
+    vTaskDelete(g_gps_task);
+    g_gps_task = nullptr;
+  }
+}
+
+void GpsTask(void* /*unused*/) {
   static char buf[kGpsBufSize + 1] = {};
   while (true) {
     const int len = Serial1.readBytesUntil('\n', buf, kGpsBufSize);
@@ -90,6 +96,13 @@ void GpsTask(void* /*unused*/) {
       const uint32_t current_capture =
           CaptureManager::GetInstance(MCPWM_UNIT_0)->TriggerNow(MCPWM_SELECT_CAP2);
       SendToLogger(fmt::format("g,{},{}", current_capture, buf));
+    }
+    {
+      static int k = 0;
+      if (++k == 10) {
+        k = 0;
+        ESP_LOGI(TAG, "water %d", uxTaskGetStackHighWaterMark(nullptr));
+      }
     }
   }
 }
