@@ -1,5 +1,6 @@
 #include "gps.hpp"
 
+#include <string_view>
 #include "fmt/core.h"
 
 #include "Arduino.h"
@@ -9,6 +10,8 @@
 #include "capture_manager.hpp"
 #include "common.hpp"
 #include "logger.hpp"
+#include "nmea_parser.h"
+#include "ui/model.hpp"
 
 namespace {
 
@@ -89,6 +92,7 @@ void GpsStop() {
 
 void GpsTask(void* /*unused*/) {
   static char buf[kGpsBufSize + 1] = {};
+  static esp_gps_t parser;
   while (true) {
     const int len = Serial1.readBytesUntil('\n', buf, kGpsBufSize);
     if (len > 0) {
@@ -96,9 +100,23 @@ void GpsTask(void* /*unused*/) {
       const uint32_t current_capture =
           CaptureManager::GetInstance(MCPWM_UNIT_0)->TriggerNow(MCPWM_SELECT_CAP2);
       SendToLogger(fmt::format("g,{},{}", current_capture, buf));
+      {
+        parser = esp_gps_init();
+        parser.buffer = (uint8_t*)buf;
+        CHECK_OK(gps_decode(&parser));
+        const gps_t& g = parser.parent;
+        ui::g_model.gps = ui::Model::Gps{
+            .hour = g.tim.hour,
+            .minute = g.tim.minute,
+            .second = g.tim.second,
+            .millisecond = g.tim.thousand,
+            .latitude = g.latitude,
+            .longitude = g.longitude,
+        };
+      }
     }
     {
-      static int k = 0;
+      static int k = 9;
       if (++k == 10) {
         k = 0;
         ESP_LOGI(TAG, "water %d", uxTaskGetStackHighWaterMark(nullptr));

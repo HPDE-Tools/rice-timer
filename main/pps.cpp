@@ -8,8 +8,8 @@
 
 #include "capture_manager.hpp"
 #include "common.hpp"
-#include "display.hpp"
 #include "logger.hpp"
+#include "ui/model.hpp"
 
 constexpr char TAG[] = "pps";
 
@@ -59,11 +59,13 @@ void PpsTask(void* /*unused*/) {
     uint32_t current_capture = 0;
     if (xTaskNotifyWait(0, 0, &current_capture, pdMS_TO_TICKS(5000)) == pdFALSE) {
       ESP_LOGE(TAG, "PPS timeout");
+      ui::g_model.pps_capture = std::nullopt;
       continue;
     }
     g_pps_latest_capture = current_capture;
-    SendToLogger(fmt::format("p,{}", current_capture));
+    ui::g_model.pps_capture = current_capture;
     last_capture = current_capture;
+    SendToLogger(fmt::format("p,{}", current_capture));
     ESP_LOGI(TAG, "water %d", uxTaskGetStackHighWaterMark(nullptr));
   }
 }

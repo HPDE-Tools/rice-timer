@@ -13,11 +13,11 @@
 #include "can.hpp"
 #include "capture_manager.hpp"
 #include "common.hpp"
-#include "display.hpp"
 #include "gps.hpp"
 #include "imu.hpp"
 #include "logger.hpp"
 #include "pps.hpp"
+#include "ui/view.hpp"
 
 constexpr char TAG[] = "main";
 constexpr int kConsoleBaudHz = CONFIG_CONSOLE_UART_BAUDRATE;
@@ -64,19 +64,18 @@ void MainTask(void* /* unused */) {
   CHECK_OK(SetupFileSystem());
 
   CHECK_OK(LoggerInit());
-  CHECK_OK(LoggerStart());
-
   CHECK_OK(PpsInit());
   CHECK_OK(GpsInit());
   CHECK_OK(ImuInit());
   CHECK_OK(CanInit());
-  CHECK_OK(DisplayInit());
+  CHECK_OK(ui::ViewInit());
 
+  CHECK_OK(LoggerStart());
   CHECK_OK(PpsStart());
   CHECK_OK(GpsStart());
   CHECK_OK(ImuStart());
   CHECK_OK(CanStart());
-  CHECK_OK(DisplayStart());
+  CHECK_OK(ui::ViewStart());
 
   vTaskDelete(nullptr);
 }

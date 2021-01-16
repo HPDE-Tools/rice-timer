@@ -17,6 +17,7 @@
 #include "nvs_flash.h"
 
 #include "common.hpp"
+#include "ui/model.hpp"
 
 namespace {
 
@@ -215,12 +216,14 @@ static std::string PopFromQueue() {
 #endif
 
 void LoggerTask(void* /*unused*/) {
+  ui::g_model.logger_session_id = g_session_id;
   SCOPE_EXIT { vTaskDelete(nullptr); };
   for (int split_id = 0; split_id < kMaxNumSplits; split_id++) {
     std::unique_ptr<LogFile> file = CreateSplitFile(split_id);
     if (!file) {
       return;
     }
+    ui::g_model.logger_split_id = split_id;
     while (file->num_lines < kMaxNumLinesPerSplit) {
       std::string line = PopFromQueue();
       CHECK_OK(file->Writeln(line));
@@ -239,8 +242,8 @@ void LoggerTask(void* /*unused*/) {
             ESP_LOGI(TAG, "water %d", uxTaskGetStackHighWaterMark(nullptr));
           }
         }
-      }
-    }
-  }
+      }  // if flush
+    }  // while lines < max
+  }  // for split
   ESP_LOGE(TAG, "stopped after making too many (%d) splits", kMaxNumSplits);
 }

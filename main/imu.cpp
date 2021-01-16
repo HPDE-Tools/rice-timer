@@ -11,6 +11,7 @@
 #include "capture_manager.hpp"
 #include "common.hpp"
 #include "logger.hpp"
+#include "ui/model.hpp"
 
 constexpr char TAG[] = "imu";
 
@@ -66,7 +67,12 @@ void ImuTask(void* /*unused*/) {
     imu::Quaternion q = bno.getQuat();
     ReleaseArduinoMutex();
 
-    SendToLogger(fmt::format("i,{},{},{:.4},{:.4},{:.4},{:.4},{:.4},{:.4},{:.8},{:.8},{:.8},{:.8}",
+    ui::g_model.imu = ui::Model::Imu {
+      .ax = float(a[0]),
+      .ay = float(a[1]),
+      .az = float(a[2]),
+    };
+    SendToLogger(fmt::format("i,{},{},{:.4f},{:.4f},{:.4f},{:.4f},{:.4f},{:.4f},{:.8f},{:.8f},{:.8f},{:.8f}",
                              current_capture,
                              int{calibrated},
                              a[0],

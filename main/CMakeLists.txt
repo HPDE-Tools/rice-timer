@@ -3,15 +3,17 @@ set(srcs
 "can.cpp"
 "capture_manager.cpp"
 "common.cpp"
-"display.cpp"
 "gps.cpp"
 "imu.cpp"
 "logger.cpp"
+"nmea_parser.c"
 "pps.cpp"
+"ui/model.cpp"
+"ui/view.cpp"
 )
 idf_component_register(
     SRCS ${srcs}
-    INCLUDE_DIRS ""
+    INCLUDE_DIRS "."
 )
 
 target_compile_options(${COMPONENT_LIB} PRIVATE -std=gnu++2a)
