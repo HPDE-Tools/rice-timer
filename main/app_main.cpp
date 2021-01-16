@@ -65,18 +65,15 @@ void MainTask(void* /* unused */) {
   CHECK_OK(LoggerInit());
   CHECK_OK(LoggerStart());
 
-#if 0  // FIXME(summivox): disable display for now to avoid interference with imu
-  CHECK_OK(DisplayInit());
-  CHECK_OK(DisplayStart());
-#endif
-
   CHECK_OK(PpsInit());
   CHECK_OK(ImuInit());
   CHECK_OK(GpsInit());
+  CHECK_OK(DisplayInit());
 
   CHECK_OK(PpsStart());
   CHECK_OK(ImuStart());
   CHECK_OK(GpsStart());
+  CHECK_OK(DisplayStart());
 
   vTaskDelete(nullptr);
 }

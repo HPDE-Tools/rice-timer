@@ -37,7 +37,7 @@ esp_err_t ImuInit() {
 }
 
 esp_err_t ImuStart() {
-  if (!xTaskCreatePinnedToCore(ImuTask, "imu", 4096, nullptr, 2, &g_imu_task, APP_CPU_NUM)) {
+  if (!xTaskCreatePinnedToCore(ImuTask, "imu", 4096, nullptr, 3, &g_imu_task, APP_CPU_NUM)) {
     return ESP_FAIL;
   }
   // TODO(summivox): set up interrupt
