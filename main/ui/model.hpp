@@ -25,6 +25,7 @@ struct Model {
   std::optional<Imu> imu = {};
   int32_t logger_session_id = 0;
   int32_t logger_split_id = 0;
+  int32_t logger_lines = 0;
 };
 
 extern Model g_model;

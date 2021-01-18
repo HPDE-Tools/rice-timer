@@ -39,7 +39,7 @@ esp_err_t PpsInit() {
 }
 
 esp_err_t PpsStart() {
-  return xTaskCreatePinnedToCore(PpsTask, "pps", 2560, nullptr, 2, &g_pps_task, APP_CPU_NUM)
+  return xTaskCreatePinnedToCore(PpsTask, "pps", 4096, nullptr, 2, &g_pps_task, APP_CPU_NUM)
              ? ESP_OK
              : ESP_FAIL;
 }
@@ -66,6 +66,5 @@ void PpsTask(void* /*unused*/) {
     ui::g_model.pps_capture = current_capture;
     last_capture = current_capture;
     SendToLogger(fmt::format("p,{}", current_capture));
-    ESP_LOGI(TAG, "water %d", uxTaskGetStackHighWaterMark(nullptr));
   }
 }

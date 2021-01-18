@@ -27,9 +27,10 @@ constexpr char kSessionIdKey[] = "session_id";
 constexpr int kLoggerQueueSize = 32;
 constexpr int kSplitPrefixMod = 1'000;
 constexpr int kMaxNumSplits = 1'000'000;
-constexpr int64_t kFlushFreqLines = 100;
+// constexpr int64_t kFlushFreqLines = 1000;  // TODO(summivox): no longer used
 constexpr int64_t kMaxNumLinesPerSplit = CONFIG_MAX_LINES_PER_FILE;
-// constexpr int64_t kMaxNumLinesPerSplit = 1000;
+
+constexpr int kFlushPeriodMs = 1000;
 
 constexpr mode_t kFsMode = 0777;
 
@@ -145,7 +146,7 @@ std::unique_ptr<LogFile> CreateSplitFile(int split_id) {
 TaskHandle_t g_logger_task{};
 
 esp_err_t LoggerInit() {
-  esp_log_level_set(TAG, ESP_LOG_INFO);
+  esp_log_level_set(TAG, ESP_LOG_WARN);
 
   g_logger_queue = xQueueCreate(kLoggerQueueSize, sizeof(std::string));
   if (!g_logger_queue) {
@@ -160,7 +161,7 @@ esp_err_t LoggerInit() {
 
 esp_err_t LoggerStart() {
   if (!xTaskCreatePinnedToCore(
-          LoggerTask, "logger", 2560, nullptr, 10, &g_logger_task, APP_CPU_NUM)) {
+          LoggerTask, "logger", 4096, nullptr, 10, &g_logger_task, APP_CPU_NUM)) {
     return ESP_FAIL;
   }
   return ESP_OK;
@@ -227,7 +228,11 @@ void LoggerTask(void* /*unused*/) {
     while (file->num_lines < kMaxNumLinesPerSplit) {
       std::string line = PopFromQueue();
       CHECK_OK(file->Writeln(line));
-      if (file->num_lines % kFlushFreqLines == kFlushFreqLines - 1) {
+      ui::g_model.logger_lines = file->num_lines;
+
+      static TickType_t last_flush_time = xTaskGetTickCount();
+      if (static_cast<int>(xTaskGetTickCount() - last_flush_time) > pdMS_TO_TICKS(kFlushPeriodMs)) {
+        last_flush_time = xTaskGetTickCount();
         const int64_t num_lines = file->num_lines;
         file.reset();
         file = CreateSplitFile(split_id);
@@ -235,15 +240,8 @@ void LoggerTask(void* /*unused*/) {
           return;
         }
         file->num_lines = num_lines;
-        {
-          static int k = 0;
-          if (++k == 10) {
-            k = 0;
-            ESP_LOGI(TAG, "water %d", uxTaskGetStackHighWaterMark(nullptr));
-          }
-        }
       }  // if flush
-    }  // while lines < max
-  }  // for split
+    }    // while lines < max
+  }      // for split
   ESP_LOGE(TAG, "stopped after making too many (%d) splits", kMaxNumSplits);
 }

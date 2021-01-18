@@ -85,13 +85,6 @@ void ImuTask(void* /*unused*/) {
                              q.x(),
                              q.y(),
                              q.z()));
-    {
-      static int k = 0;
-      if (++k == 100) {
-        k = 0;
-        ESP_LOGI(TAG, "water %d", uxTaskGetStackHighWaterMark(nullptr));
-      }
-    }
     vTaskDelayUntil(&last_wake_time, pdMS_TO_TICKS(10));
   }
 }

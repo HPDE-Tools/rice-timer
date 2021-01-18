@@ -1,6 +1,7 @@
 #include <optional>
 #include <string>
 #include "fmt/core.h"
+#include "sys/stat.h"
 
 #include "Arduino.h"
 #include "HardwareSerial.h"
@@ -19,10 +20,16 @@
 #include "pps.hpp"
 #include "ui/view.hpp"
 
+namespace {
+
 constexpr char TAG[] = "main";
 constexpr int kConsoleBaudHz = CONFIG_CONSOLE_UART_BAUDRATE;
 constexpr int kSdCardMaxFreqKhz = 20'000;
 constexpr int kI2cMaxFreqHz = 400'000;
+
+constexpr gpio_num_t kLedPin = GPIO_NUM_13;
+
+}  // namespace
 
 sdmmc_card_t* g_sdcard{};
 esp_err_t SetupFileSystem() {
@@ -80,13 +87,44 @@ void MainTask(void* /* unused */) {
   vTaskDelete(nullptr);
 }
 
+#define LOG_WATER_MARK(name, task) \
+  ESP_LOGI("canary", name ": %d", (task) ? uxTaskGetStackHighWaterMark((task)) : -1)
+
+TaskHandle_t g_canary_task{};
+void CanaryTask(void* /*unused*/) {
+  gpio_pad_select_gpio(kLedPin);
+  gpio_set_direction(kLedPin, GPIO_MODE_OUTPUT);
+
+  bool led_state = false;
+  TickType_t last_wake_tick = xTaskGetTickCount();
+  while (true) {
+    led_state = !led_state;
+    gpio_set_level(kLedPin, led_state);
+    static int k = 0;
+    if (++k == 10) {
+      k = 0;
+      LOG_WATER_MARK("canary", g_canary_task);
+      LOG_WATER_MARK("logger", g_logger_task);
+      LOG_WATER_MARK("pps", g_pps_task);
+      LOG_WATER_MARK("gps", g_gps_task);
+      LOG_WATER_MARK("imu", g_imu_task);
+      LOG_WATER_MARK("can", g_can_task);
+      LOG_WATER_MARK("ui/view", ui::g_view_task);
+    }
+    vTaskDelayUntil(&last_wake_tick, pdMS_TO_TICKS(1000));
+  }
+}
+
 extern "C" void app_main(void) {
   esp_log_level_set(TAG, ESP_LOG_INFO);
+  esp_log_level_set("canary", ESP_LOG_INFO);
 
+  InitArduinoMutex();
   Serial.begin(kConsoleBaudHz);
   Wire.begin(23, 22, kI2cMaxFreqHz);
-  InitArduinoMutex();
 
+  xTaskCreatePinnedToCore(
+    CanaryTask, "canary", 2560, /*arg*/ nullptr, configMAX_PRIORITIES - 2, &g_canary_task, PRO_CPU_NUM);
   xTaskCreatePinnedToCore(
       MainTask, "main", 4096, /*arg*/ nullptr, configMAX_PRIORITIES - 1, &g_main_task, APP_CPU_NUM);
 }

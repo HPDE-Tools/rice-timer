@@ -79,7 +79,7 @@ esp_err_t GpsInit() {
 }
 
 esp_err_t GpsStart() {
-  return xTaskCreatePinnedToCore(GpsTask, "gps", 2560, nullptr, 1, &g_gps_task, APP_CPU_NUM)
+  return xTaskCreatePinnedToCore(GpsTask, "gps", 4096, nullptr, 1, &g_gps_task, PRO_CPU_NUM)
              ? ESP_OK
              : ESP_FAIL;
 }
@@ -103,7 +103,9 @@ void GpsTask(void* /*unused*/) {
       {
         parser = esp_gps_init();
         parser.buffer = (uint8_t*)buf;
-        CHECK_OK(gps_decode(&parser));
+        if (gps_decode(&parser) != ESP_OK) {
+          ui::g_model.gps = std::nullopt;
+        }
         const gps_t& g = parser.parent;
         ui::g_model.gps = ui::Model::Gps{
             .hour = g.tim.hour,
@@ -113,13 +115,6 @@ void GpsTask(void* /*unused*/) {
             .latitude = g.latitude,
             .longitude = g.longitude,
         };
-      }
-    }
-    {
-      static int k = 9;
-      if (++k == 10) {
-        k = 0;
-        ESP_LOGI(TAG, "water %d", uxTaskGetStackHighWaterMark(nullptr));
       }
     }
   }

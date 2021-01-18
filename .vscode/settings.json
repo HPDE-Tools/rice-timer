@@ -20,7 +20,8 @@
     "regex": "cpp",
     "optional": "cpp",
     "bitset": "cpp",
-    "*.ipp": "cpp"
+    "*.ipp": "cpp",
+    "charconv": "cpp"
   },
   "idf.flashType": "UART"
 }

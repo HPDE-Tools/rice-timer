@@ -1,5 +1,6 @@
 #include "can.hpp"
 
+#include <charconv>
 #include "fmt/core.h"
 #include "fmt/format.h"
 
@@ -13,6 +14,13 @@
 namespace {
 
 constexpr char TAG[] = "can";
+
+char* WriteHexUpper(char* s, uint32_t value, int len) {
+  for (char* p = s + len - 1; p >= s; --p, value >>= 4) {
+    *p = HexDigitUpper(value & 0xf);
+  }
+  return s + len - 1;
+}
 
 }  // namespace
 
@@ -31,7 +39,7 @@ esp_err_t CanInit() {
 
 esp_err_t CanStart() {
   TRY(twai_start());
-  return xTaskCreatePinnedToCore(CanTask, "can", 2560, nullptr, 4, &g_can_task, APP_CPU_NUM)
+  return xTaskCreatePinnedToCore(CanTask, "can", 4096, nullptr, 4, &g_can_task, APP_CPU_NUM)
              ? ESP_OK
              : ESP_FAIL;
 }
@@ -45,24 +53,38 @@ void CanStop() {
 }
 
 void CanTask(void* /*unused*/) {
-  static fmt::basic_memory_buffer<char, 50, std::allocator<char>> buf;
+  // format: c,2147483647,b0b1b2b3,8,d0d1d2d3d4d5d6d7 (length 40)
+  static char buf[41] = "c,";
+  char* const buf_begin = buf + 2;
+  char* const buf_end = buf + 41;
+
   while (true) {
     twai_message_t message;
     CHECK_OK(twai_receive(&message, portMAX_DELAY));
     const uint32_t current_capture =
         CaptureManager::GetInstance(MCPWM_UNIT_0)->TriggerNow(MCPWM_SELECT_CAP2);
-    buf.clear();
-    if (message.extd) {
-      fmt::format_to(
-          buf, "c,{},{:08X},{},", current_capture, message.identifier, message.data_length_code);
-    } else {
-      fmt::format_to(
-          buf, "c,{},{:03X},{},", current_capture, message.identifier, message.data_length_code);
-    }
+
+    // NOTE(summivox): manually format to (hopefully) save time
+    char* p = buf_begin;
+    p = std::to_chars(p, buf_end, current_capture, /*base*/ 10).ptr;
+    *p++ = ',';
+    p = WriteHexUpper(p, message.identifier, message.extd ? 8 : 3);
+    *p++ = ',';
+    *p++ = '0' + message.data_length_code;
     for (int i = 0; i < message.data_length_code; i++) {
-      fmt::format_to(buf, "{:02X}", message.data[i]);
+      p = WriteHexUpper(p, message.data[i], 2);
     }
-    buf.push_back('\0');
-    SendToLogger(std::string(buf.data()));
+    *p++ = '\0';
+    CHECK(p < buf_end);
+    SendToLogger(std::string(buf, p));
+#if 0
+    {
+      static TickType_t last_print = xTaskGetTickCount();
+      if (xTaskGetTickCount() - last_print >= pdMS_TO_TICKS(100)) {
+        last_print = xTaskGetTickCount();
+        ESP_LOGW(TAG, "(%d)%s", p - buf, buf);
+      }
+    }
+#endif
   }
 }
