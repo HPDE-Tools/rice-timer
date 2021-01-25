@@ -19,7 +19,7 @@ char* WriteHexUpper(char* s, uint32_t value, int len) {
   for (char* p = s + len - 1; p >= s; --p, value >>= 4) {
     *p = HexDigitUpper(value & 0xf);
   }
-  return s + len - 1;
+  return s + len;
 }
 
 }  // namespace
