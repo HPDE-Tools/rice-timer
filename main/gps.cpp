@@ -5,10 +5,11 @@
 #include "fmt/core.h"
 
 #include "driver/uart.h"
-#include "esp_log.h"
 
 #include "capture_manager.hpp"
-#include "common.hpp"
+#include "common/logging.hpp"
+#include "io/autobaud.hpp"
+#include "io/uart_line_reader.hpp"
 #include "logger.hpp"
 #include "nmea_parser.h"
 #include "ui/model.hpp"

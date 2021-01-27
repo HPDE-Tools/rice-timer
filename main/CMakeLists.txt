@@ -6,6 +6,8 @@ set(srcs
 "logger.cpp"
 "nmea_parser.c"
 "pps.cpp"
+"io/autobaud.cpp"
+"io/uart_line_reader.cpp"
 "ui/model.cpp"
 "ui/view.cpp"
 )
