@@ -41,8 +41,3 @@ constexpr char HexDigitLower(uint8_t i) {
 constexpr char HexDigitUpper(uint8_t i) {
   return i < 10 ? '0' + i : ('A' - 10) + i;
 }
-
-// TODO(summivox): experiment with I2C transaction-level mutex
-void InitArduinoMutex();
-void TakeArduinoMutex();
-void ReleaseArduinoMutex();

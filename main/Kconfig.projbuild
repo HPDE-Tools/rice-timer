@@ -1,12 +1,12 @@
 menu "ShiftWatch on ESP32"
     menu "File System"
+        config SD_CARD_4BIT
+            bool "Use native 4-bit SD card"
+            default true
+
         config MOUNT_ROOT
             string "Root path of the sdcard in VFS"
             default "/sdcard"
-        
-        config ALLOCATION_UNIT
-            int "Allocation unit size"
-            default 4096
     endmenu
     menu "Logging"
         config MAX_LINES_PER_FILE

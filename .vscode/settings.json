@@ -23,5 +23,6 @@
     "*.ipp": "cpp",
     "charconv": "cpp"
   },
-  "idf.flashType": "UART"
+  "idf.flashType": "UART",
+  "editor.formatOnSave": true
 }

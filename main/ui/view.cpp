@@ -3,9 +3,6 @@
 #include <optional>
 #include "fmt/core.h"
 
-#include "Adafruit_GFX.h"
-#include "Adafruit_SH110X.h"
-#include "Fonts/FreeSans18pt7b.h"
 #include "driver/gpio.h"
 #include "esp_log.h"
 #include "freertos/FreeRTOS.h"
@@ -15,20 +12,23 @@
 
 namespace ui {
 namespace {
+#if 0
 Adafruit_SH110X display{64, 128, &Wire, -1, 400'000, 400'000};
-}
+#endif
+}  // namespace
 
 constexpr char TAG[] = "ui/view";
 
 TaskHandle_t g_view_task{};
 
 esp_err_t ViewInit() {
+#if 0
   TakeArduinoMutex();
   display.begin();
   display.clearDisplay();
   display.setRotation(1);
   ReleaseArduinoMutex();
-
+#endif
   return ESP_OK;
 }
 
@@ -51,6 +51,7 @@ void ViewTask(void* /*unused*/) {
   ESP_LOGW(TAG, "random base: x = %d, y = %d", x0, y0);
   TickType_t last_wake_time = xTaskGetTickCount();
   while (true) {
+#if 0
     TakeArduinoMutex();
     display.clearDisplay();
 
@@ -94,13 +95,15 @@ void ViewTask(void* /*unused*/) {
     display.setTextSize(1);
     display.setCursor(x0 + 0, y0 + 54);
     display.write(fmt::format("{}/{}", g_model.logger_session_id, g_model.logger_split_id).c_str());
-    
+
     display.drawRect(62, y0 + 55, 64, 5, SH110X_WHITE);
-    display.fillRect(62, y0 + 55, g_model.logger_lines * 64 / CONFIG_MAX_LINES_PER_FILE, 5, SH110X_WHITE);
+    display.fillRect(
+        62, y0 + 55, g_model.logger_lines * 64 / CONFIG_MAX_LINES_PER_FILE, 5, SH110X_WHITE);
 
     display.display();
     ReleaseArduinoMutex();
-    
+#endif
+
     vTaskDelayUntil(&last_wake_time, pdMS_TO_TICKS(100));
   }
 }

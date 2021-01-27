@@ -29,7 +29,7 @@ TaskHandle_t g_can_task{};
 esp_err_t CanInit() {
   esp_log_level_set(TAG, ESP_LOG_INFO);
   twai_general_config_t general_config =
-      TWAI_GENERAL_CONFIG_DEFAULT(/*tx*/ GPIO_NUM_12, /*rx*/ GPIO_NUM_27, TWAI_MODE_NORMAL);
+      TWAI_GENERAL_CONFIG_DEFAULT(/*tx*/ GPIO_NUM_33, /*rx*/ GPIO_NUM_32, TWAI_MODE_NORMAL);
   general_config.intr_flags = ESP_INTR_FLAG_IRAM;
   general_config.tx_queue_len = 0;
   twai_timing_config_t timing_config = TWAI_TIMING_CONFIG_500KBITS();

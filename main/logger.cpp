@@ -7,11 +7,11 @@
 #include <memory>
 #include <optional>
 #include <string>
-#include "fmt/core.h"
 
 #include "esp_log.h"
 #include "esp_system.h"
 #include "esp_vfs_fat.h"
+#include "fmt/core.h"
 #include "freertos/queue.h"
 #include "nvs.h"
 #include "nvs_flash.h"
@@ -146,7 +146,7 @@ std::unique_ptr<LogFile> CreateSplitFile(int split_id) {
 TaskHandle_t g_logger_task{};
 
 esp_err_t LoggerInit() {
-  esp_log_level_set(TAG, ESP_LOG_WARN);
+  esp_log_level_set(TAG, ESP_LOG_INFO);
 
   g_logger_queue = xQueueCreate(kLoggerQueueSize, sizeof(std::string));
   if (!g_logger_queue) {
