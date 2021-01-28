@@ -14,9 +14,9 @@
 #include "sdmmc_cmd.h"
 #include "soc/uart_struct.h"
 
-#include "can.hpp"
 #include "capture_manager.hpp"
 #include "common.hpp"
+#include "device/can.hpp"
 #include "device/gps.hpp"
 #include "filesystem.hpp"
 #include "logger.hpp"

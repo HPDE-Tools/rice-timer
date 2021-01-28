@@ -1,10 +1,10 @@
 set(srcs
 "app_main.cpp"
-"can.cpp"
 "capture_manager.cpp"
 "filesystem.cpp"
 "logger.cpp"
 
+"device/can.cpp"
 "device/gps.cpp"
 "io/autobaud.cpp"
 "io/uart_line_reader.cpp"
