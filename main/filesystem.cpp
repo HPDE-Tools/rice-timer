@@ -31,7 +31,6 @@ esp_err_t InitializeSdCard() {
       .max_files = 5,
       .allocation_unit_size = kSdClusterSize,
   };
-  const char mount_point[] = MOUNT_POINT;
   ESP_LOGI(TAG, "Initializing SD card");
 
   ESP_LOGI(TAG, "Using SDMMC peripheral");
@@ -55,7 +54,7 @@ esp_err_t InitializeSdCard() {
 
   gpio_set_pull_mode(GPIO_NUM_27, GPIO_PULLUP_ONLY);  // detect
 
-  TRY(esp_vfs_fat_sdmmc_mount(mount_point, &host, &slot_config, &mount_config, &g_sd_card));
+  TRY(esp_vfs_fat_sdmmc_mount(CONFIG_MOUNT_ROOT, &host, &slot_config, &mount_config, &g_sd_card));
   sdmmc_card_print_info(stdout, g_sd_card);
   CHECK(g_sd_card->csd.sector_size == kSdSectorSize);
   return ESP_OK;

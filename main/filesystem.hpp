@@ -8,8 +8,6 @@
 
 #include "driver/sdmmc_host.h"
 
-#define MOUNT_POINT "/sdcard"
-
 namespace fs {
 
 extern sdmmc_card_t* g_sd_card;
