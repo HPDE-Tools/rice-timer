@@ -2,10 +2,12 @@ set(srcs
 "app_main.cpp"
 "can.cpp"
 "capture_manager.cpp"
-"gps.cpp"
+"filesystem.cpp"
 "logger.cpp"
 "nmea_parser.c"
 "pps.cpp"
+
+"device/gps.cpp"
 "io/autobaud.cpp"
 "io/uart_line_reader.cpp"
 "ui/model.cpp"
@@ -16,5 +18,5 @@ idf_component_register(
     INCLUDE_DIRS "."
 )
 
-target_compile_options(${COMPONENT_LIB} PRIVATE -std=gnu++2a)
+target_compile_options(${COMPONENT_LIB} PRIVATE -std=gnu++2a -Wno-deprecated-declarations)
 # target_link_libraries(${COMPONENT_LIB} PUBLIC stdc++fs)

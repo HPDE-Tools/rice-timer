@@ -7,6 +7,7 @@
 class Task {
  public:
   TaskHandle_t handle() const { return handle_; }
+  virtual ~Task() = default;
 
  protected:
   TaskHandle_t handle_ = nullptr;

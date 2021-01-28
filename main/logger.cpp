@@ -17,6 +17,7 @@
 #include "nvs_flash.h"
 
 #include "common.hpp"
+#include "filesystem.hpp"
 #include "ui/model.hpp"
 
 namespace {
@@ -75,7 +76,7 @@ struct LogFile {
     return ESP_OK;
   }
 
-  void Flush() { fflush(file); }
+  void Flush() { fs::ReallyFlush(file); }
 };
 
 esp_err_t NvsInit() {
@@ -119,9 +120,8 @@ esp_err_t SetupSessionDir(int64_t session_id, std::string* out_session_dir) {
   return Mkdir(*out_session_dir);
 }
 
-esp_err_t SetupSplitDir(int split_prefix,
-                        const std::string& session_dir,
-                        std::string* out_split_dir) {
+esp_err_t SetupSplitDir(
+    int split_prefix, const std::string& session_dir, std::string* out_split_dir) {
   *out_split_dir = fmt::format("{}/{}", session_dir, split_prefix);
   return Mkdir(*out_split_dir);
 }
@@ -234,12 +234,8 @@ void LoggerTask(void* /*unused*/) {
       if (static_cast<int>(xTaskGetTickCount() - last_flush_time) > pdMS_TO_TICKS(kFlushPeriodMs)) {
         last_flush_time = xTaskGetTickCount();
         const int64_t num_lines = file->num_lines;
-        file.reset();
-        file = CreateSplitFile(split_id);
-        if (!file) {
-          return;
-        }
-        file->num_lines = num_lines;
+        file->Flush();
+        ESP_LOGD(TAG, "flush at %" PRIi64 " lines", num_lines);
       }  // if flush
     }    // while lines < max
   }      // for split

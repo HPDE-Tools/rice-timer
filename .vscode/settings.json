@@ -21,7 +21,13 @@
     "optional": "cpp",
     "bitset": "cpp",
     "*.ipp": "cpp",
-    "charconv": "cpp"
+    "charconv": "cpp",
+    "fstream": "cpp",
+    "istream": "cpp",
+    "sstream": "cpp",
+    "cinttypes": "cpp",
+    "*.tcc": "cpp",
+    "iomanip": "cpp"
   },
   "idf.flashType": "UART",
   "editor.formatOnSave": true

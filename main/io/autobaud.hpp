@@ -2,6 +2,7 @@
 
 #include <optional>
 
+#include "driver/uart.h"
 #include "esp_err.h"
 #include "freertos/FreeRTOS.h"
 #include "soc/uart_struct.h"
@@ -20,8 +21,9 @@ struct UartAutoBaudOption {
 // - must have exclusive access to UART
 // - UART must have been enabled already
 
-std::optional<int32_t> DetectUartBitWidth(uart_dev_t* UART, const UartAutoBaudOption& option);
-std::optional<int32_t> DetectUartBaudRate(uart_dev_t* UART, const UartAutoBaudOption& option);
-void SetUartBitWidth(uart_dev_t* UART, int32_t bit_width);
+std::optional<int32_t> DetectUartBitWidth(uart_dev_t* uart, const UartAutoBaudOption& option);
+std::optional<int32_t> DetectUartBaudRate(uart_dev_t* uart, const UartAutoBaudOption& option);
+void SetUartBitWidth(uart_dev_t* uart, int32_t bit_width);
+std::optional<uint32_t> GetCurrentUartBaudRate(uart_port_t uart_num);
 
 }  // namespace io

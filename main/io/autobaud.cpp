@@ -79,4 +79,12 @@ void SetUartBitWidth(uart_dev_t* UART, int32_t bit_width) {
   UART->clk_div.div_frag = 0;
 }
 
+std::optional<uint32_t> GetCurrentUartBaudRate(uart_port_t uart_num) {
+  uint32_t baud_rate;
+  if (uart_get_baudrate(uart_num, &baud_rate) == ESP_OK) {
+    return baud_rate;
+  }
+  return {};
+}
+
 }  // namespace io

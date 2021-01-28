@@ -40,7 +40,7 @@ class UartLineReader : public ::Task {
   };
 
   /// Creates a line reader on a UART with initialized driver and event queue.
-  /// Note that no lines are read until `Setup` is called.
+  /// Note that no lines are read until one of the Read methods is called.
   ///
   /// \param uart_num UART from which lines are read
   /// \param queue initialized event queue from `uart_driver_install`

@@ -7,3 +7,5 @@ IncludeBlocks: Preserve
 IndentWidth: 2
 AccessModifierOffset: -1
 PointerAlignment: Left
+AlignAfterOpenBracket: AlwaysBreak
+
