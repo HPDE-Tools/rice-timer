@@ -4,8 +4,6 @@ set(srcs
 "capture_manager.cpp"
 "filesystem.cpp"
 "logger.cpp"
-"nmea_parser.c"
-"pps.cpp"
 
 "device/gps.cpp"
 "io/autobaud.cpp"

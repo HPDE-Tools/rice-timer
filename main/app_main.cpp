@@ -1,11 +1,14 @@
+#include <inttypes.h>
+#include <sys/stat.h>
+#include <chrono>
 #include <memory>
 #include <optional>
 #include <string>
-#include "sys/stat.h"
 
 #include "driver/gpio.h"
 #include "driver/sdmmc_host.h"
 #include "driver/spi_common.h"
+#include "fmt/chrono.h"
 #include "fmt/core.h"
 #include "freertos/FreeRTOS.h"
 #include "sdmmc_cmd.h"
@@ -17,8 +20,9 @@
 #include "device/gps.hpp"
 #include "filesystem.hpp"
 #include "logger.hpp"
-#include "pps.hpp"
 #include "ui/view.hpp"
+
+namespace chrono = std::chrono;
 
 namespace {
 
@@ -26,6 +30,8 @@ constexpr char TAG[] = "main";
 constexpr int kI2cMaxFreqHz = 400'000;
 constexpr int kGpsBaudRate = 38400;
 constexpr int kGpsOutputPeriodMs = 200;
+
+constexpr int kCanaryPeriodMs = 10000;
 
 }  // namespace
 
@@ -60,7 +66,7 @@ void MainTask(void* /* unused */) {
   heap_caps_print_heap_info(MALLOC_CAP_8BIT);
   CHECK_OK(SetupFileSystem());
 
-  g_gps = std::make_unique<GpsManager>(GpsManager::Option{
+  g_gps = GpsManager::Create({
       .uart_num = UART_NUM_2,
       .uart_dev = &UART2,
       .uart_rx_pin = GPIO_NUM_16,
@@ -72,9 +78,11 @@ void MainTask(void* /* unused */) {
       .pps_pin = GPIO_NUM_4,
       .software_capture_signal = MCPWM_SELECT_CAP2,
 
+      .adjust_system_time = true,
+
       .priority = 3,
   });
-  CHECK_OK(g_gps->Setup());
+  CHECK(g_gps);
   CHECK_OK(MtkDetectAndConfigure(g_gps.get(), kGpsBaudRate, kGpsOutputPeriodMs));
 
   CHECK_OK(LoggerInit());
@@ -96,27 +104,16 @@ void MainTask(void* /* unused */) {
 
 TaskHandle_t g_canary_task{};
 void CanaryTask(void* /*unused*/) {
-  // gpio_pad_select_gpio(kLedPin);
-  // gpio_set_direction(kLedPin, GPIO_MODE_OUTPUT);
-
-  bool led_state = false;
   TickType_t last_wake_tick = xTaskGetTickCount();
   while (true) {
-    led_state = !led_state;
-    // gpio_set_level(kLedPin, led_state);
-    static int k = 9;
-    if (++k == 10) {
-      k = 0;
-      LOG_WATER_MARK("canary", g_canary_task);
-      LOG_WATER_MARK("logger", g_logger_task);
-      LOG_WATER_MARK("pps", g_pps_task);
-      if (g_gps) {
-        LOG_WATER_MARK("gps", g_gps->handle());
-      }
-      LOG_WATER_MARK("can", g_can_task);
-      LOG_WATER_MARK("ui/view", ui::g_view_task);
+    LOG_WATER_MARK("canary", g_canary_task);
+    LOG_WATER_MARK("logger", g_logger_task);
+    if (g_gps) {
+      LOG_WATER_MARK("gps", g_gps->handle());
     }
-    vTaskDelayUntil(&last_wake_tick, pdMS_TO_TICKS(1000));
+    LOG_WATER_MARK("can", g_can_task);
+    LOG_WATER_MARK("ui/view", ui::g_view_task);
+    vTaskDelayUntil(&last_wake_tick, pdMS_TO_TICKS(kCanaryPeriodMs));
   }
 }
 
@@ -133,7 +130,7 @@ extern "C" void app_main(void) {
   xTaskCreatePinnedToCore(
       CanaryTask,
       "canary",
-      2560,
+      2500,
       /*arg*/ nullptr,
       configMAX_PRIORITIES - 2,
       &g_canary_task,

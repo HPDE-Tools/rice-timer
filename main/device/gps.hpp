@@ -1,6 +1,7 @@
 #pragma once
 
 #include <time.h>
+#include <atomic>
 #include <memory>
 #include <string_view>
 
@@ -31,7 +32,7 @@ class GpsManager : public Task {
     gpio_num_t pps_pin = GPIO_NUM_NC;
     mcpwm_capture_signal_t software_capture_signal = MCPWM_SELECT_CAP2;
 
-    bool set_system_time;
+    bool adjust_system_time;
 
     int priority = 0;
   };
@@ -45,10 +46,16 @@ class GpsManager : public Task {
     time_t gps_nmea_unix;
   };
 
-  explicit GpsManager(Option option);
-  virtual ~GpsManager() = default;
+  static std::unique_ptr<GpsManager> Create(Option option) {
+    auto self = std::unique_ptr<GpsManager>(new GpsManager(option));
+    if (self->Setup() != ESP_OK) {
+      self.reset();
+    }
+    return self;
+  }
 
-  esp_err_t Setup();
+  virtual ~GpsManager();
+
   esp_err_t Start();
   void Stop();
 
@@ -73,11 +80,18 @@ class GpsManager : public Task {
   std::string ReadRawLine(TickType_t timeout);
 
   /// Have we received a PPS recently?
-  // bool IsPpsRecent() const;  // TODO
+  /// This will actively check and update the last known state if PPS has recently became stale.
+  ///
+  /// \see is_pps_recent -- returns last known state only
+  bool CheckIsPpsRecent();
 
   uart_port_t uart_num() const { return option_.uart_num; }
   uart_dev_t* uart_dev() const { return option_.uart_dev; }
   QueueHandle_t uart_queue() const { return uart_queue_; }
+  bool is_pps_recent() const { return is_pps_recent_; }
+
+  // NOTE(summivox): returns a copy to avoid surprise changes
+  PpsGpsMatch latest_pps_gps_match() const { return latest_pps_gps_match_; }
 
  protected:
   void Run() override;
@@ -88,13 +102,21 @@ class GpsManager : public Task {
   std::unique_ptr<io::UartLineReader> line_reader_;
   CaptureManager* capture_manager_ = nullptr;  // not owned
 
-  bool initialized_ = false;
-  int century_ = 2000;  // GPRMC date only has 2-digit year
+  // GPRMC provides only 2-digit year (other sources might provide this)
+  int century_ = 2000;
 
   volatile TickType_t latest_pps_time_os_ = 0;     // written from ISR
   volatile uint32_t latest_pps_time_capture_ = 0;  // written from ISR
 
+  // PPS freshness:
+  // - set to true only by ISR
+  // - set to false only by CheckIsPpsRecent
+  std::atomic_bool is_pps_recent_ = false;
+
   PpsGpsMatch latest_pps_gps_match_{};
+
+  explicit GpsManager(Option option);
+  esp_err_t Setup();
 
   // called by CaptureManager ISR
   static void HandlePpsCapture(
@@ -103,10 +125,8 @@ class GpsManager : public Task {
       mcpwm_capture_signal_t signal,
       uint32_t edge,
       uint32_t value);
-
   void ProcessGpsLine(std::string_view trimmed_line, TickType_t time_os, uint32_t time_capture);
-
-  esp_err_t SetSystemTime(const PpsGpsMatch& match);
+  void AdjustSystemTime(const PpsGpsMatch& match);
 
   NON_COPYABLE_NOR_MOVABLE(GpsManager)
 };

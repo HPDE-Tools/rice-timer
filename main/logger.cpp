@@ -3,13 +3,16 @@
 #include <inttypes.h>
 #include <sys/stat.h>
 #include <sys/unistd.h>
+#include <utime.h>
 #include <cstdio>
 #include <memory>
 #include <optional>
 #include <string>
+#include <string_view>
 
 #include "esp_log.h"
 #include "esp_system.h"
+#include "esp_vfs.h"
 #include "esp_vfs_fat.h"
 #include "fmt/core.h"
 #include "freertos/queue.h"
@@ -17,6 +20,8 @@
 #include "nvs_flash.h"
 
 #include "common.hpp"
+#include "common/strings.hpp"
+#include "common/times.hpp"
 #include "filesystem.hpp"
 #include "ui/model.hpp"
 
@@ -126,19 +131,18 @@ esp_err_t SetupSplitDir(
   return Mkdir(*out_split_dir);
 }
 
-std::unique_ptr<LogFile> CreateSplitFile(int split_id) {
+std::string SetupSplitFilename(int split_id) {
   const int split_prefix = split_id / kSplitPrefixMod;
   std::string split_dir;
   CHECK_OK(SetupSplitDir(split_prefix, g_session_dir, &split_dir));
-  const std::string filename = fmt::format("{}/{}.txt", split_dir, split_id);
-  std::unique_ptr<LogFile> file = LogFile::Create(filename);
-  // NOTE(summivox): don't return right away because we'd lose error context; log first
-  if (!file) {
-    ESP_LOGE(TAG, "cannot open log file at: %s", filename.c_str());
-    return nullptr;
+  return fmt::format("{}/{}.txt", split_dir, split_id);
+}
+
+void UpdateFileTime(const std::string& filename, TimeUnix t_unix) {
+  utimbuf buf{.actime = t_unix, .modtime = t_unix};
+  if (esp_vfs_utime(filename.c_str(), &buf) != 0) {
+    ESP_LOGE(TAG, "utimes fail => %s", strerror(errno));
   }
-  ESP_LOGI(TAG, "opened log file at: %s", filename.c_str());
-  return file;
 }
 
 }  // namespace
@@ -220,7 +224,8 @@ void LoggerTask(void* /*unused*/) {
   ui::g_model.logger_session_id = g_session_id;
   SCOPE_EXIT { vTaskDelete(nullptr); };
   for (int split_id = 0; split_id < kMaxNumSplits; split_id++) {
-    std::unique_ptr<LogFile> file = CreateSplitFile(split_id);
+    std::string filename = SetupSplitFilename(split_id);
+    std::unique_ptr<LogFile> file = LogFile::Create(filename);
     if (!file) {
       return;
     }
@@ -235,6 +240,7 @@ void LoggerTask(void* /*unused*/) {
         last_flush_time = xTaskGetTickCount();
         const int64_t num_lines = file->num_lines;
         file->Flush();
+        UpdateFileTime(filename, NowUnix());
         ESP_LOGD(TAG, "flush at %" PRIi64 " lines", num_lines);
       }  // if flush
     }    // while lines < max
