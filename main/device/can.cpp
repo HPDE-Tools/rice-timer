@@ -15,6 +15,8 @@ namespace {
 
 constexpr char TAG[] = "can";
 
+constexpr int kCanStackSize = 4096;
+
 char* WriteHexUpper(char* s, uint32_t value, int len) {
   for (char* p = s + len - 1; p >= s; --p, value >>= 4) {
     *p = HexDigitUpper(value & 0xf);
@@ -24,39 +26,38 @@ char* WriteHexUpper(char* s, uint32_t value, int len) {
 
 }  // namespace
 
-TaskHandle_t g_can_task{};
-
-esp_err_t CanInit() {
+CanManager::CanManager(Option option) : option_(option) {}
+esp_err_t CanManager::Setup() {
   esp_log_level_set(TAG, ESP_LOG_INFO);
   twai_general_config_t general_config =
-      TWAI_GENERAL_CONFIG_DEFAULT(/*tx*/ GPIO_NUM_33, /*rx*/ GPIO_NUM_32, TWAI_MODE_NORMAL);
+      TWAI_GENERAL_CONFIG_DEFAULT(option_.tx_pin, option_.rx_pin, option_.mode);
+#if CONFIG_TWAI_ISR_IN_IRAM
   general_config.intr_flags = ESP_INTR_FLAG_IRAM;
-  general_config.tx_queue_len = 0;
+#endif
+  general_config.tx_queue_len = option_.tx_queue_len;
+  general_config.rx_queue_len = option_.rx_queue_len;
   twai_timing_config_t timing_config = TWAI_TIMING_CONFIG_500KBITS();
   twai_filter_config_t filter_config = TWAI_FILTER_CONFIG_ACCEPT_ALL();
-  return twai_driver_install(&general_config, &timing_config, &filter_config);
+  TRY(twai_driver_install(&general_config, &timing_config, &filter_config));
+  return ESP_OK;
 }
+CanManager::~CanManager() { Stop(); }
 
-esp_err_t CanStart() {
+esp_err_t CanManager::Start() {
   TRY(twai_start());
-  return xTaskCreatePinnedToCore(CanTask, "can", 4096, nullptr, 4, &g_can_task, APP_CPU_NUM)
-             ? ESP_OK
-             : ESP_FAIL;
+  return Task::SpawnSame(TAG, kCanStackSize, option_.priority);
 }
 
-void CanStop() {
-  CHECK_OK(twai_stop());
-  if (g_can_task) {
-    vTaskDelete(g_can_task);
-    g_can_task = nullptr;
-  }
+void CanManager::Stop() {
+  twai_stop();
+  Task::Kill();
 }
 
-void CanTask(void* /*unused*/) {
-  // format: c,2147483647,b0b1b2b3,8,d0d1d2d3d4d5d6d7 (length 40)
-  static char buf[41] = "c,";
+void CanManager::Run() {
+  // NOTE(summivox): This is hot but the format is simple, so do manual formatting.
+  static char buf[] = "c,2147483647,b0b1b2b3,8,d0d1d2d3d4d5d6d7";
   char* const buf_begin = buf + 2;
-  char* const buf_end = buf + 41;
+  char* const buf_end = buf + sizeof(buf);
 
   while (true) {
     twai_message_t message;
@@ -71,13 +72,14 @@ void CanTask(void* /*unused*/) {
     p = WriteHexUpper(p, message.identifier, message.extd ? 8 : 3);
     *p++ = ',';
     *p++ = '0' + message.data_length_code;
+    *p++ = ',';
     for (int i = 0; i < message.data_length_code; i++) {
       p = WriteHexUpper(p, message.data[i], 2);
     }
     *p++ = '\0';
     CHECK(p < buf_end);
     SendToLogger(std::string(buf, p));
-#if 0
+#if 1
     {
       static TickType_t last_print = xTaskGetTickCount();
       if (xTaskGetTickCount() - last_print >= pdMS_TO_TICKS(100)) {

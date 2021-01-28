@@ -58,7 +58,6 @@ esp_err_t GpsManager::Setup() {
   };
   TRY(uart_driver_install(
       uart_num(), /*rx buf*/ 1024, /*tx buf*/ 1024, /*queue size*/ 128, &uart_queue_, 0));
-  MAKE_SCOPE_EXIT(guard_driver) { uart_driver_delete(uart_num()); };
 
   TRY(uart_param_config(uart_num(), &config));
   TRY(uart_set_pin(
@@ -86,13 +85,12 @@ esp_err_t GpsManager::Setup() {
       MCPWM_POS_EDGE,
       0,
       std::bind(HandlePpsCapture, this, _1, _2, _3, _4)));
-  // no need to defer unsubscribe, as this is the last step
 
-  guard_driver.dismiss();
   return ESP_OK;
 }
 
 GpsManager::~GpsManager() {
+  Stop();
   capture_manager_->Unsubscribe(option_.pps_capture_signal);
   uart_driver_delete(uart_num());
 }
