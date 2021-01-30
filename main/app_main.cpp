@@ -142,15 +142,6 @@ void CanaryTask(void* /*unused*/) {
 }
 
 extern "C" void app_main(void) {
-  esp_log_level_set(TAG, ESP_LOG_INFO);
-  esp_log_level_set("canary", ESP_LOG_INFO);
-
-#if 0
-  Serial.begin(kConsoleBaudHz);
-  Wire.begin(23, 22, kI2cMaxFreqHz);
-  Wire.begin(25, 26, kI2cMaxFreqHz);
-#endif
-
   xTaskCreatePinnedToCore(
       CanaryTask,
       "canary",
