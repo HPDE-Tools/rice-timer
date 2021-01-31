@@ -4,6 +4,7 @@
 #include <memory>
 #include <optional>
 #include <string>
+#include <string_view>
 
 #include "driver/gpio.h"
 #include "driver/sdmmc_host.h"
@@ -17,6 +18,7 @@
 
 #include "capture_manager.hpp"
 #include "common/logging.hpp"
+#include "common/strings.hpp"
 #include "common/utils.hpp"
 #include "device/can.hpp"
 #include "device/gps_daemon.hpp"
@@ -112,12 +114,10 @@ esp_err_t SetupGps(
 }
 
 void HandleGpsData(
-    GpsDaemon::State state,
-    const ParsedNmea& nmea,
-    const std::optional<GpsDaemon::TimeFix>& time_fix) {
-  ESP_LOGI(
+    GpsDaemon::State state, const ParsedNmea& nmea, const std::optional<GpsTimeFix>& time_fix) {
+  ESP_LOGW(
       TAG,
-      "gps data handler: state=%d, nmea=#%d, has_time_fix=#%d",
+      "gps data: state=%d, nmea=#%d, has_time_fix=%d",
       (int)state,
       (int)nmea.index(),
       (int)!!time_fix);
@@ -135,6 +135,11 @@ void HandleGpsData(
           },
           [](const auto&) { /* default NOP */ }},
       nmea);
+}
+
+void HandleGpsLine(std::string_view line, bool is_valid_nmea) {
+  const std::string_view trimmed = TrimSuffix(line, "\r\n");
+  ESP_LOGI(TAG, "gps line (valid=%d):%.*s", (int)is_valid_nmea, trimmed.size(), trimmed.data());
 }
 
 TaskHandle_t g_main_task{};
@@ -168,7 +173,7 @@ void MainTask(void* /* unused */) {
   CHECK_OK(LoggerInit());
 
   CHECK_OK(LoggerStart());
-  CHECK_OK(g_gpsd->Start(HandleGpsData));
+  CHECK_OK(g_gpsd->Start(HandleGpsData, HandleGpsLine));
   CHECK_OK(g_can->Start());
 
   // CHECK_OK(ui::ViewStart());

@@ -18,6 +18,7 @@
 #include "common/strings.hpp"
 #include "common/times.hpp"
 #include "common/utils.hpp"
+#include "device/gps_utils.hpp"
 #include "io/autobaud.hpp"
 #include "logger.hpp"
 #include "ui/model.hpp"
@@ -37,35 +38,6 @@ constexpr int kMaxAdjustableDeltaTimeSec = 2 * 60 * 60;
 }  // namespace
 
 using std::nullopt;
-
-ParsedNmea ParseNmea(const std::string& line) {
-  ParsedNmea parsed{ESP_ERR_INVALID_ARG};
-  if (line.empty()) {
-    return parsed;
-  }
-  switch (minmea_sentence_id(line.c_str(), /*strict*/ true)) {
-    case MINMEA_SENTENCE_RMC: {
-      if (!minmea_parse_rmc(&parsed.emplace<minmea_sentence_rmc>(), line.c_str())) {
-        parsed = ESP_ERR_INVALID_ARG;
-      }
-    } break;
-    case MINMEA_SENTENCE_GGA: {
-      if (!minmea_parse_gga(&parsed.emplace<minmea_sentence_gga>(), line.c_str())) {
-        parsed = ESP_ERR_INVALID_ARG;
-      }
-    } break;
-    case MINMEA_SENTENCE_ZDA: {
-      if (!minmea_parse_zda(&parsed.emplace<minmea_sentence_zda>(), line.c_str())) {
-        parsed = ESP_ERR_INVALID_ARG;
-      }
-    } break;
-    case MINMEA_UNKNOWN:
-    default: {
-      parsed = ESP_ERR_NOT_SUPPORTED;
-    } break;
-  }
-  return parsed;
-}
 
 GpsDaemon::GpsDaemon(
     io::UartLineReader* line_reader,
@@ -97,9 +69,11 @@ GpsDaemon::~GpsDaemon() {
   capture_manager_->Unsubscribe(option_.pps_capture_signal);
 }
 
-esp_err_t GpsDaemon::Start(GpsDataSubscriber&& subscriber) {
+esp_err_t GpsDaemon::Start(
+    GpsDataSubscriber&& data_subscriber, GpsRawLineSubscriber&& line_subscriber) {
   state_ = kLost;
-  data_subscriber_ = subscriber;
+  data_subscriber_ = data_subscriber;
+  line_subscriber_ = line_subscriber;
   latest_pps_.Reset();
   latest_gps_.Reset();
   return Task::SpawnSame(TAG, kGpsStackSize, option_.priority);
@@ -122,6 +96,7 @@ void GpsDaemon::Run() {
   static const TickType_t pps_timeout = pdMS_TO_TICKS(option_.pps_timeout_ms);
 
   static ParsedNmea nmea;
+  static TimeUnix latest_time_fix_unix;
 
   state_ = kLost;
   while (true) {
@@ -139,10 +114,14 @@ void GpsDaemon::Run() {
       continue;
     }
 
-    // each poll cycle we only wait for a short time, so that we could check for both PPS and GPS
-    // stale condition and react accordingly
+    // Each poll cycle we only wait for a short time, so that we could check for both PPS and GPS
+    // stale condition and react accordingly.
     const std::string line = line_reader_->ReadOneLine(pdMS_TO_TICKS(kGpsPollMs));
     const TickType_t now_ostime = xTaskGetTickCount();
+    const auto latest_pps = latest_pps_.Check(now_ostime, pps_timeout);
+
+    // Timing-sensitive steps have all been done; from here onwards we no longer need to worry about
+    // blocking (too much).
 
     nmea = ParseNmea(line);
     const bool nmea_is_valid = !std::holds_alternative<esp_err_t>(nmea);
@@ -154,8 +133,7 @@ void GpsDaemon::Run() {
       continue;
     }
 
-    const auto latest_pps = latest_pps_.Check(now_ostime, pps_timeout);
-    std::optional<TimeFix> time_fix;
+    std::optional<GpsTimeFix> time_fix;
     if (latest_pps) {
       time_fix = TryMatchPpsGps(latest_pps->data, latest_pps->time, now_ostime, nmea);
       if (time_fix) {
@@ -186,14 +164,16 @@ void GpsDaemon::Run() {
         break;
     }
 
-    // only call data subscriber last, so that it can also get time_fix if available
-    if (nmea_is_valid && data_subscriber_) {
+    if (line_subscriber_ && !line.empty()) {
+      line_subscriber_(line, nmea_is_valid);
+    }
+    if (data_subscriber_ && nmea_is_valid) {
       data_subscriber_(state_, nmea, time_fix);
     }
   }  // while (true)
 }
 
-std::optional<GpsDaemon::TimeFix> GpsDaemon::TryMatchPpsGps(
+std::optional<GpsTimeFix> GpsDaemon::TryMatchPpsGps(
     uint32_t pps_capture, TickType_t pps_ostime, TickType_t gps_ostime, const ParsedNmea& nmea) {
   minmea_date date;
   minmea_time time;
@@ -223,7 +203,7 @@ std::optional<GpsDaemon::TimeFix> GpsDaemon::TryMatchPpsGps(
   }
   TimeZulu nmea_zulu = ToZulu(century_, date, time);
   const TimeUnix nmea_unix = ToUnix(nmea_zulu);
-  return TimeFix{
+  return GpsTimeFix{
       .pps_capture = pps_capture,
       .pps_ostime = pps_ostime,
       .gps_ostime = gps_ostime,
@@ -231,7 +211,7 @@ std::optional<GpsDaemon::TimeFix> GpsDaemon::TryMatchPpsGps(
   };
 }
 
-void GpsDaemon::AdjustSystemTime(const TimeFix& time_fix, const CaptureChannel& sw_capture) {
+void GpsDaemon::AdjustSystemTime(const GpsTimeFix& time_fix, const CaptureChannel& sw_capture) {
   // 1 us => how many capture ticks? (this should only ever need to be set once)
   static const int kCaptureTicksInUs = sw_capture.GetNominalFreqHz() / 1'000'000;
 

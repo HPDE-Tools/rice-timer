@@ -1,10 +1,25 @@
 #pragma once
 
 #include <string_view>
+#include <variant>
 
 #include "esp_err.h"
+#include "freertos/FreeRTOS.h"
 
+#include "common/times.hpp"
 #include "driver/uart.h"
+
+struct GpsTimeFix {
+  uint32_t pps_capture;
+  TickType_t pps_ostime;
+  TickType_t gps_ostime;
+  TimeUnix parsed_time_unix;
+};
+
+using ParsedNmea =
+    std::variant<esp_err_t, minmea_sentence_rmc, minmea_sentence_gga, minmea_sentence_zda>;
+
+ParsedNmea ParseNmea(const std::string& line);
 
 /// Sends an NMEA sentence, automatically prepending and appending framing and checksum.
 ///

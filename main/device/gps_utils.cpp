@@ -7,6 +7,35 @@
 
 #include "common/utils.hpp"
 
+ParsedNmea ParseNmea(const std::string& line) {
+  ParsedNmea parsed{ESP_ERR_INVALID_ARG};
+  if (line.empty()) {
+    return parsed;
+  }
+  switch (minmea_sentence_id(line.c_str(), /*strict*/ true)) {
+    case MINMEA_SENTENCE_RMC: {
+      if (!minmea_parse_rmc(&parsed.emplace<minmea_sentence_rmc>(), line.c_str())) {
+        parsed = ESP_ERR_INVALID_ARG;
+      }
+    } break;
+    case MINMEA_SENTENCE_GGA: {
+      if (!minmea_parse_gga(&parsed.emplace<minmea_sentence_gga>(), line.c_str())) {
+        parsed = ESP_ERR_INVALID_ARG;
+      }
+    } break;
+    case MINMEA_SENTENCE_ZDA: {
+      if (!minmea_parse_zda(&parsed.emplace<minmea_sentence_zda>(), line.c_str())) {
+        parsed = ESP_ERR_INVALID_ARG;
+      }
+    } break;
+    case MINMEA_UNKNOWN:
+    default: {
+      parsed = ESP_ERR_NOT_SUPPORTED;
+    } break;
+  }
+  return parsed;
+}
+
 esp_err_t SendNmea(uart_port_t uart_num, const std::string_view payload) {
   uint8_t checksum = 0;
   for (char c : payload) {
