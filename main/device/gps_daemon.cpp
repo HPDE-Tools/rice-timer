@@ -91,15 +91,23 @@ void GpsDaemon::PpsCaptureIsr(uint32_t value) {
   latest_pps_.Set(value, xTaskGetTickCountFromISR());
 }
 
+void GpsDaemon::DebugPrintState() {
+  static TickType_t last_print = xTaskGetTickCount();
+  if (SignedMinus(xTaskGetTickCount(), last_print) >= pdMS_TO_TICKS(1000)) {
+    last_print = xTaskGetTickCount();
+    ESP_LOGV(TAG, "state=%d", (int)state_);
+  }
+}
+
 void GpsDaemon::Run() {
   static const TickType_t gps_timeout = pdMS_TO_TICKS(option_.gps_timeout_ms);
   static const TickType_t pps_timeout = pdMS_TO_TICKS(option_.pps_timeout_ms);
 
   static ParsedNmea nmea;
-  static TimeUnix latest_time_fix_unix;
 
   state_ = kLost;
   while (true) {
+    DebugPrintState();
     if (state_ == kLost) {
       if (setup_(line_reader_)) {
         ESP_LOGI(TAG, "device-specific setup successful");

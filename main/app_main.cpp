@@ -25,6 +25,7 @@
 #include "device/gps_driver_mtk.hpp"
 #include "filesystem.hpp"
 #include "logger.hpp"
+#include "ui/model.hpp"
 #include "ui/view.hpp"
 
 namespace chrono = std::chrono;
@@ -115,7 +116,7 @@ esp_err_t SetupGps(
 
 void HandleGpsData(
     GpsDaemon::State state, const ParsedNmea& nmea, const std::optional<GpsTimeFix>& time_fix) {
-  ESP_LOGW(
+  ESP_LOGV(
       TAG,
       "gps data: state=%d, nmea=#%d, has_time_fix=%d",
       (int)state,
@@ -124,22 +125,39 @@ void HandleGpsData(
   std::visit(
       overloaded{
           [](const minmea_sentence_rmc& rmc) {
-            ESP_LOGI(
+            ESP_LOGV(
                 TAG,
                 "parsed RMC: (%+10.6f, %+11.6f)",
                 (double)minmea_tocoord(&rmc.latitude),
                 (double)minmea_tocoord(&rmc.longitude));
+            auto& g = ui::g_model.gps.emplace();
+            g.hour = rmc.time.hours;
+            g.minute = rmc.time.minutes;
+            g.second = rmc.time.seconds;
+            g.millisecond = rmc.time.microseconds / 1000;
+            g.latitude = minmea_tocoord(&rmc.latitude);
+            g.longitude = minmea_tocoord(&rmc.longitude);
           },
           [](const minmea_sentence_gga& gga) {
-            ESP_LOGI(TAG, "parsed GGA: sat=%d", gga.satellites_tracked);
+            ESP_LOGV(TAG, "parsed GGA: sat=%d", gga.satellites_tracked);
           },
           [](const auto&) { /* default NOP */ }},
       nmea);
+  if (time_fix) {
+    SendToLogger(fmt::format("p,{},{}", time_fix->pps_capture, time_fix->parsed_time_unix));
+  }
 }
 
 void HandleGpsLine(std::string_view line, bool is_valid_nmea) {
+  static const CaptureChannel channel =
+      CaptureManager::GetInstance(MCPWM_UNIT_0)->GetChannel(MCPWM_SELECT_CAP2);
+
   const std::string_view trimmed = TrimSuffix(line, "\r\n");
-  ESP_LOGI(TAG, "gps line (valid=%d):%.*s", (int)is_valid_nmea, trimmed.size(), trimmed.data());
+  ESP_LOGV(TAG, "gps line (valid=%d):%.*s", (int)is_valid_nmea, trimmed.size(), trimmed.data());
+  if (is_valid_nmea) {
+    const uint32_t capture = channel.TriggerNow();
+    SendToLogger(fmt::format("g,{},{}", capture, trimmed));
+  }
 }
 
 TaskHandle_t g_main_task{};
