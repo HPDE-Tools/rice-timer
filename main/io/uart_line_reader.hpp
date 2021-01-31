@@ -1,5 +1,6 @@
 #pragma once
 
+#include <atomic>
 #include <functional>
 #include <memory>
 
@@ -78,8 +79,8 @@ class UartLineReader : public ::Task {
   /// \param priority priority for the reader background task
   /// \param callback will be called each time a line is read with line (including delimiter chars)
   /// \returns
-  esp_err_t ReadLinesAsync(uint32_t priority, Callback&& callback) {
-    return ReadLinesAsync(priority, xPortGetCoreID(), std::forward<Callback>(callback));
+  esp_err_t ReadLinesAsync(uint32_t priority, Callback callback) {
+    return ReadLinesAsync(priority, xPortGetCoreID(), callback);
   }
 
   /// Starts a background task that reads every line (including delimiter chars) as it comes.
@@ -88,7 +89,7 @@ class UartLineReader : public ::Task {
   /// \param priority priority for the reader background task
   /// \param cpu cpu to which the reader background task is pinned
   /// \param callback will be called each time a line is read with line (including delimiter chars)
-  esp_err_t ReadLinesAsync(uint32_t priority, uint32_t cpu, Callback&& callback);
+  esp_err_t ReadLinesAsync(uint32_t priority, uint32_t cpu, Callback callback);
 
   /// Stops the line-reading background task if it is running.
   void StopReadLinesAsync();

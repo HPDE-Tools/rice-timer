@@ -19,7 +19,8 @@
 #include "nvs.h"
 #include "nvs_flash.h"
 
-#include "common.hpp"
+#include "common/logging.hpp"
+#include "common/scope_guard.hpp"
 #include "common/strings.hpp"
 #include "common/times.hpp"
 #include "filesystem.hpp"

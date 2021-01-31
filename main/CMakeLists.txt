@@ -5,7 +5,9 @@ set(srcs
 "logger.cpp"
 
 "device/can.cpp"
-"device/gps.cpp"
+"device/gps_daemon.cpp"
+"device/gps_driver_mtk.cpp"
+"device/gps_utils.cpp"
 "io/autobaud.cpp"
 "io/uart_line_reader.cpp"
 "ui/model.cpp"

@@ -5,7 +5,8 @@
 #include "esp_system.h"
 #include "freertos/FreeRTOS.h"
 
-#include "common.hpp"
+#include "common/logging.hpp"
+#include "common/scope_guard.hpp"
 
 CaptureManager::CaptureManager(mcpwm_unit_t unit, mcpwm_dev_t* dev) : unit_(unit), dev_(dev) {
   mcpwm_isr_register(
@@ -25,6 +26,8 @@ CaptureManager* CaptureManager::GetInstance(mcpwm_unit_t unit) {
   CHECK(0 <= unit && unit < MCPWM_UNIT_MAX);
   return &instances[unit];
 }
+
+CaptureChannel CaptureManager::GetChannel(mcpwm_capture_signal_t signal) { return {this, signal}; }
 
 esp_err_t CaptureManager::Enable() { return esp_intr_enable(interrupt_handle_); }
 
@@ -54,7 +57,7 @@ esp_err_t CaptureManager::Subscribe(
   return ESP_OK;
 }
 
-esp_err_t CaptureManager::Unsubscribe(mcpwm_capture_signal_t signal) {
+void CaptureManager::Unsubscribe(mcpwm_capture_signal_t signal) {
   CHECK(0 <= signal && signal < 3);
   vPortEnterCritical(&lock_);
   SCOPE_EXIT { vPortExitCritical(&lock_); };
@@ -70,7 +73,7 @@ esp_err_t CaptureManager::Unsubscribe(mcpwm_capture_signal_t signal) {
       break;
   }
   callbacks_[signal] = nullptr;
-  return mcpwm_capture_disable(unit_, signal);
+  mcpwm_capture_disable(unit_, signal);
 }
 
 uint32_t CaptureManager::TriggerNow(mcpwm_capture_signal_t signal) {
@@ -88,24 +91,24 @@ void CaptureManager::InterruptHandler(CaptureManager* self) {
     self->dev_->int_clr.cap0_int_clr = true;
     const uint32_t edge = self->dev_->cap_status.cap0_edge;
     const uint32_t value = self->dev_->cap_val_ch[0];
-    if (self->callbacks_[0]) {
-      self->callbacks_[0](self->unit_, MCPWM_SELECT_CAP0, edge, value);
+    if (auto& callback = self->callbacks_[0]) {
+      callback(self->unit_, MCPWM_SELECT_CAP0, edge, value);
     }
   }
   if (self->dev_->int_st.cap1_int_st) {
     self->dev_->int_clr.cap1_int_clr = true;
     const uint32_t edge = self->dev_->cap_status.cap1_edge;
     const uint32_t value = self->dev_->cap_val_ch[1];
-    if (self->callbacks_[1]) {
-      self->callbacks_[1](self->unit_, MCPWM_SELECT_CAP1, edge, value);
+    if (auto& callback = self->callbacks_[1]) {
+      callback(self->unit_, MCPWM_SELECT_CAP1, edge, value);
     }
   }
   if (self->dev_->int_st.cap2_int_st) {
     self->dev_->int_clr.cap2_int_clr = true;
     const uint32_t edge = self->dev_->cap_status.cap2_edge;
     const uint32_t value = self->dev_->cap_val_ch[2];
-    if (self->callbacks_[2]) {
-      self->callbacks_[2](self->unit_, MCPWM_SELECT_CAP2, edge, value);
+    if (auto& callback = self->callbacks_[2]) {
+      callback(self->unit_, MCPWM_SELECT_CAP2, edge, value);
     }
   }
 }

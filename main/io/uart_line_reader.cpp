@@ -56,26 +56,28 @@ esp_err_t UartLineReader::DiscardInputBuffer() {
 }
 
 std::string UartLineReader::TryReadOneLine(TickType_t read_timeout) {
+  // NOTE(summivox): always `return line` to ensure NRVO (google it!)
+  std::string line{};
   if (!active_) {
     ESP_LOGE(TAG, "instance not active");
-    return {};
+    return line;  // empty
   }
   const int pos = uart_pattern_pop_pos(uart_num_);
   if (pos < 0) {
-    return {};
+    return line;  // empty
   }
   const int len = pos + option_.repeat;
   if (len > option_.max_line_size_bytes) {
     ESP_LOGW(TAG, "line is too long (%d > %d bytes)", len, option_.max_line_size_bytes);
     DiscardInputBuffer();
-    return {};
+    return line;  // empty
   }
-  std::string line(len, '\0');
+  line.resize(len);
   const int read_len =
       uart_read_bytes(uart_num_, reinterpret_cast<uint8_t*>(line.data()), len, read_timeout);
   if (read_len != len) {
     ESP_LOGE(TAG, "read bytes error: %d", read_len);
-    return {};
+    line.clear();
   }
   return line;
 }
@@ -115,7 +117,7 @@ std::string UartLineReader::ReadOneLine(TickType_t wait_timeout, TickType_t read
   return {};
 }
 
-esp_err_t UartLineReader::ReadLinesAsync(uint32_t priority, uint32_t cpu, Callback&& callback) {
+esp_err_t UartLineReader::ReadLinesAsync(uint32_t priority, uint32_t cpu, Callback callback) {
   if (!active_) {
     return ESP_ERR_INVALID_STATE;
   }
@@ -131,12 +133,13 @@ void UartLineReader::StopReadLinesAsync() {
 
 void UartLineReader::Run() {
   while (true) {
-    if (!callback_) {
-      Teardown();
-    }
     std::string line = ReadOneLine();
     if (!line.empty()) {
-      callback_(std::move(line));
+      if (Callback callback = callback_) {
+        callback(std::move(line));
+      } else {
+        StopReadLinesAsync();
+      }
     }
   }
 }

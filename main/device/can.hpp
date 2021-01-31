@@ -48,4 +48,5 @@ class CanManager : public Task {
   esp_err_t Setup();
 };
 
+// TODO: implement
 twai_timing_config_t CalculateCanTiming(int baud_hz, int tseg_1, int tseg_2, int sjw);

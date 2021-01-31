@@ -13,7 +13,7 @@
 #define OK_OR_RETURN(x, ret)                                                                  \
   do {                                                                                        \
     if (const esp_err_t err = (x); err != ESP_OK) {                                           \
-      ESP_LOGE("", "%s:%d TRY(" #x ") fail => %s", __FILE__, __LINE__, esp_err_to_name(err)); \
+      ESP_LOGE("", "%s:%d TRY(%s) fail => %s", __FILE__, __LINE__, #x, esp_err_to_name(err)); \
       return ret;                                                                             \
     }                                                                                         \
   } while (0)
@@ -23,7 +23,7 @@
 #define CHECK(x)                                                    \
   do {                                                              \
     if (!(x)) {                                                     \
-      ESP_LOGE("", "%s:%d CHECK(" #x ") fail", __FILE__, __LINE__); \
+      ESP_LOGE("", "%s:%d CHECK(%s) fail", __FILE__, __LINE__, #x); \
       DIEDIEDIE;                                                    \
     }                                                               \
   } while (0)
@@ -33,7 +33,17 @@
     const esp_err_t result = (x);                                                                \
     if (result != ESP_OK) {                                                                      \
       ESP_LOGE(                                                                                  \
-          "", "%s:%d CHECK_OK(" #x ") fail => %s", __FILE__, __LINE__, esp_err_to_name(result)); \
+          "", "%s:%d CHECK_OK(%s) fail => %s", __FILE__, __LINE__, #x, esp_err_to_name(result)); \
       DIEDIEDIE;                                                                                 \
     }                                                                                            \
   } while (0)
+
+#define CHECK_NOTNULL(x)                                                    \
+  ({                                                                        \
+    auto&& xx = (x);                                                        \
+    if (xx == nullptr) {                                                    \
+      ESP_LOGE("", "%s:%d CHECK_NOTNULL(%s) fail", __FILE__, __LINE__, #x); \
+      DIEDIEDIE;                                                            \
+    }                                                                       \
+    xx;                                                                     \
+  })

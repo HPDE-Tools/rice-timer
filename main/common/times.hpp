@@ -3,21 +3,26 @@
 #include <sys/time.h>
 #include <cstdint>
 #include <ctime>
+#include <type_traits>
 
 #include "fmt/chrono.h"
 #include "minmea.h"
 
-// **OUR** Conventions:
+// Time point conventions in this project:
 //
-// | type     | category name      |  what it means                          |
-// |----------|--------------------|-----------------------------------------|
-// | tm       | zulu               | UTC date and time as fields in a struct |
-// | time_t   | unix               | whole seconds since unix epoch          |
-// | timeval  | unix (with us)     | seconds + microseconds since unix epoch |
+// | type       | category name      | what it means                           |
+// |------------|--------------------|-----------------------------------------|
+// | tm         | zulu               | UTC date and time as fields in a struct |
+// | time_t     | unix               | whole seconds since unix epoch          |
+// | timeval    | unix (with us)     | seconds + microseconds since unix epoch |
+// | TickType_t | ostime             | OS ticks since boot (rolling)           |
+// | uint32_t   | capture            | high-freq MCPWM capture timer (rolling) |
 
 using TimeZulu = tm;
 using TimeUnix = time_t;
 using TimeUnixWithUs = timeval;
+
+//////////////////////////////////////////
 
 /// Build TimeZulu (`struct tm`) from numbers literally from each field in ISO-8601.
 /// This is to avoid confusion in different calendar packing conventions (such as tm itself!).
@@ -99,3 +104,5 @@ inline TimeUnixWithUs NowUnixWithUs() {
   return ret;
 }
 inline TimeZulu NowZulu() { return ToZulu(NowUnix()); }
+
+////////////////////////////////////////////////////////

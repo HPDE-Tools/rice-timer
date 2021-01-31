@@ -8,7 +8,8 @@
 #include "esp_log.h"
 
 #include "capture_manager.hpp"
-#include "common.hpp"
+#include "common/logging.hpp"
+#include "common/utils.hpp"
 #include "logger.hpp"
 
 namespace {
@@ -36,9 +37,8 @@ esp_err_t CanManager::Setup() {
 #endif
   general_config.tx_queue_len = option_.tx_queue_len;
   general_config.rx_queue_len = option_.rx_queue_len;
-  twai_timing_config_t timing_config = TWAI_TIMING_CONFIG_500KBITS();
   twai_filter_config_t filter_config = TWAI_FILTER_CONFIG_ACCEPT_ALL();
-  TRY(twai_driver_install(&general_config, &timing_config, &filter_config));
+  TRY(twai_driver_install(&general_config, &option_.timing, &filter_config));
   return ESP_OK;
 }
 CanManager::~CanManager() { Stop(); }

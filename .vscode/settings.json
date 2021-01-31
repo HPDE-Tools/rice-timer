@@ -28,7 +28,10 @@
     "cinttypes": "cpp",
     "*.tcc": "cpp",
     "iomanip": "cpp",
-    "chrono": "cpp"
+    "chrono": "cpp",
+    "functional": "cpp",
+    "variant": "cpp",
+    "ostream": "cpp"
   },
   "idf.flashType": "UART",
   "editor.formatOnSave": true

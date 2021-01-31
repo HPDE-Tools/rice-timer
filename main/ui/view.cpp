@@ -1,34 +1,25 @@
 #include "ui/view.hpp"
 
 #include <optional>
-#include "fmt/core.h"
 
 #include "driver/gpio.h"
 #include "esp_log.h"
+#include "fmt/core.h"
 #include "freertos/FreeRTOS.h"
+// #include "lvgl.h"
 
-#include "common.hpp"
+#include "common/logging.hpp"
 #include "ui/model.hpp"
 
 namespace ui {
-namespace {
-#if 0
-Adafruit_SH110X display{64, 128, &Wire, -1, 400'000, 400'000};
-#endif
-}  // namespace
+namespace {}  // namespace
 
 constexpr char TAG[] = "ui/view";
 
 TaskHandle_t g_view_task{};
 
 esp_err_t ViewInit() {
-#if 0
-  TakeArduinoMutex();
-  display.begin();
-  display.clearDisplay();
-  display.setRotation(1);
-  ReleaseArduinoMutex();
-#endif
+  // TODO
   return ESP_OK;
 }
 

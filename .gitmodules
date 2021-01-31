@@ -21,4 +21,4 @@
 	url = https://github.com/adafruit/Adafruit_SH110X
 [submodule "components/fmtlib/fmt"]
 	path = components/fmtlib/fmt
-	url = https://github.com/summivox/fmt
+	url = https://github.com/fmtlib/fmt
