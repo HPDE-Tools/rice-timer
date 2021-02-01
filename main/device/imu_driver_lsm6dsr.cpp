@@ -4,12 +4,14 @@
 
 #include "driver/spi_common.h"
 #include "driver/spi_master.h"
+#include "fmt/core.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/semphr.h"
 
 #include "capture_manager.hpp"
 #include "common/logging.hpp"
 #include "common/scope_guard.hpp"
+#include "logger.hpp"
 
 namespace {
 constexpr char TAG[] = "imu_lsm6";
@@ -135,24 +137,17 @@ esp_err_t TestImu() {
       txn.tx_buffer = tx_buf;
       txn.rx_buffer = rx_buf;
       TRY(spi_device_transmit(g_imu_handle, &txn));
-      ESP_LOGI(
-          TAG,
-          "%010d :: %02X%02X || %02X%02X | %02X%02X | %02X%02X || %02X%02X | %02X%02X | %02X%02X",
-          capture,
-          rx_buf[2],
-          rx_buf[1],
-          rx_buf[4],
-          rx_buf[3],
-          rx_buf[6],
-          rx_buf[5],
-          rx_buf[8],
-          rx_buf[7],
-          rx_buf[10],
-          rx_buf[9],
-          rx_buf[12],
-          rx_buf[11],
-          rx_buf[14],
-          rx_buf[13]);
+      const uint16_t temp = (uint16_t{rx_buf[2]} << 8) | rx_buf[1];
+      const int16_t gx = (uint16_t{rx_buf[4]} << 8) | rx_buf[3];
+      const int16_t gy = (uint16_t{rx_buf[6]} << 8) | rx_buf[5];
+      const int16_t gz = (uint16_t{rx_buf[8]} << 8) | rx_buf[7];
+      const int16_t ax = (uint16_t{rx_buf[10]} << 8) | rx_buf[9];
+      const int16_t ay = (uint16_t{rx_buf[12]} << 8) | rx_buf[11];
+      const int16_t az = (uint16_t{rx_buf[14]} << 8) | rx_buf[13];
+      std::string line = fmt::format(
+          "i,{},{:+06d},{:+06d},{:+06d},{:+06d},{:+06d},{:+06d}", capture, ax, ay, az, gx, gy, gz);
+      ESP_LOGI(TAG, "%s", line.c_str());
+      SendToLogger(std::move(line));
     }
   }
   return ESP_OK;
