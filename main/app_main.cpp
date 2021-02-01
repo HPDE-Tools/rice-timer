@@ -23,6 +23,7 @@
 #include "device/can.hpp"
 #include "device/gps_daemon.hpp"
 #include "device/gps_driver_mtk.hpp"
+#include "device/imu_driver_lsm6dsr.hpp"
 #include "filesystem.hpp"
 #include "logger.hpp"
 #include "ui/model.hpp"
@@ -36,9 +37,13 @@ namespace {
 
 constexpr char TAG[] = "main";
 constexpr int kI2cMaxFreqHz = 400'000;
-constexpr int kGpsDesiredBaudRate = 115200;
+
+#if 0
+constexpr int kGpsDesiredBaudRate = HW_VERSION == 1 ? 115200 : HW_VERSION == 2 ? 921600 : 9600;
+#endif
+constexpr int kGpsDesiredBaudRate = 921600;
+
 constexpr int kGpsDesiredOutputPeriodMs = 100;
-constexpr int kGpsOutputPeriodMs = 200;
 
 constexpr int kCanaryPeriodMs = 10000;
 
@@ -97,10 +102,14 @@ esp_err_t SetupGps(
       CaptureManager::GetInstance(MCPWM_UNIT_0),
       // vendor-specific GPS setup handler
       [uart_num, uart_dev](io::UartLineReader* line_reader) -> bool {
-        OK_OR_RETURN(
-            SetupMtkGps(
-                uart_num, uart_dev, line_reader, kGpsDesiredBaudRate, kGpsDesiredOutputPeriodMs),
-            false);
+        if (HW_VERSION == 1) {
+          OK_OR_RETURN(
+              SetupMtkGps(
+                  uart_num, uart_dev, line_reader, kGpsDesiredBaudRate, kGpsDesiredOutputPeriodMs),
+              false);
+        }
+        // HW v2 GPS is pre-configured and does not need autobaud or config command
+        // Using the MTK routine does not hurt though (it should be able to autobaud)
         return true;
       },
       GpsDaemon::Option{
@@ -183,7 +192,6 @@ void MainTask(void* /* unused */) {
 #elif HW_VERSION == 2
     .tx_pin = GPIO_NUM_33, .rx_pin = GPIO_NUM_32,
 #endif
-
     .priority = 3,
   });
   CHECK(g_can);
@@ -193,6 +201,29 @@ void MainTask(void* /* unused */) {
   CHECK_OK(LoggerStart());
   CHECK_OK(g_gpsd->Start(HandleGpsData, HandleGpsLine));
   CHECK_OK(g_can->Start());
+
+  // BEGIN DEBUG
+  if (HW_VERSION == 1) {
+    CHECK_OK(SetupLsm6dsrImu({
+        .spi = VSPI_HOST,
+        .mosi_pin = GPIO_NUM_25,
+        .miso_pin = GPIO_NUM_39,
+        .sclk_pin = GPIO_NUM_26,
+        .cs_pin = GPIO_NUM_21,
+        .int1_pin = GPIO_NUM_34,
+    }));
+  } else if (HW_VERSION == 2) {
+    CHECK_OK(SetupLsm6dsrImu({
+        .spi = VSPI_HOST,
+        .mosi_pin = GPIO_NUM_23,
+        .miso_pin = GPIO_NUM_19,
+        .sclk_pin = GPIO_NUM_18,
+        .cs_pin = GPIO_NUM_5,
+        .int1_pin = GPIO_NUM_22,
+    }));
+  }
+  CHECK_OK(TestImu());
+  // END DEBUG
 
   // CHECK_OK(ui::ViewStart());
 
