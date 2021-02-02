@@ -36,19 +36,19 @@ esp_err_t SetupLsm6dsrImu(Lsm6dsrConfig config) {
       .flags = 0,
       .intr_flags = 0,
   };
-  TRY(spi_bus_initialize(config.spi, &spi_bus_config, config.spi));
+  TRY(spi_bus_initialize(config.spi, &spi_bus_config, /*dma*/ 0));
   spi_device_interface_config_t spi_device_config = {
       .command_bits = 0,
-      .address_bits = 0,  // unused
-      .dummy_bits = 0,    // unused
+      .address_bits = 8,
+      .dummy_bits = 0,
       .mode = 3,
       .duty_cycle_pos = 128,
-      .cs_ena_pretrans = 1,  // fixed for full-duplex
-      .cs_ena_posttrans = 8,
+      .cs_ena_pretrans = 1,
+      .cs_ena_posttrans = 1,
       .clock_speed_hz = 1'000'000,
       .input_delay_ns = 0,
       .spics_io_num = config.cs_pin,
-      .flags = 0,
+      .flags = SPI_DEVICE_HALFDUPLEX,
       .queue_size = 16,
       .pre_cb = nullptr,
       .post_cb = nullptr,
@@ -67,6 +67,7 @@ esp_err_t SetupLsm6dsrImu(Lsm6dsrConfig config) {
 
 void HandleImuInterrupt(
     mcpwm_unit_t /*unit*/, mcpwm_capture_signal_t /*signal*/, uint32_t /*edge*/, uint32_t value) {
+  gpio_set_level(GPIO_NUM_13, 1);
   xQueueSendToBackFromISR(g_imu_queue, &value, nullptr);
 }
 
@@ -81,19 +82,21 @@ void HandleImuInterrupt(
 
 std::optional<uint8_t> ReadOneReg(uint8_t reg) {
   spi_transaction_t txn{};
-  txn.flags = SPI_TRANS_USE_TXDATA | SPI_TRANS_USE_RXDATA;
-  txn.length = 16;
-  txn.tx_data[0] = READ | reg;
+  txn.flags = SPI_TRANS_USE_RXDATA;
+  txn.addr = READ | reg;
+  txn.length = 0;
+  txn.rxlength = 8;
   OK_OR_RETURN(spi_device_polling_transmit(g_imu_handle, &txn), std::nullopt);
-  return txn.rx_data[1];
+  return txn.rx_data[0];
 }
 
 esp_err_t WriteOneReg(uint8_t reg, uint8_t value) {
   spi_transaction_t txn{};
-  txn.flags = SPI_TRANS_USE_TXDATA | SPI_TRANS_USE_RXDATA;
-  txn.length = 16;
-  txn.tx_data[0] = WRITE | reg;
-  txn.tx_data[1] = value;
+  txn.flags = SPI_TRANS_USE_TXDATA;
+  txn.addr = WRITE | reg;
+  txn.length = 8;
+  txn.rxlength = 0;
+  txn.tx_data[0] = value;
   TRY(spi_device_polling_transmit(g_imu_handle, &txn));
   return ESP_OK;
 }
@@ -119,6 +122,7 @@ esp_err_t TestImu() {
         continue;
       }
     }
+    gpio_set_level(GPIO_NUM_13, 0);
     const auto status_reg = ReadOneReg(STATUS_REG);
     if (!status_reg) {
       ESP_LOGE(TAG, "cannot get status reg");
@@ -131,19 +135,21 @@ esp_err_t TestImu() {
     }
     {
       spi_transaction_t txn{};
-      txn.length = 8 * (1 + 14);
-      static char tx_buf[15] = {READ | 0x20};
-      static char rx_buf[15] = {};
-      txn.tx_buffer = tx_buf;
+      txn.flags = 0;
+      txn.addr = READ | 0x20;
+      txn.length = 0;
+      txn.rxlength = 8 * 14;
+      static char rx_buf[14] = {};
       txn.rx_buffer = rx_buf;
       TRY(spi_device_transmit(g_imu_handle, &txn));
-      const uint16_t temp = (uint16_t{rx_buf[2]} << 8) | rx_buf[1];
-      const int16_t gx = (uint16_t{rx_buf[4]} << 8) | rx_buf[3];
-      const int16_t gy = (uint16_t{rx_buf[6]} << 8) | rx_buf[5];
-      const int16_t gz = (uint16_t{rx_buf[8]} << 8) | rx_buf[7];
-      const int16_t ax = (uint16_t{rx_buf[10]} << 8) | rx_buf[9];
-      const int16_t ay = (uint16_t{rx_buf[12]} << 8) | rx_buf[11];
-      const int16_t az = (uint16_t{rx_buf[14]} << 8) | rx_buf[13];
+      const uint16_t temp = (uint16_t{rx_buf[1]} << 8) | rx_buf[0];
+      const int16_t gx = (uint16_t{rx_buf[3]} << 8) | rx_buf[2];
+      const int16_t gy = (uint16_t{rx_buf[5]} << 8) | rx_buf[4];
+      const int16_t gz = (uint16_t{rx_buf[7]} << 8) | rx_buf[5];
+      const int16_t ax = (uint16_t{rx_buf[9]} << 8) | rx_buf[8];
+      const int16_t ay = (uint16_t{rx_buf[11]} << 8) | rx_buf[10];
+      const int16_t az = (uint16_t{rx_buf[13]} << 8) | rx_buf[12];
+      (void)temp;
       std::string line = fmt::format(
           "i,{},{:+06d},{:+06d},{:+06d},{:+06d},{:+06d},{:+06d}", capture, ax, ay, az, gx, gy, gz);
       ESP_LOGI(TAG, "%s", line.c_str());

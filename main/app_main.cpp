@@ -204,6 +204,8 @@ void MainTask(void* /* unused */) {
 
   // BEGIN DEBUG
   if (HW_VERSION == 1) {
+    gpio_pad_select_gpio(GPIO_NUM_13);
+    gpio_set_direction(GPIO_NUM_13, GPIO_MODE_OUTPUT);
     CHECK_OK(SetupLsm6dsrImu({
         .spi = VSPI_HOST,
         .mosi_pin = GPIO_NUM_25,
