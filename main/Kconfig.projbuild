@@ -19,5 +19,8 @@ menu "ShiftWatch on ESP32"
             default 500000
     endmenu
     menu "Pinout"
+        config HW_VERSION
+            int "build for which hardware version"
+            default 1
     endmenu
 endmenu

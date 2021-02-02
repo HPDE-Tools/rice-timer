@@ -1,6 +1,4 @@
 #include <inttypes.h>
-#include <sys/stat.h>
-#include <chrono>
 #include <memory>
 #include <optional>
 #include <string>
@@ -29,23 +27,21 @@
 #include "ui/model.hpp"
 #include "ui/view.hpp"
 
-namespace chrono = std::chrono;
-
-#define HW_VERSION 1
-
 namespace {
 
 constexpr char TAG[] = "main";
-constexpr int kI2cMaxFreqHz = 400'000;
 
 #if 0
-constexpr int kGpsDesiredBaudRate = HW_VERSION == 1 ? 115200 : HW_VERSION == 2 ? 921600 : 9600;
+constexpr int kGpsDesiredBaudRate = CONFIG_HW_VERSION == 1 ? 115200 : CONFIG_HW_VERSION == 2 ? 921600 : 9600;
 #endif
 constexpr int kGpsDesiredBaudRate = 921600;
-
 constexpr int kGpsDesiredOutputPeriodMs = 100;
 
 constexpr int kCanaryPeriodMs = 10000;
+
+constexpr int kPriorityCan = 4;
+constexpr int kPriorityGpsd = 5;
+constexpr int kPriorityImu = 6;
 
 }  // namespace
 
@@ -61,8 +57,8 @@ esp_err_t SetupFileSystem() {
 QueueHandle_t g_gps_uart_queue;
 std::unique_ptr<io::UartLineReader> g_gps_line_reader;
 std::unique_ptr<GpsDaemon> g_gpsd;
-
 std::unique_ptr<CanManager> g_can;
+std::unique_ptr<Lsm6dsr> g_imu;
 
 esp_err_t SetupGps(
     uart_port_t uart_num,
@@ -102,7 +98,7 @@ esp_err_t SetupGps(
       CaptureManager::GetInstance(MCPWM_UNIT_0),
       // vendor-specific GPS setup handler
       [uart_num, uart_dev](io::UartLineReader* line_reader) -> bool {
-        if (HW_VERSION == 1) {
+        if constexpr (CONFIG_HW_VERSION == 1) {
           OK_OR_RETURN(
               SetupMtkGps(
                   uart_num, uart_dev, line_reader, kGpsDesiredBaudRate, kGpsDesiredOutputPeriodMs),
@@ -115,7 +111,7 @@ esp_err_t SetupGps(
       GpsDaemon::Option{
           .pps_capture_signal = MCPWM_SELECT_CAP0,
           .software_capture_signal = MCPWM_SELECT_CAP2,
-          .priority = 5,
+          .priority = kPriorityGpsd,
       });
   if (!g_gpsd) {
     return ESP_FAIL;
@@ -169,63 +165,116 @@ void HandleGpsLine(std::string_view line, bool is_valid_nmea) {
   }
 }
 
+esp_err_t SetupCan() {
+  g_can = CanManager::Create({
+#if CONFIG_HW_VERSION == 1
+    .tx_pin = GPIO_NUM_12, .rx_pin = GPIO_NUM_27,
+#elif CONFIG_HW_VERSION == 2
+    .tx_pin = GPIO_NUM_33, .rx_pin = GPIO_NUM_32,
+#endif
+    .priority = kPriorityCan,
+  });
+  return g_can ? ESP_OK : ESP_FAIL;
+}
+
+esp_err_t SetupImu() {
+  gpio_num_t cs_pin;
+  gpio_num_t interrupt_pin;
+  spi_bus_config_t bus_config;
+  if constexpr (CONFIG_HW_VERSION == 1) {
+    gpio_pad_select_gpio(GPIO_NUM_13);
+    gpio_set_direction(GPIO_NUM_13, GPIO_MODE_OUTPUT);
+    bus_config = {
+        .mosi_io_num = GPIO_NUM_25,
+        .miso_io_num = GPIO_NUM_39,
+        .sclk_io_num = GPIO_NUM_26,
+        .quadwp_io_num = -1,
+        .quadhd_io_num = -1,
+        .max_transfer_sz = 0,
+        .flags = 0,
+        .intr_flags = 0,
+    };
+    cs_pin = GPIO_NUM_21;
+    interrupt_pin = GPIO_NUM_34;
+  } else if constexpr (CONFIG_HW_VERSION == 2) {
+    bus_config = {
+        .mosi_io_num = GPIO_NUM_23,
+        .miso_io_num = GPIO_NUM_19,
+        .sclk_io_num = GPIO_NUM_18,
+        .quadwp_io_num = -1,
+        .quadhd_io_num = -1,
+        .max_transfer_sz = 0,
+        .flags = 0,
+        .intr_flags = 0,
+    };
+    cs_pin = GPIO_NUM_5;
+    interrupt_pin = GPIO_NUM_22;
+  } else {
+    return ESP_FAIL;
+  }
+  TRY(spi_bus_initialize(VSPI_HOST, &bus_config, /*dma*/ 0));
+  TRY(mcpwm_gpio_init(MCPWM_UNIT_0, MCPWM_CAP_1, interrupt_pin));
+  g_imu = Lsm6dsr::Create(
+      CaptureManager::GetInstance(MCPWM_UNIT_0)->GetChannel(MCPWM_SELECT_CAP1),
+      {
+          .spi = VSPI_HOST,
+          .cs_pin = cs_pin,
+          .interrupt_pin = interrupt_pin,
+          .accel_output_data_rate = Lsm6dsr::kOdr104Hz,
+          .accel_full_scale = Lsm6dsr::kAccelFs2g,
+          .gyro_output_data_rate = Lsm6dsr::kOdr104Hz,
+          .gyro_full_scale = Lsm6dsr::kGyroFs500Dps,
+          .priority = kPriorityImu,
+      });
+  return g_imu ? ESP_OK : ESP_FAIL;
+}
+
+void HandleImuRawData(const Lsm6dsr::RawImuData& data) {
+  std::string line = fmt::format(
+      "i,{},{:+06d},{:+06d},{:+06d},{:+06d},{:+06d},{:+06d}",
+      data.capture,
+      data.ax,
+      data.ay,
+      data.az,
+      data.wx,
+      data.wy,
+      data.wz);
+
+  // DEBUG
+  static int k = 0;
+  if (++k == 500) {
+    k = 0;
+    fputs(line.c_str(), stdout);
+    fputc('\n', stdout);
+  }
+
+  SendToLogger(std::move(line));
+}
+
 TaskHandle_t g_main_task{};
 void MainTask(void* /* unused */) {
-  vTaskDelay(pdMS_TO_TICKS(2000));  // let monitor connect
-
+  ESP_LOGI(TAG, "MainTask started");
   heap_caps_print_heap_info(MALLOC_CAP_8BIT);
-  CHECK_OK(SetupFileSystem());
+  vTaskDelay(pdMS_TO_TICKS(2000));
 
+  CHECK_OK(SetupFileSystem());
   CHECK_OK(SetupGps(
       UART_NUM_2,
       &UART2,
       /*tx*/ GPIO_NUM_17,
       /*rx*/ GPIO_NUM_16,
       /*pps*/
-      (HW_VERSION == 1   ? GPIO_NUM_4
-       : HW_VERSION == 2 ? GPIO_NUM_21
-                         : GPIO_NUM_NC)));
-
-  g_can = CanManager::Create({
-#if HW_VERSION == 1
-    .tx_pin = GPIO_NUM_12, .rx_pin = GPIO_NUM_27,
-#elif HW_VERSION == 2
-    .tx_pin = GPIO_NUM_33, .rx_pin = GPIO_NUM_32,
-#endif
-    .priority = 3,
-  });
-  CHECK(g_can);
-
+      (CONFIG_HW_VERSION == 1   ? GPIO_NUM_4
+       : CONFIG_HW_VERSION == 2 ? GPIO_NUM_21
+                                : GPIO_NUM_NC)));
+  CHECK_OK(SetupCan());
+  CHECK_OK(SetupImu());
   CHECK_OK(LoggerInit());
 
   CHECK_OK(LoggerStart());
   CHECK_OK(g_gpsd->Start(HandleGpsData, HandleGpsLine));
   CHECK_OK(g_can->Start());
-
-  // BEGIN DEBUG
-  if (HW_VERSION == 1) {
-    gpio_pad_select_gpio(GPIO_NUM_13);
-    gpio_set_direction(GPIO_NUM_13, GPIO_MODE_OUTPUT);
-    CHECK_OK(SetupLsm6dsrImu({
-        .spi = VSPI_HOST,
-        .mosi_pin = GPIO_NUM_25,
-        .miso_pin = GPIO_NUM_39,
-        .sclk_pin = GPIO_NUM_26,
-        .cs_pin = GPIO_NUM_21,
-        .int1_pin = GPIO_NUM_34,
-    }));
-  } else if (HW_VERSION == 2) {
-    CHECK_OK(SetupLsm6dsrImu({
-        .spi = VSPI_HOST,
-        .mosi_pin = GPIO_NUM_23,
-        .miso_pin = GPIO_NUM_19,
-        .sclk_pin = GPIO_NUM_18,
-        .cs_pin = GPIO_NUM_5,
-        .int1_pin = GPIO_NUM_22,
-    }));
-  }
-  CHECK_OK(TestImu());
-  // END DEBUG
+  CHECK_OK(g_imu->Start(HandleImuRawData));
 
   // CHECK_OK(ui::ViewStart());
 

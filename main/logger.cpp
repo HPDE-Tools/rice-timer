@@ -142,7 +142,7 @@ std::string SetupSplitFilename(int split_id) {
 void UpdateFileTime(const std::string& filename, TimeUnix t_unix) {
   utimbuf buf{.actime = t_unix, .modtime = t_unix};
   if (esp_vfs_utime(filename.c_str(), &buf) != 0) {
-    ESP_LOGE(TAG, "utimes fail => %s", strerror(errno));
+    ESP_LOGE(TAG, "utimes(%s, %d) fail => %s", filename.c_str(), (int)t_unix, strerror(errno));
   }
 }
 
@@ -166,7 +166,7 @@ esp_err_t LoggerInit() {
 
 esp_err_t LoggerStart() {
   if (!xTaskCreatePinnedToCore(
-          LoggerTask, "logger", 4096, nullptr, 10, &g_logger_task, APP_CPU_NUM)) {
+          LoggerTask, "logger", 4096, nullptr, 1, &g_logger_task, APP_CPU_NUM)) {
     return ESP_FAIL;
   }
   return ESP_OK;
