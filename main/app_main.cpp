@@ -46,7 +46,7 @@ constexpr int kPriorityImu = 6;
 }  // namespace
 
 esp_err_t SetupFileSystem() {
-  if (/*CONFIG_SD_CARD_4BIT*/ false) {
+  if constexpr (CONFIG_HW_VERSION == 2) {
     TRY(fs::InitializeSdCard());
   } else {
     TRY(fs::InitializeSdCardSpi());
