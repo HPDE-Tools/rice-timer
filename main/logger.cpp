@@ -121,9 +121,13 @@ esp_err_t Mkdir(const std::string& dir) {
   return result == 0 || errno == EEXIST ? ESP_OK : ESP_FAIL;
 }
 
-esp_err_t SetupSessionDir(int64_t session_id, std::string* out_session_dir) {
-  *out_session_dir = fmt::format(CONFIG_MOUNT_ROOT "/{}", session_id);
-  return Mkdir(*out_session_dir);
+esp_err_t SetupSessionDir(uint8_t mac[6], int64_t session_id, std::string* out_session_dir) {
+  std::string device_dir =
+      fmt::format(CONFIG_MOUNT_ROOT "/{:02X}{:02X}{:02X}{:02X}", mac[2], mac[3], mac[4], mac[5]);
+  TRY(Mkdir(device_dir));
+  *out_session_dir = fmt::format("{}/{}", device_dir, session_id);
+  TRY(Mkdir(*out_session_dir));
+  return ESP_OK;
 }
 
 esp_err_t SetupSplitDir(
@@ -149,17 +153,26 @@ void UpdateFileTime(const std::string& filename, TimeUnix t_unix) {
 }  // namespace
 
 TaskHandle_t g_logger_task{};
+uint8_t g_mac[6];
 
 esp_err_t LoggerInit() {
-  esp_log_level_set(TAG, ESP_LOG_INFO);
-
   g_logger_queue = xQueueCreate(kLoggerQueueSize, sizeof(std::string));
   if (!g_logger_queue) {
     return ESP_FAIL;
   }
+  TRY(esp_efuse_mac_get_default(g_mac));
   TRY(GetNewSessionId(&g_session_id));
   ESP_LOGI(TAG, "logger session id: %lld", g_session_id);  // (somehow PRId64 doesn't work)
-  TRY(SetupSessionDir(g_session_id, &g_session_dir));
+  ESP_LOGI(
+      TAG,
+      "logger mac: %02X %02X %02X %02X %02X %02X",
+      g_mac[0],
+      g_mac[1],
+      g_mac[2],
+      g_mac[3],
+      g_mac[4],
+      g_mac[5]);  // (somehow PRId64 doesn't work)
+  TRY(SetupSessionDir(g_mac, g_session_id, &g_session_dir));
   ESP_LOGI(TAG, "logger initialized");
   return ESP_OK;
 }
