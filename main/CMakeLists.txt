@@ -3,6 +3,7 @@ set(srcs
 "capture_manager.cpp"
 "filesystem.cpp"
 "logger.cpp"
+"lvgl_tick.c"
 
 "device/can.cpp"
 "device/gps_daemon.cpp"
@@ -14,10 +15,13 @@ set(srcs
 "ui/model.cpp"
 "ui/view.cpp"
 )
+file(GLOB fonts "ui/fonts/*.c")
+
 idf_component_register(
-    SRCS ${srcs}
+    SRCS ${srcs} ${fonts}
     INCLUDE_DIRS "."
 )
 
 target_compile_options(${COMPONENT_LIB} PRIVATE -std=gnu++2a -Wno-deprecated-declarations)
+target_compile_options(${COMPONENT_LIB} PUBLIC -DLV_LVGL_H_INCLUDE_SIMPLE)
 # target_link_libraries(${COMPONENT_LIB} PUBLIC stdc++fs)

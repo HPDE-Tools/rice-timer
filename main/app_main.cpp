@@ -270,13 +270,13 @@ void MainTask(void* /* unused */) {
   CHECK_OK(SetupCan());
   CHECK_OK(SetupImu());
   CHECK_OK(LoggerInit());
+  CHECK_OK(ui::ViewInit());
 
   CHECK_OK(LoggerStart());
   CHECK_OK(g_gpsd->Start(HandleGpsData, HandleGpsLine));
   CHECK_OK(g_can->Start());
   CHECK_OK(g_imu->Start(HandleImuRawData));
-
-  // CHECK_OK(ui::ViewStart());
+  CHECK_OK(ui::ViewStart());
 
   vTaskDelete(nullptr);
 }
