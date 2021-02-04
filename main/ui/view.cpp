@@ -16,6 +16,9 @@ extern lv_font_t caecilia18;
 extern lv_font_t caecilia22b;
 extern lv_font_t consolas8;
 extern lv_font_t consolas10;
+extern lv_font_t iosevka10l;
+extern lv_font_t iosevka12;
+extern lv_font_t mononoki10;
 
 namespace ui {
 
@@ -77,8 +80,8 @@ void ViewTask(void* /*unused*/) {
 
   lv_style_t small_text;
   lv_style_init(&small_text);
-  lv_style_set_text_font(&small_text, LV_STATE_DEFAULT, &consolas10);
-  lv_style_set_text_letter_space(&small_text, LV_STATE_DEFAULT, 0);
+  lv_style_set_text_font(&small_text, LV_STATE_DEFAULT, &iosevka10l);
+  lv_style_set_text_letter_space(&small_text, LV_STATE_DEFAULT, 1);
 
   lv_style_t big_text;
   lv_style_init(&big_text);
