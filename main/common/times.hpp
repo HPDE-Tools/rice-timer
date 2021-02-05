@@ -8,6 +8,8 @@
 #include "fmt/chrono.h"
 #include "minmea.h"
 
+#include "common/utils.hpp"
+
 // Time point conventions in this project:
 //
 // | type       | category name      | what it means                           |
@@ -63,8 +65,16 @@ inline TimeUnixWithUs ToUnix(TimeZulu t_zulu, int32_t dt_us) {
       .tv_usec = dt_us,
   };
 }
+
 inline TimeZulu ToZulu(TimeUnix t_unix) { return fmt::gmtime(t_unix); }
 inline TimeZulu ToZulu(TimeUnixWithUs t_unix) { return fmt::gmtime(t_unix.tv_sec); }
+
+constexpr int64_t ToMicroseconds(const TimeUnixWithUs& t_unix) {
+  return int64_t{t_unix.tv_sec} * int64_t{1'000'000} + int64_t{t_unix.tv_usec};
+}
+constexpr int64_t operator-(const TimeUnixWithUs& a, const TimeUnixWithUs& b) {
+  return ToMicroseconds(a) - ToMicroseconds(b);
+}
 
 //////////////////////////////////////////////////////////////
 

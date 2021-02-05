@@ -230,7 +230,12 @@ esp_err_t SetupImu() {
 }
 
 void HandleImuRawData(const Lsm6dsr::RawImuData& data) {
-  std::string line = fmt::format(
+  ui::g_model.imu = ui::Model::Imu{
+      .ax = data.ax * float{2.0f / 32767},
+      .ay = data.ay * float{2.0f / 32767},
+      .az = data.az * float{2.0f / 32767},
+  };
+  SendToLogger(std::move(fmt::format(
       "i,{},{:+06d},{:+06d},{:+06d},{:+06d},{:+06d},{:+06d}",
       data.capture,
       data.ax,
@@ -238,17 +243,7 @@ void HandleImuRawData(const Lsm6dsr::RawImuData& data) {
       data.az,
       data.wx,
       data.wy,
-      data.wz);
-
-  // DEBUG
-  static int k = 0;
-  if (++k == 500) {
-    k = 0;
-    fputs(line.c_str(), stdout);
-    fputc('\n', stdout);
-  }
-
-  SendToLogger(std::move(line));
+      data.wz)));
 }
 
 TaskHandle_t g_main_task{};

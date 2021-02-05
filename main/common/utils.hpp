@@ -21,3 +21,12 @@ overloaded(Ts...) -> overloaded<Ts...>;
 
 // usually not zero-sized, but good enough
 struct Unit {};
+
+constexpr uint16_t Uint16LeAt(const uint8_t* bytes) {
+  return static_cast<uint16_t>(
+      static_cast<uint16_t>(bytes[0]) | (static_cast<uint16_t>(bytes[1]) << uint16_t{8}));
+}
+constexpr int16_t Sint16LeAt(const uint8_t* bytes) {
+  return static_cast<int16_t>(
+      static_cast<uint16_t>(bytes[0]) | (static_cast<uint16_t>(bytes[1]) << uint16_t{8}));
+}

@@ -12,13 +12,14 @@
 #include "capture_manager.hpp"
 #include "common/logging.hpp"
 #include "common/scope_guard.hpp"
+#include "common/utils.hpp"
 #include "logger.hpp"
 
 namespace {
 constexpr char TAG[] = "imu_lsm6dsr";
 
 constexpr int kImuStackSize = 4096;
-constexpr int kImuPollPeriodMs = 10;
+constexpr int kImuPollPeriodMs = 1;
 
 constexpr uint8_t kRead = 0x80;
 constexpr uint8_t kWrite = 0x00;
@@ -57,15 +58,6 @@ esp_err_t ReadRegs(spi_device_handle_t spi, uint8_t reg_start, uint8_t len, uint
   return ESP_OK;
 }
 
-constexpr uint16_t Uint16LeAt(const uint8_t* bytes) {
-  return static_cast<uint16_t>(
-      static_cast<uint16_t>(bytes[0]) | (static_cast<uint16_t>(bytes[1]) << uint16_t{8}));
-}
-constexpr int16_t Sint16LeAt(const uint8_t* bytes) {
-  return static_cast<int16_t>(
-      static_cast<uint16_t>(bytes[0]) | (static_cast<uint16_t>(bytes[1]) << uint16_t{8}));
-}
-
 }  // namespace
 
 Lsm6dsr::Lsm6dsr(CaptureChannel interrupt_capture, Option option)
@@ -84,7 +76,7 @@ esp_err_t Lsm6dsr::Setup() {
       .duty_cycle_pos = 128,
       .cs_ena_pretrans = 1,
       .cs_ena_posttrans = 1,
-      .clock_speed_hz = 1'000'000,
+      .clock_speed_hz = 10'000'000,
       .input_delay_ns = 0,
       .spics_io_num = option_.cs_pin,
       .flags = SPI_DEVICE_HALFDUPLEX,
