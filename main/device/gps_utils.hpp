@@ -23,7 +23,7 @@ using ParsedNmea = std::variant<
     esp_err_t,
     minmea_sentence_rmc,
     minmea_sentence_gga,
-    // minmea_sentence_gst,
+    minmea_sentence_gst,
     minmea_sentence_zda>;
 
 /// Attempt to parse an NMEA sentence

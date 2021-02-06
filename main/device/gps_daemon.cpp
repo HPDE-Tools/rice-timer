@@ -139,9 +139,6 @@ void GpsDaemon::Run() {
     //       valid: the line is valid NMEA, but we don't know how to parse it.
     const bool nmea_is_parsed = !std::holds_alternative<esp_err_t>(nmea);
     const bool nmea_is_valid = nmea_is_parsed || std::get<esp_err_t>(nmea) == ESP_ERR_NOT_SUPPORTED;
-    if (!nmea_is_parsed && nmea_is_valid) {
-      ESP_LOGW(TAG, "got unparsed valid: %s", line.c_str());
-    }
     if (nmea_is_valid) {
       latest_gps_.Set(nmea, now_ostime);
     } else if (!latest_gps_.Check(now_ostime, gps_timeout)) {

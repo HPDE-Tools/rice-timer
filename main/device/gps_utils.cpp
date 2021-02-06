@@ -28,13 +28,9 @@ ParsedNmea ParseNmea(const std::string& line) {
       }
     } break;
     case MINMEA_SENTENCE_GST: {
-      /*
       if (!minmea_parse_gst(&parsed.emplace<minmea_sentence_gst>(), line.c_str())) {
         parsed = ESP_ERR_INVALID_RESPONSE;
       }
-      */
-      ESP_LOGW("", "fake parsing GST");
-      parsed = ESP_ERR_NOT_SUPPORTED;
     } break;
     case MINMEA_SENTENCE_ZDA: {
       if (!minmea_parse_zda(&parsed.emplace<minmea_sentence_zda>(), line.c_str())) {
