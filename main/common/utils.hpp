@@ -6,8 +6,8 @@
 #include <cstdint>
 #include <type_traits>
 
-constexpr char HexDigitLower(uint8_t i) { return "0123456789abcdef"[i]; }
-constexpr char HexDigitUpper(uint8_t i) { return "0123456789ABCDEF"[i]; }
+constexpr char HexDigitLower(uint8_t i) { return "0123456789abcdef"[i & uint8_t{0xf}]; }
+constexpr char HexDigitUpper(uint8_t i) { return "0123456789ABCDEF"[i & uint8_t{0xf}]; }
 
 template <typename T>
 constexpr auto SignedMinus(T a, T b) -> std::make_signed_t<T> {
