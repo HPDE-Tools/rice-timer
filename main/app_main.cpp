@@ -149,15 +149,13 @@ void HandleGpsData(
           [](const minmea_sentence_gga& gga) {
             ESP_LOGV(TAG, "parsed GGA: sat=%d", gga.satellites_tracked);
           },
-          /*
           [](const minmea_sentence_gst& gst) {
-            ESP_LOGW(
+            ESP_LOGV(
                 TAG,
                 "parsed GST: lat=%f, long=%f",
-                (double)minmea_tofloat(gst.latitude_error_deviation),
-                (double)minmea_tofloat(gst.longitude_error_deviation));
+                (double)minmea_tofloat(&gst.latitude_error_deviation),
+                (double)minmea_tofloat(&gst.longitude_error_deviation));
           },
-          */
           [](const auto&) { /* default NOP */ }},
       nmea);
   if (time_fix) {
