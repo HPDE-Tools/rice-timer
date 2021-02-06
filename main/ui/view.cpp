@@ -112,6 +112,7 @@ void ViewTask(void* /*unused*/) {
 
   TickType_t last_wake_time = xTaskGetTickCount();
 
+  // Screen 1: Dashboard
   static lv_obj_t* screen1 = lv_disp_get_scr_act(nullptr);
 
   lv_style_t small_text;
@@ -163,14 +164,8 @@ void ViewTask(void* /*unused*/) {
   static lv_obj_t* label_imu = lv_label_create(screen1, label_latlong);
   lv_obj_align(label_imu, label_clock, LV_ALIGN_OUT_BOTTOM_MID, 0, -2);
 
+  // Screen 2: IMU G-circle in the X-Y plane
   static lv_obj_t* screen2 = lv_obj_create(nullptr, nullptr);
-
-  /*
-  lv_obj_t* label_imu_2 = lv_label_create(screen2, label_latlong);
-  lv_obj_set_style_local_text_font(label_imu_2, 0, LV_STATE_DEFAULT, &lv_font_montserrat_14);
-  lv_label_set_text(label_imu_2, LV_SYMBOL_SD_CARD LV_SYMBOL_DOWNLOAD LV_SYMBOL_WIFI);
-  lv_obj_align(label_imu_2, nullptr, LV_ALIGN_IN_LEFT_MID, 0, 0);
-  */
 
   static lv_obj_t* canvas_imu = lv_canvas_create(screen2, nullptr);
   lv_obj_set_size(canvas_imu, 63, 63);
@@ -180,6 +175,9 @@ void ViewTask(void* /*unused*/) {
   lv_canvas_set_palette(canvas_imu, 0, LV_COLOR_BLACK);
   lv_canvas_set_palette(canvas_imu, 1, LV_COLOR_WHITE);
 
+  // Screen 3: Lap Timing (currently fully off)
+  static lv_obj_t* screen3 = lv_obj_create(nullptr, nullptr);
+
   while (true) {
     static uint8_t last_buttons = 0;
     const uint8_t buttons = ReadButtons(0b0000010);
@@ -188,6 +186,8 @@ void ViewTask(void* /*unused*/) {
       lv_scr_load(screen1);
     } else if (click & 0b010) {
       lv_scr_load(screen2);
+    } else if (click & 0b100) {
+      lv_scr_load(screen3);
     }
     last_buttons = buttons;
     ESP_LOGD(TAG, "buttons: %d; click: %d", buttons, click);
