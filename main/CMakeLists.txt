@@ -1,20 +1,27 @@
 set(srcs
 "app_main.cpp"
-"can.cpp"
 "capture_manager.cpp"
-"common.cpp"
-"gps.cpp"
-"imu.cpp"
+"filesystem.cpp"
 "logger.cpp"
-"nmea_parser.c"
-"pps.cpp"
+"lvgl_tick.c"
+
+"device/can.cpp"
+"device/gps_daemon.cpp"
+"device/gps_driver_mtk.cpp"
+"device/gps_utils.cpp"
+"device/imu_driver_lsm6dsr.cpp"
+"io/autobaud.cpp"
+"io/uart_line_reader.cpp"
 "ui/model.cpp"
 "ui/view.cpp"
 )
+file(GLOB fonts "ui/fonts/*.c")
+
 idf_component_register(
-    SRCS ${srcs}
+    SRCS ${srcs} ${fonts}
     INCLUDE_DIRS "."
 )
 
-target_compile_options(${COMPONENT_LIB} PRIVATE -std=gnu++2a)
+target_compile_options(${COMPONENT_LIB} PRIVATE -std=gnu++2a -Wno-deprecated-declarations)
+target_compile_options(${COMPONENT_LIB} PUBLIC -DLV_LVGL_H_INCLUDE_SIMPLE)
 # target_link_libraries(${COMPONENT_LIB} PUBLIC stdc++fs)

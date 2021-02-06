@@ -3,20 +3,27 @@
 #include <inttypes.h>
 #include <sys/stat.h>
 #include <sys/unistd.h>
+#include <utime.h>
 #include <cstdio>
 #include <memory>
 #include <optional>
 #include <string>
-#include "fmt/core.h"
+#include <string_view>
 
 #include "esp_log.h"
 #include "esp_system.h"
+#include "esp_vfs.h"
 #include "esp_vfs_fat.h"
+#include "fmt/core.h"
 #include "freertos/queue.h"
 #include "nvs.h"
 #include "nvs_flash.h"
 
-#include "common.hpp"
+#include "common/logging.hpp"
+#include "common/scope_guard.hpp"
+#include "common/strings.hpp"
+#include "common/times.hpp"
+#include "filesystem.hpp"
 #include "ui/model.hpp"
 
 namespace {
@@ -75,7 +82,7 @@ struct LogFile {
     return ESP_OK;
   }
 
-  void Flush() { fflush(file); }
+  void Flush() { fs::ReallyFlush(file); }
 };
 
 esp_err_t NvsInit() {
@@ -114,54 +121,65 @@ esp_err_t Mkdir(const std::string& dir) {
   return result == 0 || errno == EEXIST ? ESP_OK : ESP_FAIL;
 }
 
-esp_err_t SetupSessionDir(int64_t session_id, std::string* out_session_dir) {
-  *out_session_dir = fmt::format(CONFIG_MOUNT_ROOT "/{}", session_id);
-  return Mkdir(*out_session_dir);
+esp_err_t SetupSessionDir(uint8_t mac[6], int64_t session_id, std::string* out_session_dir) {
+  std::string device_dir =
+      fmt::format(CONFIG_MOUNT_ROOT "/{:02X}{:02X}{:02X}{:02X}", mac[2], mac[3], mac[4], mac[5]);
+  TRY(Mkdir(device_dir));
+  *out_session_dir = fmt::format("{}/{}", device_dir, session_id);
+  TRY(Mkdir(*out_session_dir));
+  return ESP_OK;
 }
 
-esp_err_t SetupSplitDir(int split_prefix,
-                        const std::string& session_dir,
-                        std::string* out_split_dir) {
+esp_err_t SetupSplitDir(
+    int split_prefix, const std::string& session_dir, std::string* out_split_dir) {
   *out_split_dir = fmt::format("{}/{}", session_dir, split_prefix);
   return Mkdir(*out_split_dir);
 }
 
-std::unique_ptr<LogFile> CreateSplitFile(int split_id) {
+std::string SetupSplitFilename(int split_id) {
   const int split_prefix = split_id / kSplitPrefixMod;
   std::string split_dir;
   CHECK_OK(SetupSplitDir(split_prefix, g_session_dir, &split_dir));
-  const std::string filename = fmt::format("{}/{}.txt", split_dir, split_id);
-  std::unique_ptr<LogFile> file = LogFile::Create(filename);
-  // NOTE(summivox): don't return right away because we'd lose error context; log first
-  if (!file) {
-    ESP_LOGE(TAG, "cannot open log file at: %s", filename.c_str());
-    return nullptr;
+  return fmt::format("{}/{}.txt", split_dir, split_id);
+}
+
+void UpdateFileTime(const std::string& filename, TimeUnix t_unix) {
+  utimbuf buf{.actime = t_unix, .modtime = t_unix};
+  if (esp_vfs_utime(filename.c_str(), &buf) != 0) {
+    ESP_LOGE(TAG, "utimes(%s, %d) fail => %s", filename.c_str(), (int)t_unix, strerror(errno));
   }
-  ESP_LOGI(TAG, "opened log file at: %s", filename.c_str());
-  return file;
 }
 
 }  // namespace
 
 TaskHandle_t g_logger_task{};
+uint8_t g_mac[6];
 
 esp_err_t LoggerInit() {
-  esp_log_level_set(TAG, ESP_LOG_WARN);
-
   g_logger_queue = xQueueCreate(kLoggerQueueSize, sizeof(std::string));
   if (!g_logger_queue) {
     return ESP_FAIL;
   }
+  TRY(esp_efuse_mac_get_default(g_mac));
   TRY(GetNewSessionId(&g_session_id));
   ESP_LOGI(TAG, "logger session id: %lld", g_session_id);  // (somehow PRId64 doesn't work)
-  TRY(SetupSessionDir(g_session_id, &g_session_dir));
+  ESP_LOGI(
+      TAG,
+      "logger mac: %02X %02X %02X %02X %02X %02X",
+      g_mac[0],
+      g_mac[1],
+      g_mac[2],
+      g_mac[3],
+      g_mac[4],
+      g_mac[5]);  // (somehow PRId64 doesn't work)
+  TRY(SetupSessionDir(g_mac, g_session_id, &g_session_dir));
   ESP_LOGI(TAG, "logger initialized");
   return ESP_OK;
 }
 
 esp_err_t LoggerStart() {
   if (!xTaskCreatePinnedToCore(
-          LoggerTask, "logger", 4096, nullptr, 10, &g_logger_task, APP_CPU_NUM)) {
+          LoggerTask, "logger", 4096, nullptr, 1, &g_logger_task, APP_CPU_NUM)) {
     return ESP_FAIL;
   }
   return ESP_OK;
@@ -220,7 +238,8 @@ void LoggerTask(void* /*unused*/) {
   ui::g_model.logger_session_id = g_session_id;
   SCOPE_EXIT { vTaskDelete(nullptr); };
   for (int split_id = 0; split_id < kMaxNumSplits; split_id++) {
-    std::unique_ptr<LogFile> file = CreateSplitFile(split_id);
+    std::string filename = SetupSplitFilename(split_id);
+    std::unique_ptr<LogFile> file = LogFile::Create(filename);
     if (!file) {
       return;
     }
@@ -234,12 +253,9 @@ void LoggerTask(void* /*unused*/) {
       if (static_cast<int>(xTaskGetTickCount() - last_flush_time) > pdMS_TO_TICKS(kFlushPeriodMs)) {
         last_flush_time = xTaskGetTickCount();
         const int64_t num_lines = file->num_lines;
-        file.reset();
-        file = CreateSplitFile(split_id);
-        if (!file) {
-          return;
-        }
-        file->num_lines = num_lines;
+        file->Flush();
+        UpdateFileTime(filename, NowUnix());
+        ESP_LOGD(TAG, "flush at %" PRIi64 " lines", num_lines);
       }  // if flush
     }    // while lines < max
   }      // for split
