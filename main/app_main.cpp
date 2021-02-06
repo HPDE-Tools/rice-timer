@@ -267,6 +267,9 @@ void MainTask(void* /* unused */) {
   CHECK_OK(LoggerInit());
   CHECK_OK(ui::ViewInit());
 
+  ESP_LOGI(TAG, "MainTask setup complete");
+  heap_caps_print_heap_info(MALLOC_CAP_8BIT);
+
   CHECK_OK(LoggerStart());
   CHECK_OK(g_gpsd->Start(HandleGpsData, HandleGpsLine));
   CHECK_OK(g_can->Start());
