@@ -1,3 +1,6 @@
+// Copyright 2021 summivox. All rights reserved.
+// Authors: summivox@gmail.com
+
 #include "ui/view.hpp"
 
 #include <optional>
@@ -14,13 +17,10 @@
 #include "common/times.hpp"
 #include "ui/model.hpp"
 
-extern lv_font_t caecilia18;
-extern lv_font_t caecilia22b;
-extern lv_font_t consolas8;
-extern lv_font_t consolas10;
 extern lv_font_t iosevka10l;
 extern lv_font_t iosevka12;
 extern lv_font_t mononoki10;
+extern lv_font_t mononoki22;
 
 namespace ui {
 
@@ -121,7 +121,7 @@ void ViewTask(void* /*unused*/) {
 
   static lv_style_t big_text;
   lv_style_init(&big_text);
-  lv_style_set_text_font(&big_text, LV_STATE_DEFAULT, &caecilia22b);
+  lv_style_set_text_font(&big_text, LV_STATE_DEFAULT, &mononoki22);
   lv_style_set_text_letter_space(&big_text, LV_STATE_DEFAULT, 1);
 
   static lv_draw_line_dsc_t solid_line;

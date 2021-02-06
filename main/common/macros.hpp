@@ -1,3 +1,6 @@
+// Copyright 2021 summivox. All rights reserved.
+// Authors: summivox@gmail.com
+
 #pragma once
 
 #define NON_COPYABLE_NOR_MOVABLE(T)    \

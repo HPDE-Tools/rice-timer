@@ -1,3 +1,6 @@
+// Copyright 2021 summivox. All rights reserved.
+// Authors: summivox@gmail.com
+
 #include "io/uart_line_reader.hpp"
 
 #include "common/logging.hpp"
