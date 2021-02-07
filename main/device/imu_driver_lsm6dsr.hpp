@@ -12,8 +12,8 @@
 #include "driver/spi_master.h"
 #include "esp_err.h"
 
-#include "capture_manager.hpp"
 #include "common/task.hpp"
+#include "device/capture_manager.hpp"
 
 class Lsm6dsr : Task {
  public:

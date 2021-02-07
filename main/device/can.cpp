@@ -10,10 +10,10 @@
 #include "driver/twai.h"
 #include "esp_log.h"
 
-#include "capture_manager.hpp"
+#include "app/logger.hpp"
 #include "common/logging.hpp"
 #include "common/utils.hpp"
-#include "logger.hpp"
+#include "device/capture_manager.hpp"
 
 namespace {
 
@@ -68,6 +68,8 @@ void CanManager::Run() {
     const uint32_t current_capture =
         CaptureManager::GetInstance(MCPWM_UNIT_0)->TriggerNow(MCPWM_SELECT_CAP2);
 
+    // TODO(summivox): callback out this entire thing below
+
     // NOTE(summivox): manually format to (hopefully) save time
     char* p = buf_begin;
     p = std::to_chars(p, buf_end, current_capture, /*base*/ 10).ptr;
@@ -81,7 +83,7 @@ void CanManager::Run() {
     }
     *p++ = '\0';
     CHECK(p < buf_end);
-    SendToLogger(std::string(buf, p));
+    app::SendToLogger(std::string(buf, p));
 #if 1
     {
       static TickType_t last_print = xTaskGetTickCount();

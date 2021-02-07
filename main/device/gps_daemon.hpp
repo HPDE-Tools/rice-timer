@@ -16,10 +16,10 @@
 #include "minmea.h"
 #include "soc/uart_struct.h"
 
-#include "capture_manager.hpp"
 #include "common/macros.hpp"
 #include "common/perishable.hpp"
 #include "common/task.hpp"
+#include "device/capture_manager.hpp"
 #include "device/gps_utils.hpp"
 #include "io/uart_line_reader.hpp"
 

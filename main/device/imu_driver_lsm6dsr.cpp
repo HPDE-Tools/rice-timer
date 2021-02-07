@@ -12,11 +12,11 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/semphr.h"
 
-#include "capture_manager.hpp"
+#include "app/logger.hpp"
 #include "common/logging.hpp"
 #include "common/scope_guard.hpp"
 #include "common/utils.hpp"
-#include "logger.hpp"
+#include "device/capture_manager.hpp"
 
 namespace {
 constexpr char TAG[] = "imu_lsm6dsr";

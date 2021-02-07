@@ -1,7 +1,7 @@
 // Copyright 2021 summivox. All rights reserved.
 // Authors: summivox@gmail.com
 
-#include "logger.hpp"
+#include "app/logger.hpp"
 
 #include <inttypes.h>
 #include <sys/stat.h>
@@ -22,6 +22,7 @@
 #include "nvs.h"
 #include "nvs_flash.h"
 
+#include "app/priorities.hpp"
 #include "common/logging.hpp"
 #include "common/scope_guard.hpp"
 #include "common/strings.hpp"
@@ -29,15 +30,18 @@
 #include "filesystem.hpp"
 #include "ui/model.hpp"
 
+namespace app {
+
 namespace {
 
 constexpr char TAG[] = "logger";
+
+constexpr int kLoggerStackSize = 4096;
 
 constexpr char kSessionIdKey[] = "session_id";
 constexpr int kLoggerQueueSize = 32;
 constexpr int kSplitPrefixMod = 1'000;
 constexpr int kMaxNumSplits = 1'000'000;
-// constexpr int64_t kFlushFreqLines = 1000;  // TODO(summivox): no longer used
 constexpr int64_t kMaxNumLinesPerSplit = CONFIG_MAX_LINES_PER_FILE;
 
 constexpr int kFlushPeriodMs = 1000;
@@ -182,7 +186,13 @@ esp_err_t LoggerInit() {
 
 esp_err_t LoggerStart() {
   if (!xTaskCreatePinnedToCore(
-          LoggerTask, "logger", 4096, nullptr, 1, &g_logger_task, APP_CPU_NUM)) {
+          LoggerTask,
+          "logger",
+          kLoggerStackSize,
+          nullptr,
+          kPriorityLogging,
+          &g_logger_task,
+          APP_CPU_NUM)) {
     return ESP_FAIL;
   }
   return ESP_OK;
@@ -264,3 +274,5 @@ void LoggerTask(void* /*unused*/) {
   }      // for split
   ESP_LOGE(TAG, "stopped after making too many (%d) splits", kMaxNumSplits);
 }
+
+}  // namespace app

@@ -14,16 +14,16 @@
 #include "fmt/core.h"
 #include "minmea.h"
 
-#include "capture_manager.hpp"
+#include "app/logger.hpp"
 #include "common/logging.hpp"
 #include "common/perishable.hpp"
 #include "common/scope_guard.hpp"
 #include "common/strings.hpp"
 #include "common/times.hpp"
 #include "common/utils.hpp"
+#include "device/capture_manager.hpp"
 #include "device/gps_utils.hpp"
 #include "io/autobaud.hpp"
-#include "logger.hpp"
 #include "ui/model.hpp"
 
 namespace {

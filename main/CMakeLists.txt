@@ -1,11 +1,14 @@
 set(srcs
 "app_main.cpp"
-"capture_manager.cpp"
 "filesystem.cpp"
-"logger.cpp"
 "lvgl_tick.c"
 
+"app/can_instance.cpp"
+"app/gps_instance.cpp"
+"app/imu_instance.cpp"
+"app/logger.cpp"
 "device/can.cpp"
+"device/capture_manager.cpp"
 "device/gps_daemon.cpp"
 "device/gps_driver_mtk.cpp"
 "device/gps_utils.cpp"

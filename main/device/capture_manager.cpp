@@ -1,7 +1,7 @@
 // Copyright 2021 summivox. All rights reserved.
 // Authors: summivox@gmail.com
 
-#include "capture_manager.hpp"
+#include "device/capture_manager.hpp"
 
 #include "esp32/clk.h"
 #include "esp_log.h"
