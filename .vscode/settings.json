@@ -31,7 +31,8 @@
     "chrono": "cpp",
     "functional": "cpp",
     "variant": "cpp",
-    "ostream": "cpp"
+    "ostream": "cpp",
+    "atomic": "cpp"
   },
   "idf.flashType": "UART",
   "editor.formatOnSave": true,
