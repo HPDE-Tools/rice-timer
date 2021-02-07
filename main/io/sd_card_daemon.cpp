@@ -50,7 +50,7 @@ esp_err_t SdCardDaemon::Setup() {
   gpio_config(&card_detect_pin_config);
 
   // okay if GPIO ISR is already installed
-  if (const esp_err_t err = gpio_install_isr_service(0);
+  if (const esp_err_t err = gpio_install_isr_service(ESP_INTR_FLAG_IRAM);
       err != ESP_OK && err != ESP_ERR_INVALID_STATE) {
     return err;
   }

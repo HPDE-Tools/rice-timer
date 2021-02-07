@@ -158,6 +158,9 @@ void CanaryTask(void* /*unused*/) {
     if (g_can) {
       LOG_WATER_MARK("can", g_can->handle());
     }
+    if (g_sd_card) {
+      LOG_WATER_MARK("sd", g_sd_card->handle());
+    }
     LOG_WATER_MARK("ui/view", ui::g_view_task);
     vTaskDelayUntil(&last_wake_tick, pdMS_TO_TICKS(kCanaryPeriodMs));
   }

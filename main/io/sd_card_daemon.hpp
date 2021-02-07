@@ -19,7 +19,7 @@ namespace io {
 
 // TODO(summivox): add support for no detect pin (just poll)
 
-class SdCardDaemon : Task {
+class SdCardDaemon : public Task {
  public:
   static constexpr int kSdSectorSize = 512;  // fixed number for SDHC/SDXC
 
