@@ -68,13 +68,15 @@ void HandleGpsData(
                 "parsed RMC: (%+10.6f, %+11.6f)",
                 (double)minmea_tocoord(&rmc.latitude),
                 (double)minmea_tocoord(&rmc.longitude));
-            auto& g = ui::g_model.gps.emplace();
-            g.hour = rmc.time.hours;
-            g.minute = rmc.time.minutes;
-            g.second = rmc.time.seconds;
-            g.millisecond = rmc.time.microseconds / 1000;
-            g.latitude = minmea_tocoord(&rmc.latitude);
-            g.longitude = minmea_tocoord(&rmc.longitude);
+            if (rmc.valid) {
+              auto& g = ui::g_model.gps.emplace();
+              g.hour = rmc.time.hours;
+              g.minute = rmc.time.minutes;
+              g.second = rmc.time.seconds;
+              g.millisecond = rmc.time.microseconds / 1000;
+              g.latitude = minmea_tocoord(&rmc.latitude);
+              g.longitude = minmea_tocoord(&rmc.longitude);
+            }
           },
           [](const minmea_sentence_gga& gga) {
             ESP_LOGV(TAG, "parsed GGA: sat=%d", gga.satellites_tracked);
