@@ -26,7 +26,7 @@
 #include "common/scope_guard.hpp"
 #include "common/strings.hpp"
 #include "common/times.hpp"
-#include "filesystem.hpp"
+#include "io/filesystem.hpp"
 #include "priorities.hpp"
 #include "ui/model.hpp"
 
@@ -89,7 +89,7 @@ struct LogFile {
     return ESP_OK;
   }
 
-  void Flush() { fs::ReallyFlush(file); }
+  void Flush() { io::ReallyFlush(file); }
 };
 
 esp_err_t NvsInit() {

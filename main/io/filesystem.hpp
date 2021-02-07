@@ -11,7 +11,7 @@
 
 #include "driver/sdmmc_host.h"
 
-namespace fs {
+namespace io {
 
 extern sdmmc_card_t* g_sd_card;
 
@@ -20,4 +20,4 @@ esp_err_t InitializeSdCardSpi();
 std::optional<int64_t> GetFreeSpaceBytes();
 esp_err_t ReallyFlush(FILE* f);
 
-}  // namespace fs
+}  // namespace io

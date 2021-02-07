@@ -1,7 +1,7 @@
 // Copyright 2021 summivox. All rights reserved.
 // Authors: summivox@gmail.com
 
-#include "filesystem.hpp"
+#include "io/filesystem.hpp"
 
 #include "unistd.h"
 
@@ -14,7 +14,7 @@
 
 #include "common/logging.hpp"
 
-namespace fs {
+namespace io {
 
 namespace {
 
@@ -40,8 +40,6 @@ esp_err_t InitializeSdCard() {
   sdmmc_host_t host = SDMMC_HOST_DEFAULT();
   host.max_freq_khz = SDMMC_FREQ_HIGHSPEED;
 
-  // This initializes the slot without card detect (CD) and write protect (WP) signals.
-  // Modify slot_config.gpio_cd and slot_config.gpio_wp if your board has these signals.
   sdmmc_slot_config_t slot_config = SDMMC_SLOT_CONFIG_DEFAULT();
   slot_config.width = 4;
   slot_config.gpio_cd = GPIO_NUM_27;
@@ -90,7 +88,7 @@ esp_err_t InitializeSdCardSpi() {
   };
   TRY(spi_bus_initialize(HSPI_HOST, &bus_cfg, HSPI_HOST));
   TRY(esp_vfs_fat_sdspi_mount(
-      CONFIG_MOUNT_ROOT, &host_config, &io_config, &mount_config, &fs::g_sd_card));
+      CONFIG_MOUNT_ROOT, &host_config, &io_config, &mount_config, &io::g_sd_card));
   return ESP_OK;
 }
 
@@ -118,4 +116,4 @@ esp_err_t ReallyFlush(FILE* f) {
   return ESP_OK;
 }
 
-}  // namespace fs
+}  // namespace io

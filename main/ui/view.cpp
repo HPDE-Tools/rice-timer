@@ -15,6 +15,7 @@
 
 #include "common/logging.hpp"
 #include "common/times.hpp"
+#include "priorities.hpp"
 #include "ui/model.hpp"
 
 extern lv_font_t iosevka10l;
@@ -29,6 +30,10 @@ namespace {
 constexpr char TAG[] = "ui/view";
 constexpr int kRefreshPeriodMs = 100;
 
+constexpr int kViewStackSize = 6000;
+
+// TODO(summivox): rename or remove or something
+// pixel coordinates for the IMU G-circle
 constexpr uint8_t outer_x[] = {62, 61, 58, 55, 51, 46, 40, 34, 28, 22, 16, 11, 7,  4,  1,  0,
                                0,  1,  4,  7,  11, 16, 22, 28, 34, 40, 46, 51, 55, 58, 61, 62};
 constexpr uint8_t outer_y[] = {34, 40, 46, 51, 55, 58, 61, 62, 62, 61, 58, 55, 51, 46, 40, 34,
@@ -94,9 +99,10 @@ esp_err_t ViewInit() {
 }
 
 esp_err_t ViewStart() {
-  return xTaskCreatePinnedToCore(ViewTask, "ui/view", 6000, nullptr, 2, &g_view_task, APP_CPU_NUM)
-             ? ESP_OK
-             : ESP_FAIL;
+  return xTaskCreatePinnedToCore(
+             ViewTask, "ui/view", kViewStackSize, nullptr, kPriorityUi, &g_view_task, APP_CPU_NUM) ?
+             ESP_OK :
+             ESP_FAIL;
 }
 
 void ViewStop() {

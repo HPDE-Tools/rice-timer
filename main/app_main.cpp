@@ -29,7 +29,7 @@
 #include "device/gps_daemon.hpp"
 #include "device/gps_driver_mtk.hpp"
 #include "device/imu_driver_lsm6dsr.hpp"
-#include "filesystem.hpp"
+#include "io/filesystem.hpp"
 #include "ui/model.hpp"
 #include "ui/view.hpp"
 
@@ -45,9 +45,9 @@ using namespace app;  // TODO: move this file altogether
 
 esp_err_t SetupFileSystem() {
   if constexpr (CONFIG_HW_VERSION == 2) {
-    TRY(fs::InitializeSdCard());
+    TRY(io::InitializeSdCard());
   } else {
-    TRY(fs::InitializeSdCardSpi());
+    TRY(io::InitializeSdCardSpi());
   }
   return ESP_OK;
 }

@@ -1,6 +1,5 @@
 set(srcs
 "app_main.cpp"
-"filesystem.cpp"
 "lvgl_tick.c"
 
 "app/can_instance.cpp"
@@ -14,6 +13,7 @@ set(srcs
 "device/gps_utils.cpp"
 "device/imu_driver_lsm6dsr.cpp"
 "io/autobaud.cpp"
+"io/filesystem.cpp"
 "io/uart_line_reader.cpp"
 "ui/model.cpp"
 "ui/view.cpp"
