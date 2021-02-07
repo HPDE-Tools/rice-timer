@@ -8,11 +8,11 @@
 #include "driver/uart.h"
 #include "soc/uart_periph.h"
 
-#include "app/priorities.hpp"
 #include "common/logging.hpp"
 #include "device/gps_driver_mtk.hpp"
 #include "device/gps_utils.hpp"
 #include "io/uart_line_reader.hpp"
+#include "priorities.hpp"
 
 namespace app {
 

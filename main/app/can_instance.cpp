@@ -3,8 +3,8 @@
 
 #include "app/can_instance.hpp"
 
-#include "app/priorities.hpp"
 #include "device/can.hpp"
+#include "priorities.hpp"
 
 namespace app {
 

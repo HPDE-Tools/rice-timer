@@ -22,12 +22,12 @@
 #include "nvs.h"
 #include "nvs_flash.h"
 
-#include "app/priorities.hpp"
 #include "common/logging.hpp"
 #include "common/scope_guard.hpp"
 #include "common/strings.hpp"
 #include "common/times.hpp"
 #include "filesystem.hpp"
+#include "priorities.hpp"
 #include "ui/model.hpp"
 
 namespace app {

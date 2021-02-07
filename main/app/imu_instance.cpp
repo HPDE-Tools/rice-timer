@@ -3,8 +3,8 @@
 
 #include "app/imu_instance.hpp"
 
-#include "app/priorities.hpp"
 #include "common/logging.hpp"
+#include "priorities.hpp"
 
 namespace app {
 
