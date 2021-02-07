@@ -7,7 +7,8 @@
 // compared to those of other tasks. Having a single place to look up all the priorities makes it
 // clear which task has higher priority.
 
-constexpr int kPriorityLogging = 2;
+constexpr int kPriorityLogging = 1;
+constexpr int kPrioritySdCard = 2;
 constexpr int kPriorityUi = 3;
 constexpr int kPriorityCan = 4;
 constexpr int kPriorityGpsd = 5;

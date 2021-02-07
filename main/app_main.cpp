@@ -8,28 +8,20 @@
 #include <string_view>
 
 #include "driver/gpio.h"
-#include "driver/sdmmc_host.h"
-#include "driver/spi_common.h"
 #include "fmt/chrono.h"
 #include "fmt/core.h"
 #include "freertos/FreeRTOS.h"
 #include "minmea.h"
 #include "sdmmc_cmd.h"
-#include "soc/uart_struct.h"
 
 #include "app/can_instance.hpp"
 #include "app/gps_instance.hpp"
 #include "app/imu_instance.hpp"
 #include "app/logger.hpp"
+#include "app/sd_card_instance.hpp"
 #include "common/logging.hpp"
 #include "common/strings.hpp"
 #include "common/utils.hpp"
-#include "device/can.hpp"
-#include "device/capture_manager.hpp"
-#include "device/gps_daemon.hpp"
-#include "device/gps_driver_mtk.hpp"
-#include "device/imu_driver_lsm6dsr.hpp"
-#include "io/filesystem.hpp"
 #include "ui/model.hpp"
 #include "ui/view.hpp"
 
@@ -42,15 +34,6 @@ constexpr int kCanaryPeriodMs = 10000;
 }  // namespace
 
 using namespace app;  // TODO: move this file altogether
-
-esp_err_t SetupFileSystem() {
-  if constexpr (CONFIG_HW_VERSION == 2) {
-    TRY(io::InitializeSdCard());
-  } else {
-    TRY(io::InitializeSdCardSpi());
-  }
-  return ESP_OK;
-}
 
 void HandleGpsData(
     GpsDaemon::State state, const ParsedNmea& nmea, const std::optional<GpsTimeFix>& time_fix) {
@@ -124,13 +107,24 @@ void HandleImuRawData(const Lsm6dsr::RawImuData& data) {
       data.wz)));
 }
 
+void HandleSdCardStateChange(bool mounted) {
+  if (mounted) {
+    sdmmc_card_print_info(stdout, g_sd_card->sd_card());
+    ESP_LOGI(TAG, "card mounted; starting logger");
+    LoggerStart();
+  } else {
+    LoggerStop();
+    ESP_LOGI(TAG, "card unmounted; logger stopped");
+  }
+}
+
 TaskHandle_t g_main_task{};
 void MainTask(void* /* unused */) {
   ESP_LOGI(TAG, "MainTask started");
   heap_caps_print_heap_info(MALLOC_CAP_8BIT);
   vTaskDelay(pdMS_TO_TICKS(2000));
 
-  CHECK_OK(SetupFileSystem());
+  CHECK_OK(SetupSdCard());
   CHECK_OK(SetupGps());
   CHECK_OK(SetupCan());
   CHECK_OK(SetupImu());
@@ -140,7 +134,7 @@ void MainTask(void* /* unused */) {
   ESP_LOGI(TAG, "MainTask setup complete");
   heap_caps_print_heap_info(MALLOC_CAP_8BIT);
 
-  CHECK_OK(LoggerStart());
+  CHECK_OK(g_sd_card->Start(HandleSdCardStateChange));
   CHECK_OK(g_gpsd->Start(HandleGpsData, HandleGpsLine));
   CHECK_OK(g_can->Start());
   CHECK_OK(g_imu->Start(HandleImuRawData));

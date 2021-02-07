@@ -22,11 +22,12 @@
 #include "nvs.h"
 #include "nvs_flash.h"
 
+#include "app/sd_card_instance.hpp"
 #include "common/logging.hpp"
 #include "common/scope_guard.hpp"
 #include "common/strings.hpp"
 #include "common/times.hpp"
-#include "io/filesystem.hpp"
+#include "io/fs_utils.hpp"
 #include "priorities.hpp"
 #include "ui/model.hpp"
 
@@ -89,7 +90,7 @@ struct LogFile {
     return ESP_OK;
   }
 
-  void Flush() { io::ReallyFlush(file); }
+  esp_err_t Flush() { return io::ReallyFlush(file); }
 };
 
 esp_err_t NvsInit() {
@@ -151,6 +152,7 @@ std::string SetupSplitFilename(int split_id) {
 }
 
 void UpdateFileTime(const std::string& filename, TimeUnix t_unix) {
+  // TODO(summivox): consider validity of current system time
   utimbuf buf{.actime = t_unix, .modtime = t_unix};
   if (esp_vfs_utime(filename.c_str(), &buf) != 0) {
     ESP_LOGE(TAG, "utimes(%s, %d) fail => %s", filename.c_str(), (int)t_unix, strerror(errno));
@@ -168,8 +170,6 @@ esp_err_t LoggerInit() {
     return ESP_FAIL;
   }
   TRY(esp_efuse_mac_get_default(g_mac));
-  TRY(GetNewSessionId(&g_session_id));
-  ESP_LOGI(TAG, "logger session id: %lld", g_session_id);  // (somehow PRId64 doesn't work)
   ESP_LOGI(
       TAG,
       "logger mac: %02X %02X %02X %02X %02X %02X",
@@ -178,13 +178,14 @@ esp_err_t LoggerInit() {
       g_mac[2],
       g_mac[3],
       g_mac[4],
-      g_mac[5]);  // (somehow PRId64 doesn't work)
-  TRY(SetupSessionDir(g_mac, g_session_id, &g_session_dir));
-  ESP_LOGI(TAG, "logger initialized");
+      g_mac[5]);
   return ESP_OK;
 }
 
 esp_err_t LoggerStart() {
+  if (g_logger_task) {
+    return ESP_ERR_INVALID_STATE;
+  }
   if (!xTaskCreatePinnedToCore(
           LoggerTask,
           "logger",
@@ -208,6 +209,9 @@ void LoggerStop() {
 #if 1  // TODO(summivox): choose one tunneling implementation
 
 esp_err_t SendToLogger(std::string&& moved_line, uint32_t timeout) {
+  if (!g_logger_task) {
+    return ESP_ERR_INVALID_STATE;
+  }
   char* s = new char[moved_line.size() + 1];
   strcpy(s, moved_line.c_str());
   if (!xQueueSendToBack(g_logger_queue, &s, timeout)) {
@@ -248,8 +252,17 @@ static std::string PopFromQueue() {
 #endif
 
 void LoggerTask(void* /*unused*/) {
+  SCOPE_EXIT {
+    vTaskDelete(nullptr);
+    g_logger_task = nullptr;
+  };
+
+  xQueueReset(g_logger_queue);
+  OK_OR_RETURN(GetNewSessionId(&g_session_id), /*void*/);
+  OK_OR_RETURN(SetupSessionDir(g_mac, g_session_id, &g_session_dir), /*void*/);
   ui::g_model.logger_session_id = g_session_id;
-  SCOPE_EXIT { vTaskDelete(nullptr); };
+  ESP_LOGI(TAG, "logger started at %s", g_session_dir.c_str());
+
   for (int split_id = 0; split_id < kMaxNumSplits; split_id++) {
     std::string filename = SetupSplitFilename(split_id);
     std::unique_ptr<LogFile> file = LogFile::Create(filename);
@@ -259,14 +272,22 @@ void LoggerTask(void* /*unused*/) {
     ui::g_model.logger_split_id = split_id;
     while (file->num_lines < kMaxNumLinesPerSplit) {
       std::string line = PopFromQueue();
-      CHECK_OK(file->Writeln(line));
+      if (const esp_err_t err = file->Writeln(line); err != ESP_OK) {
+        ESP_LOGE(TAG, "write line fail: %s ; %s", esp_err_to_name(err), strerror(errno));
+        g_sd_card->Ping();
+        return;
+      }
       ui::g_model.logger_lines = file->num_lines;
 
       static TickType_t last_flush_time = xTaskGetTickCount();
       if (static_cast<int>(xTaskGetTickCount() - last_flush_time) > pdMS_TO_TICKS(kFlushPeriodMs)) {
         last_flush_time = xTaskGetTickCount();
         const int64_t num_lines = file->num_lines;
-        file->Flush();
+        if (const esp_err_t err = file->Flush(); err != ESP_OK) {
+          ESP_LOGE(TAG, "flush fail: %s ; %s", esp_err_to_name(err), strerror(errno));
+          g_sd_card->Ping();
+          return;
+        }
         UpdateFileTime(filename, NowUnix());
         ESP_LOGD(TAG, "flush at %" PRIi64 " lines", num_lines);
       }  // if flush
