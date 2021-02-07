@@ -34,5 +34,6 @@
     "ostream": "cpp"
   },
   "idf.flashType": "UART",
-  "editor.formatOnSave": true
+  "editor.formatOnSave": true,
+  "editor.tabSize": 2
 }

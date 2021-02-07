@@ -86,6 +86,10 @@ Also, the native USB-serial port of the [uBlox NEO][ublox] has its own USB Micro
 - **Enable WiFi/BLE connectivity**. The choice of ESP32 as the main processor is exactly so that we could do this after the core functionality is done.
 - **Enclosure Design**. So that I don't have to velcro the naked PCB down to my car's center console anymore...
 
+## Contributions
+
+This project is currently not ready to accept contributions.
+
 
 [GNSS]: https://en.wikipedia.org/wiki/Satellite_navigation
 [PPS]: https://en.wikipedia.org/wiki/Pulse-per-second_signal

@@ -8,4 +8,4 @@ IndentWidth: 2
 AccessModifierOffset: -1
 PointerAlignment: Left
 AlignAfterOpenBracket: AlwaysBreak
-
+BreakBeforeTernaryOperators: false
