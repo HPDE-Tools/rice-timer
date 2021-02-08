@@ -229,14 +229,9 @@ void GpsDaemon::AdjustSystemTime(const GpsTimeFix& time_fix, const CaptureChanne
   // 1 us => how many capture ticks? (this should only ever need to be set once)
   static const int kCaptureTicksInUs = sw_capture.GetNominalFreqHz() / 1'000'000;
 
-  // Ensure that sampling of `system_now` and `capture_now` are not interrupted.
-  // NOTE: This lock will nest around CaptureManager's lock; this is okay.
-  static portMUX_TYPE lock = portMUX_INITIALIZER_UNLOCKED;
-  vPortEnterCritical(&lock);
   TimeUnixWithUs system_now{};
   gettimeofday(&system_now, /*tz*/ nullptr);
   const uint32_t capture_now = sw_capture.TriggerNow();
-  vPortExitCritical(&lock);
 
   const time_t a_s = system_now.tv_sec;
   const suseconds_t a_us = system_now.tv_usec;
