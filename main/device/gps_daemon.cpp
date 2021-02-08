@@ -14,7 +14,6 @@
 #include "fmt/core.h"
 #include "minmea.h"
 
-#include "app/logger.hpp"
 #include "common/logging.hpp"
 #include "common/perishable.hpp"
 #include "common/scope_guard.hpp"
@@ -152,6 +151,7 @@ void GpsDaemon::Run() {
       time_fix = TryMatchPpsGps(latest_pps->data, latest_pps->time, now_ostime, nmea);
       if (time_fix) {
         AdjustSystemTime(*time_fix, sw_capture_);
+        had_first_fix_ = true;
       }
     }
 

@@ -12,7 +12,6 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/semphr.h"
 
-#include "app/logger.hpp"
 #include "common/logging.hpp"
 #include "common/scope_guard.hpp"
 #include "common/utils.hpp"

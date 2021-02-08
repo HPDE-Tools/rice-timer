@@ -85,11 +85,7 @@ void SdCardDaemon::Ping() {
 
 void SdCardDaemon::PingFromIsr() {
   if (const TaskHandle_t handle = Task::handle()) {
-    BaseType_t should_yield{};
-    xTaskNotifyFromISR(handle, 1, eSetBits, &should_yield);
-    if (should_yield) {
-      portYIELD_FROM_ISR();
-    }
+    xTaskNotifyFromISR(handle, 1, eSetBits, nullptr);
   }
 }
 

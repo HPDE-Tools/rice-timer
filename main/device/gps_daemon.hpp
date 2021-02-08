@@ -42,9 +42,14 @@ class GpsDaemon : public Task {
   };
 
   enum State {
+    /// We haven't heard from GPS for a while.
     kLost,
+    /// The GPS has (supposingly) been set up. We will wait for a valid incoming NMEA sentence to
+    /// confirm that it's indeed alive.
     kAwaitingNmea,
+    /// We have got some NMEA sentence, but none has been matched with PPS event so far.
     kAwaitingTimeFix,
+    /// We have both NMEA and PPS locked in and up to date.
     kActive,
   };
 
@@ -77,6 +82,9 @@ class GpsDaemon : public Task {
   auto latest_pps() const { return latest_pps_.Get(); }
   auto latest_gps() const { return latest_gps_.Get(); }
 
+  /// \returns whether a time fix had been received (and therefore the system time had been updated)
+  bool had_first_fix() const { return had_first_fix_; }
+
   static void AdjustSystemTime(const GpsTimeFix& time_fix, const CaptureChannel& sw_capture);
 
  protected:
@@ -94,6 +102,7 @@ class GpsDaemon : public Task {
   std::atomic<State> state_ = kLost;
   Perishable</*data*/ uint32_t, /*time*/ TickType_t> latest_pps_;
   Perishable</*data*/ ParsedNmea, /*time*/ TickType_t> latest_gps_;
+  bool had_first_fix_ = false;
 
   int century_;
 

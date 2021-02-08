@@ -4,13 +4,14 @@
 #include "device/can.hpp"
 
 #include <charconv>
-#include "fmt/core.h"
-#include "fmt/format.h"
+#include <string_view>
 
 #include "driver/twai.h"
 #include "esp_log.h"
+#include "fmt/core.h"
+#include "fmt/format.h"
 
-#include "app/logger.hpp"
+#include "app/logger_instance.hpp"
 #include "common/logging.hpp"
 #include "common/utils.hpp"
 #include "device/capture_manager.hpp"
@@ -83,7 +84,7 @@ void CanManager::Run() {
     }
     *p++ = '\0';
     CHECK(p < buf_end);
-    app::SendToLogger(std::string(buf, p));
+    app::SendToLogger(std::string_view(buf));
 #if 1
     {
       static TickType_t last_print = xTaskGetTickCount();

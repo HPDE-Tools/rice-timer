@@ -3,11 +3,20 @@
 
 #include "io/fs_utils.hpp"
 
-#include "unistd.h"
+#include <sys/stat.h>
+#include <sys/unistd.h>
+#include <utime.h>
+#include <algorithm>
+#include <cstdio>
+#include <initializer_list>
+#include <numeric>
 
 #include "driver/gpio.h"
+#include "esp_vfs.h"
+#include "esp_vfs_fat.h"
 
 #include "common/logging.hpp"
+#include "common/times.hpp"
 
 namespace io {
 
@@ -25,6 +34,42 @@ esp_err_t ReallyFlush(FILE* f) {
     return ESP_FAIL;
   }
   if (fsync(fileno(f)) != 0) {
+    return ESP_FAIL;
+  }
+  return ESP_OK;
+}
+
+esp_err_t Mkdir(const std::string& dir) {
+  // this is infrequent enough we can afford logging every call
+  ESP_LOGI(TAG, "Mkdir: %s", dir.c_str());
+  const int result = mkdir(dir.c_str(), kFsMode);
+  return (result == 0 || errno == EEXIST) ? ESP_OK : ESP_FAIL;
+}
+
+esp_err_t MkdirParts(std::initializer_list<std::string_view> parts, std::string* out_path) {
+  // basically `join(parts, '/')`
+  CHECK(out_path != nullptr);
+  int len = parts.size();
+  for (const auto& part : parts) {
+    len += part.size();
+  }
+  out_path->clear();
+  out_path->reserve(len);
+  for (const auto& part : parts) {
+    (*out_path) += part;
+    TRY(Mkdir(*out_path));
+    (*out_path) += '/';
+  }
+  CHECK(out_path->size() == len);
+  out_path->resize(len - 1);  // trim the trailing slash
+  return ESP_OK;
+}
+
+esp_err_t UpdateFileTime(const std::string& path, TimeUnix t_unix) {
+  // TODO(summivox): consider validity of current system time
+  utimbuf buf{.actime = t_unix, .modtime = t_unix};
+  if (esp_vfs_utime(path.c_str(), &buf) != 0) {
+    ESP_LOGE(TAG, "utimes(%s, %d) fail => %s", path.c_str(), (int)t_unix, strerror(errno));
     return ESP_FAIL;
   }
   return ESP_OK;

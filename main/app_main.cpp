@@ -15,9 +15,10 @@
 #include "sdmmc_cmd.h"
 
 #include "app/can_instance.hpp"
+#include "app/device_id.hpp"
 #include "app/gps_instance.hpp"
 #include "app/imu_instance.hpp"
-#include "app/logger.hpp"
+#include "app/logger_instance.hpp"
 #include "app/sd_card_instance.hpp"
 #include "common/logging.hpp"
 #include "common/strings.hpp"
@@ -26,14 +27,23 @@
 #include "ui/view.hpp"
 
 namespace {
-
 constexpr char TAG[] = "main";
-
 constexpr int kCanaryPeriodMs = 10000;
-
 }  // namespace
 
 using namespace app;  // TODO: move this file altogether
+
+void PrintDeviceMac() {
+  ESP_LOGI(
+      TAG,
+      "logger mac: %02X:%02X:%02X:%02X:%02X:%02X",
+      g_device_mac[0],
+      g_device_mac[1],
+      g_device_mac[2],
+      g_device_mac[3],
+      g_device_mac[4],
+      g_device_mac[5]);
+}
 
 void HandleGpsData(
     GpsDaemon::State state, const ParsedNmea& nmea, const std::optional<GpsTimeFix>& time_fix) {
@@ -96,7 +106,7 @@ void HandleImuRawData(const Lsm6dsr::RawImuData& data) {
       .ay = data.ay * float{2.0f / 32767},
       .az = data.az * float{2.0f / 32767},
   };
-  SendToLogger(std::move(fmt::format(
+  SendToLogger(fmt::format(
       "i,{},{:+06d},{:+06d},{:+06d},{:+06d},{:+06d},{:+06d}",
       data.capture,
       data.ax,
@@ -104,37 +114,53 @@ void HandleImuRawData(const Lsm6dsr::RawImuData& data) {
       data.az,
       data.wx,
       data.wy,
-      data.wz)));
+      data.wz));
+}
+
+void HandleLoggerCommit(const io::Logger& logger, TickType_t now) {
+  ui::g_model.logger_session_id = logger.session_id();
+  ui::g_model.logger_split_id = logger.split_id();
+  ui::g_model.logger_lines = logger.lines_committed();
+}
+
+void HandleLoggerExit(const io::Logger::Error error) {
+  ESP_LOGE(TAG, "logger exit: %d", (int)error);
 }
 
 void HandleSdCardStateChange(bool mounted) {
   if (mounted) {
     sdmmc_card_print_info(stdout, g_sd_card->sd_card());
     ESP_LOGI(TAG, "card mounted; starting logger");
-    LoggerStart();
+    const esp_err_t err =
+        g_logger->Start(NewSessionId(), /*init split id*/ 0, HandleLoggerCommit, HandleLoggerExit);
+    if (err != ESP_OK) {
+      ESP_LOGE(TAG, "logger cannot be started: %s", esp_err_to_name(err));
+    }
   } else {
-    LoggerStop();
-    ESP_LOGI(TAG, "card unmounted; logger stopped");
+    g_logger->Stop();
+    ESP_LOGW(TAG, "card unmounted; logger stopped");
   }
 }
 
 TaskHandle_t g_main_task{};
 void MainTask(void* /* unused */) {
   ESP_LOGI(TAG, "MainTask started");
+  PrintDeviceMac();
   heap_caps_print_heap_info(MALLOC_CAP_8BIT);
   vTaskDelay(pdMS_TO_TICKS(2000));
 
   CHECK_OK(SetupSdCard());
+  CHECK_OK(SetupLogger());
   CHECK_OK(SetupGps());
   CHECK_OK(SetupCan());
   CHECK_OK(SetupImu());
-  CHECK_OK(LoggerInit());
   CHECK_OK(ui::ViewInit());
 
   ESP_LOGI(TAG, "MainTask setup complete");
   heap_caps_print_heap_info(MALLOC_CAP_8BIT);
 
   CHECK_OK(g_sd_card->Start(HandleSdCardStateChange));
+  // the logger is started by the SD card daemon
   CHECK_OK(g_gpsd->Start(HandleGpsData, HandleGpsLine));
   CHECK_OK(g_can->Start());
   CHECK_OK(g_imu->Start(HandleImuRawData));
@@ -151,7 +177,9 @@ void CanaryTask(void* /*unused*/) {
   TickType_t last_wake_tick = xTaskGetTickCount();
   while (true) {
     LOG_WATER_MARK("canary", g_canary_task);
-    LOG_WATER_MARK("logger", g_logger_task);
+    if (g_logger) {
+      LOG_WATER_MARK("logger", g_logger->handle());
+    }
     if (g_gpsd) {
       LOG_WATER_MARK("gpsd", g_gpsd->handle());
     }
