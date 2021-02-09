@@ -15,7 +15,7 @@
 
 #define OK_OR_RETURN(x, ret)                                                                  \
   do {                                                                                        \
-    if (const esp_err_t err = (x); err != ESP_OK) {                                           \
+    if (const esp_err_t err = (x); unlikely(err != ESP_OK)) {                                 \
       ESP_LOGE("", "%s:%d TRY(%s) fail => %s", __FILE__, __LINE__, #x, esp_err_to_name(err)); \
       return ret;                                                                             \
     }                                                                                         \
@@ -23,9 +23,11 @@
 
 #define TRY(x) OK_OR_RETURN(x, err)
 
+// TODO(summivox): add "unlikely" annotation
+
 #define CHECK(x)                                                    \
   do {                                                              \
-    if (!(x)) {                                                     \
+    if (unlikely(!(x))) {                                           \
       ESP_LOGE("", "%s:%d CHECK(%s) fail", __FILE__, __LINE__, #x); \
       DIEDIEDIE;                                                    \
     }                                                               \
@@ -34,7 +36,7 @@
 #define CHECK_OK(x)                                                                              \
   do {                                                                                           \
     const esp_err_t result = (x);                                                                \
-    if (result != ESP_OK) {                                                                      \
+    if (unlikely(result != ESP_OK)) {                                                            \
       ESP_LOGE(                                                                                  \
           "", "%s:%d CHECK_OK(%s) fail => %s", __FILE__, __LINE__, #x, esp_err_to_name(result)); \
       DIEDIEDIE;                                                                                 \
@@ -44,7 +46,7 @@
 #define CHECK_NOTNULL(x)                                                    \
   ({                                                                        \
     auto&& xx = (x);                                                        \
-    if (xx == nullptr) {                                                    \
+    if (unlikely(xx == nullptr)) {                                          \
       ESP_LOGE("", "%s:%d CHECK_NOTNULL(%s) fail", __FILE__, __LINE__, #x); \
       DIEDIEDIE;                                                            \
     }                                                                       \
