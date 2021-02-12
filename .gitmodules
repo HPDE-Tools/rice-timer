@@ -28,3 +28,6 @@
 [submodule "components/lvgl_esp32_drivers"]
 	path = components/lvgl_esp32_drivers
 	url = git@github.com:summivox/lvgl_esp32_drivers.git
+[submodule "components/eigen/eigen"]
+	path = components/eigen/eigen
+	url = https://gitlab.com/libeigen/eigen.git

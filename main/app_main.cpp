@@ -7,6 +7,7 @@
 #include <string>
 #include <string_view>
 
+#include "Eigen/Core"
 #include "driver/gpio.h"
 #include "fmt/chrono.h"
 #include "fmt/core.h"
@@ -142,11 +143,17 @@ void HandleSdCardStateChange(bool mounted) {
   }
 }
 
+void TestEigen() {
+  Eigen::Vector3f a{3.14, -1000000, 0};
+  ESP_LOGE(TAG, "%f %f %f", a[0], a[1], a[2]);
+}
+
 TaskHandle_t g_main_task{};
 void MainTask(void* /* unused */) {
   ESP_LOGI(TAG, "MainTask started");
   PrintDeviceMac();
   heap_caps_print_heap_info(MALLOC_CAP_8BIT);
+  TestEigen();  // debug
   vTaskDelay(pdMS_TO_TICKS(2000));
 
   CHECK_OK(SetupSdCard());
