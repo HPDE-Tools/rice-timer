@@ -31,3 +31,6 @@
 [submodule "components/eigen/eigen"]
 	path = components/eigen/eigen
 	url = https://gitlab.com/libeigen/eigen.git
+[submodule "components/geographiclib/geographiclib"]
+	path = components/geographiclib/geographiclib
+	url = https://git.code.sf.net/p/geographiclib/code
