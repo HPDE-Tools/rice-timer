@@ -136,7 +136,7 @@ esp_err_t SdCardDaemon::MountInternal() {
 
   sdmmc_slot_config_t slot_config = SDMMC_SLOT_CONFIG_DEFAULT();
   slot_config.width = 4;
-  slot_config.gpio_cd = option_.card_detect_pin;
+  // slot_config.gpio_cd = option_.card_detect_pin;  // we will handle the pin ourselves
 
   TRY(esp_vfs_fat_sdmmc_mount(
       CONFIG_MOUNT_ROOT, &host, &slot_config, &option_.mount_config, &sd_card_));
