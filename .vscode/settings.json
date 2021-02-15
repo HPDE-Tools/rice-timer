@@ -32,7 +32,10 @@
     "functional": "cpp",
     "variant": "cpp",
     "ostream": "cpp",
-    "atomic": "cpp"
+    "atomic": "cpp",
+    "condition_variable": "c",
+    "mutex": "c",
+    "cmath": "cpp"
   },
   "idf.flashType": "UART",
   "editor.formatOnSave": true,
