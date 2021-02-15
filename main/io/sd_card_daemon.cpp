@@ -1,3 +1,6 @@
+// Copyright 2021 summivox. All rights reserved.
+// Authors: summivox@gmail.com
+
 #include "io/sd_card_daemon.hpp"
 
 #include <optional>
@@ -149,6 +152,9 @@ esp_err_t SdCardDaemon::MountInternal() {
 
 bool SdCardDaemon::UnmountInternal() {
   if (sd_card_) {
+    // NOTE(summivox): Unfortunately this call is not thread-safe, and might fail when another
+    // thread is halfway through a VFS operation. I haven't found a way to avoid this, partially
+    // because there's no library function to "close everything" before/upon unmount.
     esp_vfs_fat_sdcard_unmount(CONFIG_MOUNT_ROOT, sd_card_);
     sd_card_ = nullptr;
     if (callback_) {
