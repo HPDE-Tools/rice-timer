@@ -75,13 +75,16 @@ inline TimeZulu ToZulu(TimeUnixWithUs t_unix) { return fmt::gmtime(t_unix.tv_sec
 constexpr int64_t ToMicroseconds(const TimeUnixWithUs& t_unix) {
   return int64_t{t_unix.tv_sec} * int64_t{1'000'000} + int64_t{t_unix.tv_usec};
 }
+constexpr int64_t ToMilliseconds(const TimeUnixWithUs& t_unix) {
+  return int64_t{t_unix.tv_sec} * int64_t{1'000} + int64_t{t_unix.tv_usec} / int64_t{1'000};
+}
 constexpr int64_t operator-(const TimeUnixWithUs& a, const TimeUnixWithUs& b) {
   return ToMicroseconds(a) - ToMicroseconds(b);
 }
 
 //////////////////////////////////////////////////////////////
 
-constexpr TimeZulu ToZulu(const int century, const minmea_date& date, const minmea_time& time) {
+constexpr TimeZulu ToZulu(int century, const minmea_date& date, const minmea_time& time) {
   return ZuluFromParts(
       date.year + century, date.month, date.day, time.hours, time.minutes, time.seconds);
 }
@@ -116,6 +119,8 @@ inline TimeUnixWithUs NowUnixWithUs() {
   gettimeofday(&ret, /*tz*/ nullptr);
   return ret;
 }
+inline int64_t NowUnixMs() { return ToMilliseconds(NowUnixWithUs()); }
+inline int64_t NowUnixUs() { return ToMicroseconds(NowUnixWithUs()); }
 inline TimeZulu NowZulu() { return ToZulu(NowUnix()); }
 
 ////////////////////////////////////////////////////////
