@@ -6,6 +6,7 @@ set(srcs
 "app/device_id.cpp"
 "app/gps_instance.cpp"
 "app/imu_instance.cpp"
+"app/lap_timer.cpp"
 "app/logger_instance.cpp"
 "app/sd_card_instance.cpp"
 "device/can.cpp"

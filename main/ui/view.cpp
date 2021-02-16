@@ -22,6 +22,8 @@ extern lv_font_t iosevka10l;
 extern lv_font_t iosevka12;
 extern lv_font_t mononoki10;
 extern lv_font_t mononoki22;
+extern lv_font_t liberation18bn;
+extern lv_font_t liberation22bn;
 
 namespace ui {
 
@@ -118,10 +120,14 @@ void ViewTask(void* /*unused*/) {
 
   TickType_t last_wake_time = xTaskGetTickCount();
 
-  // Screen 1: Dashboard
-  static lv_obj_t* screen1 = lv_disp_get_scr_act(nullptr);
+  static std::array screens = {
+      lv_disp_get_scr_act(nullptr),
+      lv_obj_create(nullptr, nullptr),
+      lv_obj_create(nullptr, nullptr),
+      lv_obj_create(nullptr, nullptr),
+  };
 
-  lv_style_t small_text;
+  static lv_style_t small_text;
   lv_style_init(&small_text);
   lv_style_set_text_font(&small_text, LV_STATE_DEFAULT, &iosevka10l);
   lv_style_set_text_letter_space(&small_text, LV_STATE_DEFAULT, 1);
@@ -130,6 +136,11 @@ void ViewTask(void* /*unused*/) {
   lv_style_init(&big_text);
   lv_style_set_text_font(&big_text, LV_STATE_DEFAULT, &mononoki22);
   lv_style_set_text_letter_space(&big_text, LV_STATE_DEFAULT, 1);
+
+  static lv_style_t lap_text;
+  lv_style_init(&lap_text);
+  lv_style_set_text_font(&lap_text, LV_STATE_DEFAULT, &liberation22bn);
+  lv_style_set_text_letter_space(&lap_text, LV_STATE_DEFAULT, 1);
 
   static lv_draw_line_dsc_t solid_line;
   lv_draw_line_dsc_init(&solid_line);
@@ -145,21 +156,23 @@ void ViewTask(void* /*unused*/) {
   dotted_line.dash_width = 1;
   dotted_line.dash_gap = 9;
 
-  static lv_obj_t* label_latlong = lv_label_create(screen1, nullptr);
+  // Screen 0: Device Dashboard
+
+  static lv_obj_t* label_latlong = lv_label_create(screens[0], nullptr);
   lv_obj_reset_style_list(label_latlong, 0);
   lv_obj_add_style(label_latlong, 0, &small_text);
   lv_label_set_text(label_latlong, "+12.34567 -123.12345");
   lv_obj_align(label_latlong, nullptr, LV_ALIGN_IN_TOP_MID, 0, 1);
   lv_obj_set_auto_realign(label_latlong, true);
 
-  static lv_obj_t* label_clock = lv_label_create(screen1, nullptr);
+  static lv_obj_t* label_clock = lv_label_create(screens[0], nullptr);
   lv_obj_reset_style_list(label_clock, 0);
   lv_obj_add_style(label_clock, 0, &big_text);
   lv_label_set_text(label_clock, "12:34:56");
   lv_obj_align(label_clock, label_latlong, LV_ALIGN_OUT_BOTTOM_MID, 0, 0);
   lv_obj_set_auto_realign(label_clock, true);
 
-  static lv_obj_t* bar_file = lv_bar_create(screen1, nullptr);
+  static lv_obj_t* bar_file = lv_bar_create(screens[0], nullptr);
   lv_obj_set_size(bar_file, 100, 4);
   lv_bar_set_range(bar_file, 0, CONFIG_MAX_LINES_PER_FILE);
   lv_obj_set_style_local_outline_width(bar_file, 0, LV_STATE_DEFAULT, 0);
@@ -167,13 +180,12 @@ void ViewTask(void* /*unused*/) {
   lv_bar_set_value(bar_file, 2500, LV_ANIM_OFF);
   lv_obj_align(bar_file, nullptr, LV_ALIGN_IN_BOTTOM_MID, 0, -1);
 
-  static lv_obj_t* label_imu = lv_label_create(screen1, label_latlong);
+  static lv_obj_t* label_imu = lv_label_create(screens[0], label_latlong);
   lv_obj_align(label_imu, label_clock, LV_ALIGN_OUT_BOTTOM_MID, 0, -2);
 
-  // Screen 2: IMU G-circle in the X-Y plane
-  static lv_obj_t* screen2 = lv_obj_create(nullptr, nullptr);
+  // Screen 1: IMU G-circle in the X-Y plane
 
-  static lv_obj_t* canvas_imu = lv_canvas_create(screen2, nullptr);
+  static lv_obj_t* canvas_imu = lv_canvas_create(screens[1], nullptr);
   lv_obj_set_size(canvas_imu, 63, 63);
   lv_obj_align(canvas_imu, nullptr, LV_ALIGN_CENTER, 0, 0);
   static uint8_t canvas_buf[LV_CANVAS_BUF_SIZE_INDEXED_1BIT(63, 63)];
@@ -181,19 +193,33 @@ void ViewTask(void* /*unused*/) {
   lv_canvas_set_palette(canvas_imu, 0, LV_COLOR_BLACK);
   lv_canvas_set_palette(canvas_imu, 1, LV_COLOR_WHITE);
 
-  // Screen 3: Lap Timing (currently fully off)
-  static lv_obj_t* screen3 = lv_obj_create(nullptr, nullptr);
+  // Screen 2: Lap Timing
+
+  static lv_obj_t* label_lap_time = lv_label_create(screens[2], nullptr);
+  lv_obj_reset_style_list(label_lap_time, 0);
+  lv_obj_add_style(label_lap_time, 0, &lap_text);
+  lv_label_set_text(label_lap_time, "01'23\"45");
+  lv_obj_align(label_lap_time, nullptr, LV_ALIGN_CENTER, 0, 0);
+  lv_obj_set_auto_realign(label_lap_time, true);
 
   while (true) {
+    static int active_screen_index = 0;
     static uint8_t last_buttons = 0;
     const uint8_t buttons = ReadButtons(0b0000010);
     const uint8_t click = last_buttons & ~buttons;
     if (click & 0b001) {
-      lv_scr_load(screen1);
+      // up button (fixed for switching screen)
+      if (--active_screen_index < 0) {
+        active_screen_index = screens.size() - 1;
+      }
+      lv_scr_load(screens[active_screen_index]);
     } else if (click & 0b010) {
-      lv_scr_load(screen2);
+      // center button (NOP for now)
     } else if (click & 0b100) {
-      lv_scr_load(screen3);
+      if (++active_screen_index >= screens.size()) {
+        active_screen_index = 0;
+      }
+      lv_scr_load(screens[active_screen_index]);
     }
     last_buttons = buttons;
     ESP_LOGD(TAG, "buttons: %d; click: %d", buttons, click);
@@ -232,8 +258,20 @@ void ViewTask(void* /*unused*/) {
     } else {
       lv_label_set_text(label_imu, "");
     }
-    const TimeUnixWithUs end_update = NowUnixWithUs();
 
+    if (const auto& lap_start_time_ms = g_model.lap_start_time_ms) {
+      const int64_t diff_total_ms = ToMilliseconds(begin) - *lap_start_time_ms;
+      const int diff_ms = diff_total_ms % 1'000;
+      const int diff_sec = (diff_total_ms / 1'000) % 60;
+      const int diff_min = diff_total_ms / 60'000;
+      lv_label_set_text_fmt(
+          label_lap_time, "%2d#%2d'%02d\"%02d", g_model.num_laps, diff_min, diff_sec, diff_ms / 10);
+    } else {
+      // lv_label_set_text(label_lap_time, "no lap");
+      lv_label_set_text_fmt(label_lap_time, "%2d#%2d'%02d\"%02d", 12, 34, 56, 78);
+    }
+
+    const TimeUnixWithUs end_update = NowUnixWithUs();
     lv_task_handler();
     const TimeUnixWithUs end_render = NowUnixWithUs();
     ESP_LOGD(TAG, "update: %lld; all: %lld", end_update - begin, end_render - begin);

@@ -18,6 +18,7 @@
 #include "app/device_id.hpp"
 #include "app/gps_instance.hpp"
 #include "app/imu_instance.hpp"
+#include "app/lap_timer.hpp"
 #include "app/logger_instance.hpp"
 #include "app/sd_card_instance.hpp"
 #include "common/logging.hpp"
@@ -153,6 +154,7 @@ void Main() {
   CHECK_OK(SetupGps());
   CHECK_OK(SetupCan());
   CHECK_OK(SetupImu());
+  CHECK_OK(SetupLapTimer());
   CHECK_OK(ui::ViewInit());
 
   ESP_LOGI(TAG, "MainTask setup complete");
@@ -163,6 +165,7 @@ void Main() {
   CHECK_OK(g_gpsd->Start(HandleGpsData, HandleGpsLine));
   CHECK_OK(g_can->Start());
   CHECK_OK(g_imu->Start(HandleImuRawData));
+  CHECK_OK(StartLapTimerTask());
   CHECK_OK(ui::ViewStart());
 }
 
@@ -192,6 +195,7 @@ void CanaryTask(void* /*unused*/) {
     if (g_sd_card) {
       LOG_WATER_MARK("sd", g_sd_card->handle());
     }
+    LOG_WATER_MARK("lap", GetLapTimerTask());
     LOG_WATER_MARK("ui/view", ui::g_view_task);
     vTaskDelayUntil(&last_wake_tick, pdMS_TO_TICKS(kCanaryPeriodMs));
   }
