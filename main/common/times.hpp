@@ -89,6 +89,10 @@ constexpr TimeZulu ToZulu(int century, const minmea_date& date, const minmea_tim
       date.year + century, date.month, date.day, time.hours, time.minutes, time.seconds);
 }
 
+inline TimeUnixWithUs ToUnixWithUs(int century, const minmea_date& date, const minmea_time& time) {
+  return ToUnix(ToZulu(century, date, time), time.microseconds);
+}
+
 constexpr uint16_t ToFat32Date(const TimeZulu& t_zulu) {
   // bit15:9
   //     Year origin from 1980 (0..127)

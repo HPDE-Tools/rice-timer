@@ -70,6 +70,7 @@ void HandleGpsData(
               g.millisecond = rmc.time.microseconds / 1000;
               g.latitude = minmea_tocoord(&rmc.latitude);
               g.longitude = minmea_tocoord(&rmc.longitude);
+              UpdateGps(rmc);
             }
           },
           [](const minmea_sentence_gga& gga) {

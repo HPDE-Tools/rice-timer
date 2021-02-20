@@ -37,6 +37,8 @@ struct Model {
 
   std::optional<int64_t> lap_start_time_ms = {};
   int32_t num_laps = 0;
+  float ltm_x;
+  float ltm_y;
 };
 
 extern Model g_model;

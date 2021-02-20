@@ -198,9 +198,16 @@ void ViewTask(void* /*unused*/) {
   static lv_obj_t* label_lap_time = lv_label_create(screens[2], nullptr);
   lv_obj_reset_style_list(label_lap_time, 0);
   lv_obj_add_style(label_lap_time, 0, &lap_text);
-  lv_label_set_text(label_lap_time, "01'23\"45");
+  lv_label_set_text(label_lap_time, "12#34'56\"78");
   lv_obj_align(label_lap_time, nullptr, LV_ALIGN_CENTER, 0, 0);
   lv_obj_set_auto_realign(label_lap_time, true);
+
+  static lv_obj_t* label_lap_xy = lv_label_create(screens[2], nullptr);
+  lv_obj_reset_style_list(label_lap_xy, 0);
+  lv_obj_add_style(label_lap_xy, 0, &small_text);
+  lv_label_set_text(label_lap_xy, "+1234.56 +1234.56");
+  lv_obj_align(label_lap_xy, label_lap_time, LV_ALIGN_OUT_TOP_MID, 0, -3);
+  lv_obj_set_auto_realign(label_lap_xy, true);
 
   while (true) {
     static int active_screen_index = 0;
@@ -267,9 +274,10 @@ void ViewTask(void* /*unused*/) {
       lv_label_set_text_fmt(
           label_lap_time, "%2d#%2d'%02d\"%02d", g_model.num_laps, diff_min, diff_sec, diff_ms / 10);
     } else {
-      // lv_label_set_text(label_lap_time, "no lap");
-      lv_label_set_text_fmt(label_lap_time, "%2d#%2d'%02d\"%02d", 12, 34, 56, 78);
+      lv_label_set_text(label_lap_time, "no lap");
+      // lv_label_set_text_fmt(label_lap_time, "%2d#%2d'%02d\"%02d", 12, 34, 56, 78);
     }
+    lv_label_set_text_fmt(label_lap_xy, "%+09.2f %+09.2f", g_model.ltm_x, g_model.ltm_y);
 
     const TimeUnixWithUs end_update = NowUnixWithUs();
     lv_task_handler();

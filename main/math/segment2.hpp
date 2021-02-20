@@ -27,6 +27,13 @@ class Segment2 {
   Segment2(const Segment2<TFloatOther>& other)
       : a_(other.a_.cast()), b_(other.b_.cast()), dir_(other.dir_.cast()) {}
 
+  template <typename TFloatOther>
+  Segment2<TFloat>& operator=(const Segment2<TFloatOther>& other) {
+    a_ = other.a_.cast();
+    b_ = other.b_.cast();
+    dir_ = other.dir_.cast();
+  }
+
   Eigen::Vector2<TFloat> Vec() const { return b_ - a_; }
   Eigen::Vector2<TFloat> NormalDir() const { return {-dir_.y(), dir_.x()}; }
 
@@ -43,9 +50,9 @@ class Segment2 {
   const Eigen::Vector2<TFloat>& dir() const { return dir_; }
 
  private:
-  const Eigen::Vector2<TFloat> a_{};
-  const Eigen::Vector2<TFloat> b_{};
-  const Eigen::Vector2<TFloat> dir_{};
+  Eigen::Vector2<TFloat> a_{};
+  Eigen::Vector2<TFloat> b_{};
+  Eigen::Vector2<TFloat> dir_{};
 
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 };

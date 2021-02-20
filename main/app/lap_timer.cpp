@@ -41,10 +41,13 @@ constexpr double kOriginLon = std::midpoint(kStartLeftLon, kStartRightLon);
 class LapTimer : public Task {
  public:
   LapTimer()
-      : gps_queue_(CHECK_NOTNULL(xQueueCreate(kLapTimerGpsQueueSize, sizeof(minmea_sentence_rmc)))),
-        start_finish_{
-            LatLonToLtm(kStartLeftLat, kStartLeftLon),
-            LatLonToLtm(kStartRightLat, kStartRightLon)} {}
+      : gps_queue_(
+            CHECK_NOTNULL(xQueueCreate(kLapTimerGpsQueueSize, sizeof(minmea_sentence_rmc)))) {
+    double unused_x;
+    ltm_.Forward(kOriginLon, kOriginLat, kOriginLon, /*out*/ unused_x, /*out*/ origin_y_);
+    start_finish_ = {
+        LatLonToLtm(kStartLeftLat, kStartLeftLon), LatLonToLtm(kStartRightLat, kStartRightLon)};
+  }
 
   virtual ~LapTimer() { Task::Kill(); }
 
@@ -67,6 +70,7 @@ class LapTimer : public Task {
     double x = NAN;
     double y = NAN;
     ltm_.Forward(kOriginLon, lat, lon, /*out*/ x, /*out*/ y);
+    y -= origin_y_;
     return {x, y};
   }
 
@@ -84,7 +88,9 @@ class LapTimer : public Task {
       const Eigen::Vector2f curr_gps_pos =
           LatLonToLtm(minmea_tocoord(&rmc.latitude), minmea_tocoord(&rmc.longitude));
       // TODO(summivox): properly pass through timestamp
-      const int64_t curr_gps_time_ms = ToUnix(ToZulu(2000, rmc.date, rmc.time)) * 1'000;
+      const int64_t curr_gps_time_ms = ToMilliseconds(ToUnixWithUs(2000, rmc.date, rmc.time));
+      ui::g_model.ltm_x = curr_gps_pos.x();
+      ui::g_model.ltm_y = curr_gps_pos.y();
       SCOPE_EXIT {
         last_gps_pos_ = curr_gps_pos;
         last_gps_time_ms_ = curr_gps_time_ms;
@@ -120,6 +126,7 @@ class LapTimer : public Task {
       GeographicLib::Constants::WGS84_f(),
       /*scale*/ 1.0,
   };
+  double origin_y_;
   QueueHandle_t gps_queue_{};
 
   math::Segment2f start_finish_;
