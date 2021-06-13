@@ -13,15 +13,24 @@ namespace {}  // namespace
 std::unique_ptr<CanManager> g_can;
 
 esp_err_t SetupCan() {
+  gpio_num_t tx_pin = GPIO_NUM_NC;
+  gpio_num_t rx_pin = GPIO_NUM_NC;
+  if constexpr (CONFIG_HW_VERSION == 1) {
+    tx_pin = GPIO_NUM_12;
+    rx_pin = GPIO_NUM_27;
+  } else if constexpr (CONFIG_HW_VERSION == 2) {
+    tx_pin = GPIO_NUM_33;
+    rx_pin = GPIO_NUM_32;
+  } else if constexpr (CONFIG_HW_VERSION == 3) {
+    tx_pin = GPIO_NUM_32;
+    rx_pin = GPIO_NUM_35;
+  } else {
+    return ESP_ERR_NOT_SUPPORTED;
+  }
   g_can = CanManager::Create({
-#if CONFIG_HW_VERSION == 1
-    .tx_pin = GPIO_NUM_12, .rx_pin = GPIO_NUM_27,
-#elif CONFIG_HW_VERSION == 2
-    .tx_pin = GPIO_NUM_33, .rx_pin = GPIO_NUM_32,
-#elif CONFIG_HW_VERSION == 3
-    .tx_pin = GPIO_NUM_32, .rx_pin = GPIO_NUM_35,
-#endif
-    .priority = kPriorityCan,
+      .tx_pin = tx_pin,
+      .rx_pin = rx_pin,
+      .priority = kPriorityCan,
   });
   return g_can ? ESP_OK : ESP_FAIL;
 }

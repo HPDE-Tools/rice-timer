@@ -17,43 +17,36 @@ esp_err_t SetupSharedSpiBus() {
   if (configured) {
     return ESP_OK;
   }
-  spi_bus_config_t bus_config;
+
+  gpio_num_t sclk_pin = GPIO_NUM_NC;
+  gpio_num_t mosi_pin = GPIO_NUM_NC;
+  gpio_num_t miso_pin = GPIO_NUM_NC;
   if constexpr (CONFIG_HW_VERSION == 1) {
-    bus_config = {
-        .mosi_io_num = GPIO_NUM_25,
-        .miso_io_num = GPIO_NUM_39,
-        .sclk_io_num = GPIO_NUM_26,
-        .quadwp_io_num = -1,
-        .quadhd_io_num = -1,
-        .max_transfer_sz = 0,
-        .flags = 0,
-        .intr_flags = 0,
-    };
+    mosi_pin = GPIO_NUM_25;
+    miso_pin = GPIO_NUM_39;
+    sclk_pin = GPIO_NUM_26;
   } else if constexpr (CONFIG_HW_VERSION == 2) {
-    bus_config = {
-        .mosi_io_num = GPIO_NUM_23,
-        .miso_io_num = GPIO_NUM_19,
-        .sclk_io_num = GPIO_NUM_18,
-        .quadwp_io_num = -1,
-        .quadhd_io_num = -1,
-        .max_transfer_sz = 0,
-        .flags = 0,
-        .intr_flags = 0,
-    };
+    mosi_pin = GPIO_NUM_23;
+    miso_pin = GPIO_NUM_19;
+    sclk_pin = GPIO_NUM_18;
   } else if constexpr (CONFIG_HW_VERSION == 3) {
-    bus_config = {
-        .mosi_io_num = GPIO_NUM_23,
-        .miso_io_num = GPIO_NUM_NC,
-        .sclk_io_num = GPIO_NUM_18,
-        .quadwp_io_num = -1,
-        .quadhd_io_num = -1,
-        .max_transfer_sz = 0,
-        .flags = 0,
-        .intr_flags = 0,
-    };
+    mosi_pin = GPIO_NUM_23;
+    miso_pin = GPIO_NUM_NC;
+    sclk_pin = GPIO_NUM_18;
   } else {
-    return ESP_FAIL;
+    return ESP_ERR_NOT_SUPPORTED;
   }
+
+  spi_bus_config_t bus_config = {
+      .mosi_io_num = mosi_pin,
+      .miso_io_num = miso_pin,
+      .sclk_io_num = sclk_pin,
+      .quadwp_io_num = -1,
+      .quadhd_io_num = -1,
+      .max_transfer_sz = 0,
+      .flags = 0,
+      .intr_flags = 0,
+  };
   TRY(spi_bus_initialize(VSPI_HOST, &bus_config, /*dma*/ VSPI_HOST));
   configured = true;
   return ESP_OK;

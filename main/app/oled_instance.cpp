@@ -17,13 +17,14 @@ std::unique_ptr<OledSsd1309> g_oled;
 
 esp_err_t SetupOled() {
   TRY(SetupSharedSpiBus());
+
   gpio_num_t cs_pin = GPIO_NUM_NC;
   gpio_num_t dc_pin = GPIO_NUM_NC;
   if constexpr (CONFIG_HW_VERSION == 3) {
     cs_pin = GPIO_NUM_5;
     dc_pin = GPIO_NUM_19;
   } else {
-    return ESP_FAIL;
+    return ESP_ERR_NOT_SUPPORTED;
   }
 
   g_oled = OledSsd1309::Create(OledSsd1309::Option{

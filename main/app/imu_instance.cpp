@@ -13,8 +13,8 @@ std::unique_ptr<Lsm6dsr> g_imu{};
 
 esp_err_t SetupImu() {
   TRY(SetupSharedSpiBus());
-  gpio_num_t cs_pin;
-  gpio_num_t interrupt_pin;
+  gpio_num_t cs_pin = GPIO_NUM_NC;
+  gpio_num_t interrupt_pin = GPIO_NUM_NC;
   if constexpr (CONFIG_HW_VERSION == 1) {
     // DEBUG: measure interrupt handling latency and task handling latency
     gpio_pad_select_gpio(GPIO_NUM_13);
@@ -29,7 +29,7 @@ esp_err_t SetupImu() {
     cs_pin = GPIO_NUM_33;
     interrupt_pin = GPIO_NUM_39;  // SENSOR_VN
   } else {
-    return ESP_FAIL;
+    return ESP_ERR_NOT_SUPPORTED;
   }
   TRY(mcpwm_gpio_init(MCPWM_UNIT_0, MCPWM_CAP_1, interrupt_pin));
   g_imu = Lsm6dsr::Create(

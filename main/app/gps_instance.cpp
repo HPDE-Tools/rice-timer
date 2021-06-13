@@ -34,11 +34,25 @@ std::unique_ptr<GpsDaemon> g_gpsd;
 esp_err_t SetupGps() {
   const uart_port_t uart_num = UART_NUM_2;
   uart_dev_t* const uart_dev = &UART2;
-  const gpio_num_t tx_pin = GPIO_NUM_17;
-  const gpio_num_t rx_pin = GPIO_NUM_16;
-  const gpio_num_t pps_pin = CONFIG_HW_VERSION == 1 ? GPIO_NUM_4 :
-                             CONFIG_HW_VERSION == 2 ? GPIO_NUM_21 :
-                                                      GPIO_NUM_NC;
+
+  gpio_num_t tx_pin = GPIO_NUM_NC;
+  gpio_num_t rx_pin = GPIO_NUM_NC;
+  gpio_num_t pps_pin = GPIO_NUM_NC;
+  if constexpr (CONFIG_HW_VERSION == 1) {
+    tx_pin = GPIO_NUM_17;
+    rx_pin = GPIO_NUM_16;
+    pps_pin = GPIO_NUM_4;
+  } else if constexpr (CONFIG_HW_VERSION == 2) {
+    tx_pin = GPIO_NUM_17;
+    rx_pin = GPIO_NUM_16;
+    pps_pin = GPIO_NUM_21;
+  } else if constexpr (CONFIG_HW_VERSION == 3) {
+    tx_pin = GPIO_NUM_27;
+    rx_pin = GPIO_NUM_26;
+    pps_pin = GPIO_NUM_25;
+  } else {
+    return ESP_ERR_NOT_SUPPORTED;
+  }
 
   const uart_config_t config{
       .baud_rate = kGpsUartDesiredBaudRate,
