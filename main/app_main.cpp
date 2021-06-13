@@ -20,6 +20,7 @@
 #include "app/imu_instance.hpp"
 #include "app/lap_timer.hpp"
 #include "app/logger_instance.hpp"
+#include "app/oled_instance.hpp"
 #include "app/sd_card_instance.hpp"
 #include "common/logging.hpp"
 #include "common/strings.hpp"
@@ -104,10 +105,16 @@ void HandleGpsLine(std::string_view line, bool is_valid_nmea) {
 
 void HandleImuRawData(const Lsm6dsr::RawImuData& data) {
   ui::g_model.imu = ui::Model::Imu{
-      .ax = data.ax * float{2.0f / 32767},
-      .ay = data.ay * float{2.0f / 32767},
-      .az = data.az * float{2.0f / 32767},
+      .ax = app::g_imu->AccelRawToG(data.ax),
+      .ay = app::g_imu->AccelRawToG(data.ay),
+      .az = app::g_imu->AccelRawToG(data.az),
   };
+  static int n = -1;
+  if (++n == 0) {
+    ESP_LOGI(
+        TAG, "%10.3f,%10.3f,%10.3f", ui::g_model.imu->ax, ui::g_model.imu->ay, ui::g_model.imu->az);
+    n = -100;
+  }
   SendToLogger(fmt::format(
       "i,{},{:+06d},{:+06d},{:+06d},{:+06d},{:+06d},{:+06d}",
       data.capture,
@@ -152,10 +159,11 @@ void Main() {
 
   CHECK_OK(SetupSdCard());
   CHECK_OK(SetupLogger());
-  CHECK_OK(SetupGps());
-  CHECK_OK(SetupCan());
+  // CHECK_OK(SetupGps());
+  // CHECK_OK(SetupCan());
   CHECK_OK(SetupImu());
-  CHECK_OK(SetupLapTimer());
+  CHECK_OK(SetupOled());
+  // CHECK_OK(SetupLapTimer());
   CHECK_OK(ui::ViewInit());
 
   ESP_LOGI(TAG, "MainTask setup complete");
@@ -163,10 +171,10 @@ void Main() {
 
   CHECK_OK(g_sd_card->Start(HandleSdCardStateChange));
   // the logger is started by the SD card daemon
-  CHECK_OK(g_gpsd->Start(HandleGpsData, HandleGpsLine));
-  CHECK_OK(g_can->Start());
+  // CHECK_OK(g_gpsd->Start(HandleGpsData, HandleGpsLine));
+  // CHECK_OK(g_can->Start());
   CHECK_OK(g_imu->Start(HandleImuRawData));
-  CHECK_OK(StartLapTimerTask());
+  // CHECK_OK(StartLapTimerTask());
   CHECK_OK(ui::ViewStart());
 }
 

@@ -13,6 +13,7 @@
 #include "lvgl.h"
 #include "lvgl_helpers.h"
 
+#include "app/oled_instance.hpp"
 #include "common/logging.hpp"
 #include "common/times.hpp"
 #include "priorities.hpp"
@@ -47,19 +48,28 @@ constexpr uint8_t inner_y[] = {34, 40, 45, 49, 51, 51, 49, 45, 40, 34,
 
 esp_err_t SetupDisplayDriver() {
   lv_init();
-  lvgl_driver_init();
 
-  static lv_color_t buf1[DISP_BUF_SIZE];
-  static lv_disp_buf_t disp_buf;
-  lv_disp_buf_init(&disp_buf, buf1, /*buf2*/ nullptr, DISP_BUF_SIZE);
+  if constexpr (CONFIG_HW_VERSION <= 2) {
+    lvgl_driver_init();
 
-  lv_disp_drv_t disp_drv;
-  lv_disp_drv_init(&disp_drv);
-  disp_drv.flush_cb = disp_driver_flush;
-  disp_drv.rounder_cb = disp_driver_rounder;
-  disp_drv.set_px_cb = disp_driver_set_px;
-  disp_drv.buffer = &disp_buf;
-  if (lv_disp_drv_register(&disp_drv) == nullptr) {
+    static lv_color_t buf1[DISP_BUF_SIZE];
+    static lv_disp_buf_t disp_buf;
+    lv_disp_buf_init(&disp_buf, buf1, /*buf2*/ nullptr, DISP_BUF_SIZE);
+
+    lv_disp_drv_t disp_drv;
+    lv_disp_drv_init(&disp_drv);
+    disp_drv.flush_cb = disp_driver_flush;
+    disp_drv.rounder_cb = disp_driver_rounder;
+    disp_drv.set_px_cb = disp_driver_set_px;
+    disp_drv.buffer = &disp_buf;
+    if (lv_disp_drv_register(&disp_drv) == nullptr) {
+      return ESP_FAIL;
+    }
+  } else if constexpr (CONFIG_HW_VERSION == 3) {
+    TRY(app::g_oled->SetDisplayEnabled(false));
+    TRY(app::g_oled->RegisterLvglDriver());
+    TRY(app::g_oled->SetDisplayEnabled(true));
+  } else {
     return ESP_FAIL;
   }
 
@@ -67,6 +77,9 @@ esp_err_t SetupDisplayDriver() {
 }
 
 uint8_t ReadButtons(uint8_t addr_7bit) {
+  if constexpr (CONFIG_HW_VERSION == 3) {
+    return 0;
+  }
   constexpr uint8_t kRequest[] = {0x02, 0x04, 0x00, 0x04};
   {
     i2c_cmd_handle_t txn = i2c_cmd_link_create();
@@ -282,7 +295,7 @@ void ViewTask(void* /*unused*/) {
     const TimeUnixWithUs end_update = NowUnixWithUs();
     lv_task_handler();
     const TimeUnixWithUs end_render = NowUnixWithUs();
-    ESP_LOGD(TAG, "update: %lld; all: %lld", end_update - begin, end_render - begin);
+    ESP_LOGW(TAG, "update: %lld; all: %lld", end_update - begin, end_render - begin);
 
     vTaskDelayUntil(&last_wake_time, pdMS_TO_TICKS(kRefreshPeriodMs));
   }

@@ -26,6 +26,7 @@ constexpr int kImuPollPeriodMs = 1;
 constexpr uint8_t kRead = 0x80;
 constexpr uint8_t kWrite = 0x00;
 
+constexpr uint8_t kSpiThreeWire = 0b00001100;  // CTRL3_C: SIM | IF_INC
 constexpr uint8_t kChipSelfId = 0x6B;
 
 std::optional<uint8_t> ReadOneReg(spi_device_handle_t spi, uint8_t reg) {
@@ -68,8 +69,6 @@ Lsm6dsr::Lsm6dsr(CaptureChannel interrupt_capture, Option option)
 Lsm6dsr::~Lsm6dsr() { Teardown(); }
 
 esp_err_t Lsm6dsr::Setup() {
-  // NOTE: Half duplex operation does NOT support using DMA with both MOSI and MISO phases.
-  // This is okay because one burst read is only 12 bytes (6 axes + 1 temp sensor, each 2 bytes)
   spi_device_interface_config_t spi_device_config = {
       .command_bits = 0,
       .address_bits = 8,
@@ -78,15 +77,20 @@ esp_err_t Lsm6dsr::Setup() {
       .duty_cycle_pos = 128,
       .cs_ena_pretrans = 1,
       .cs_ena_posttrans = 1,
-      .clock_speed_hz = 10'000'000,
+      .clock_speed_hz = 10'000'000,  // because we can
       .input_delay_ns = 0,
       .spics_io_num = option_.cs_pin,
-      .flags = SPI_DEVICE_HALFDUPLEX,
+      .flags = SPI_DEVICE_HALFDUPLEX | (option_.spi_three_wire ? SPI_DEVICE_3WIRE : 0u),
       .queue_size = 16,
       .pre_cb = nullptr,
       .post_cb = nullptr,
   };
   TRY(spi_bus_add_device(option_.spi, &spi_device_config, &spi_device_));
+
+  if (option_.spi_three_wire) {
+    // set 3-wire half duplex flag first (otherwise we can't read)
+    TRY(WriteOneReg(spi_device_, Reg::CTRL3_C, kSpiThreeWire));
+  }
 
   // read and validate chip self-ID register
   const std::optional<uint8_t> who_am_i = ReadOneReg(spi_device_, Reg::WHO_AM_I);

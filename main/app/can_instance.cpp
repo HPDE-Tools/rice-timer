@@ -18,6 +18,8 @@ esp_err_t SetupCan() {
     .tx_pin = GPIO_NUM_12, .rx_pin = GPIO_NUM_27,
 #elif CONFIG_HW_VERSION == 2
     .tx_pin = GPIO_NUM_33, .rx_pin = GPIO_NUM_32,
+#elif CONFIG_HW_VERSION == 3
+    .tx_pin = GPIO_NUM_32, .rx_pin = GPIO_NUM_35,
 #endif
     .priority = kPriorityCan,
   });

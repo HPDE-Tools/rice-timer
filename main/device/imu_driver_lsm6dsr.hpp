@@ -49,6 +49,7 @@ class Lsm6dsr : Task {
     spi_host_device_t spi = VSPI_HOST;
     gpio_num_t cs_pin = GPIO_NUM_NC;
     gpio_num_t interrupt_pin = GPIO_NUM_NC;
+    bool spi_three_wire = false;
 
     OutputDataRate accel_output_data_rate = kDisabled;
     AccelFullScale accel_full_scale = kAccelFs2g;
@@ -82,6 +83,40 @@ class Lsm6dsr : Task {
 
   esp_err_t Start(RawImuDataSubscriber subscriber);
   void Stop();
+
+  float AccelRawToG(int16_t a) const {
+    switch (option_.accel_full_scale) {
+      case kAccelFs2g:
+        return a * float{2.0f / 32767};
+      case kAccelFs4g:
+        return a * float{4.0f / 32767};
+      case kAccelFs8g:
+        return a * float{6.0f / 32767};
+      case kAccelFs16g:
+        return a * float{8.0f / 32767};
+      default:
+        return 0.0f;
+    }
+  }
+
+  float GyroRawToDps(int16_t w) const {
+    switch (option_.gyro_full_scale) {
+      case kGyroFs125Dps:
+        return w * float{125.0f / 32767};
+      case kGyroFs250Dps:
+        return w * float{250.0f / 32767};
+      case kGyroFs500Dps:
+        return w * float{500.0f / 32767};
+      case kGyroFs1000Dps:
+        return w * float{1000.0f / 32767};
+      case kGyroFs2000Dps:
+        return w * float{2000.0f / 32767};
+      case kGyroFs4000Dps:
+        return w * float{4000.0f / 32767};
+      default:
+        return 0;
+    }
+  }
 
  protected:
   void Run() override;
