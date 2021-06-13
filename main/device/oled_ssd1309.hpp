@@ -69,19 +69,3 @@ class OledSsd1309 {
       lv_color_t color,
       lv_opa_t opa);
 };
-
-extern "C" {
-
-esp_err_t ssd1309_init(void);
-void ssd1309_flush(lv_disp_drv_t* drv, const lv_area_t* area, lv_color_t* color_map);
-void ssd1309_rounder(lv_disp_drv_t* disp_drv, lv_area_t* area);
-void ssd1309_set_px(
-    lv_disp_drv_t* disp_drv,
-    uint8_t* buf,
-    lv_coord_t buf_w,
-    lv_coord_t x,
-    lv_coord_t y,
-    lv_color_t color,
-    lv_opa_t opa);
-
-}  // extern "C"

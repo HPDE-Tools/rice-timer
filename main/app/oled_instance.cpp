@@ -34,8 +34,8 @@ esp_err_t SetupOled() {
   if (!g_oled) {
     return ESP_FAIL;
   }
-  vTaskDelay(pdMS_TO_TICKS(100));
-  TRY(g_oled->SetDisplayEnabled(true));
+  TRY(g_oled->Flush());
+
   return ESP_OK;
 }
 

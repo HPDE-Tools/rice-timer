@@ -31,7 +31,7 @@ namespace ui {
 namespace {
 
 constexpr char TAG[] = "ui/view";
-constexpr int kRefreshPeriodMs = 100;
+constexpr int kRefreshPeriodMs = 50;
 
 constexpr int kViewStackSize = 6000;
 
@@ -66,7 +66,6 @@ esp_err_t SetupDisplayDriver() {
       return ESP_FAIL;
     }
   } else if constexpr (CONFIG_HW_VERSION == 3) {
-    TRY(app::g_oled->SetDisplayEnabled(false));
     TRY(app::g_oled->RegisterLvglDriver());
     TRY(app::g_oled->SetDisplayEnabled(true));
   } else {
@@ -295,7 +294,7 @@ void ViewTask(void* /*unused*/) {
     const TimeUnixWithUs end_update = NowUnixWithUs();
     lv_task_handler();
     const TimeUnixWithUs end_render = NowUnixWithUs();
-    ESP_LOGW(TAG, "update: %lld; all: %lld", end_update - begin, end_render - begin);
+    ESP_LOGD(TAG, "update: %lld; all: %lld", end_update - begin, end_render - begin);
 
     vTaskDelayUntil(&last_wake_time, pdMS_TO_TICKS(kRefreshPeriodMs));
   }

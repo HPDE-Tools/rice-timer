@@ -79,6 +79,7 @@ OledSsd1309::OledSsd1309(Option option) : option_(option) {
   // NOTE: address of the buffer is the same address as the driver object.
   // This makes it easy to recover the driver object from C API.
   static_assert(offsetof(OledSsd1309, buf_) == 0);
+  std::fill(buf_.begin(), buf_.end(), 0u);
 }
 
 esp_err_t OledSsd1309::Setup() {
@@ -134,7 +135,7 @@ esp_err_t OledSsd1309::Flush() {
 }
 
 esp_err_t OledSsd1309::RegisterLvglDriver() {
-  lv_disp_buf_init(&lv_disp_buf_, buf_.data(), /*buf2*/ nullptr, buf_.size());
+  lv_disp_buf_init(&lv_disp_buf_, buf_.data(), /*buf2*/ nullptr, kNativePixels);
   lv_disp_drv_init(&lv_disp_drv_);
   lv_disp_drv_.hor_res = kNativeWidth;
   lv_disp_drv_.ver_res = kNativeHeight;
@@ -147,7 +148,6 @@ esp_err_t OledSsd1309::RegisterLvglDriver() {
   };
   lv_disp_drv_.flush_cb = [](lv_disp_drv_t* drv, const lv_area_t* area, lv_color_t* color_map) {
     auto self = reinterpret_cast<OledSsd1309*>(drv->buffer->buf1);
-    ESP_LOGE(TAG, "flush");
     self->Flush();
     lv_disp_flush_ready(drv);
   };
@@ -167,12 +167,11 @@ void OledSsd1309::LvglSetPx(
     lv_coord_t y,
     lv_color_t color,
     lv_opa_t opa) {
-  ESP_LOGE(TAG, "set(%d,%d)", x, y);
   const int page = y / 8;
   const int bit = y % 8;
   if (color.full) {
-    buf[page * kNativeWidth + x] |= (1u << bit);
-  } else {
     buf[page * kNativeWidth + x] &= ~(1u << bit);
+  } else {
+    buf[page * kNativeWidth + x] |= (1u << bit);
   }
 }
