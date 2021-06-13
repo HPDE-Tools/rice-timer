@@ -57,7 +57,7 @@ esp_err_t ReadRegs(spi_device_handle_t spi, uint8_t reg_start, uint8_t len, uint
   txn.length = 0;
   txn.rxlength = 8 * len;
   txn.rx_buffer = out_buf;
-  TRY(spi_device_transmit(spi, &txn));
+  TRY(spi_device_polling_transmit(spi, &txn));
   return ESP_OK;
 }
 
@@ -77,8 +77,8 @@ esp_err_t Lsm6dsr::Setup() {
       .duty_cycle_pos = 128,
       .cs_ena_pretrans = 1,
       .cs_ena_posttrans = 1,
-      .clock_speed_hz = 10'000'000,  // because we can
-      .input_delay_ns = 0,
+      .clock_speed_hz = 10'000'000,
+      .input_delay_ns = 10,
       .spics_io_num = option_.cs_pin,
       .flags = SPI_DEVICE_HALFDUPLEX | (option_.spi_three_wire ? SPI_DEVICE_3WIRE : 0u),
       .queue_size = 16,
@@ -173,6 +173,15 @@ void Lsm6dsr::Run() {
     SCOPE_EXIT { spi_device_release_bus(spi_device_); };
 
     // check that both accel and gyro are indeed ready
+    //
+    // NOTE(summivox): While this increases the handling overhead, it also magically avoids an ESP32
+    // hardware/library bug where only the first data byte is read into our buffer, while hooking up
+    // a logic analyzer clearly shows that all bytes are indeed transmitted.
+    //
+    // Reason for this is unknown, but is confirmed to be related to DMA. Disabling DMA will also
+    // make this work individually, but affects the entire SPI bus (shared with other peripherals).
+    //
+    // see: https://www.esp32.com/viewtopic.php?t=2519
     const std::optional<uint8_t> status_reg = ReadOneReg(spi_device_, Reg::STATUS_REG);
     if (!status_reg) {
       ESP_LOGE(TAG, "cannot get status reg");
@@ -183,6 +192,7 @@ void Lsm6dsr::Run() {
       portYIELD();
       continue;
     }
+
     if (ReadRegs(spi_device_, Reg::OUT_TEMP_L, sizeof(buf), buf) != ESP_OK) {
       ESP_LOGE(TAG, "cannot start SPI transaction");
       continue;
