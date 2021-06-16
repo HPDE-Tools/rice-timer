@@ -13,6 +13,7 @@
 #include "lvgl.h"
 #include "lvgl_helpers.h"
 
+#include "app/encoder_button_input.hpp"
 #include "app/oled_instance.hpp"
 #include "common/logging.hpp"
 #include "common/times.hpp"
@@ -68,6 +69,7 @@ esp_err_t SetupDisplayDriver() {
   } else if constexpr (CONFIG_HW_VERSION == 3) {
     TRY(app::g_oled->RegisterLvglDriver());
     TRY(app::g_oled->SetDisplayEnabled(true));
+    TRY(app::RegisterLvglInputDriver());
   } else {
     return ESP_FAIL;
   }

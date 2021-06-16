@@ -157,7 +157,7 @@ void Main() {
   heap_caps_print_heap_info(MALLOC_CAP_8BIT);
   vTaskDelay(pdMS_TO_TICKS(2000));
 
-  CHECK_OK(SetupSdCard());
+  // CHECK_OK(SetupSdCard());
   CHECK_OK(SetupLogger());
   // CHECK_OK(SetupGps());
   // CHECK_OK(SetupCan());
@@ -169,7 +169,7 @@ void Main() {
   ESP_LOGI(TAG, "MainTask setup complete");
   heap_caps_print_heap_info(MALLOC_CAP_8BIT);
 
-  CHECK_OK(g_sd_card->Start(HandleSdCardStateChange));
+  // CHECK_OK(g_sd_card->Start(HandleSdCardStateChange)); //
   // the logger is started by the SD card daemon
   // CHECK_OK(g_gpsd->Start(HandleGpsData, HandleGpsLine));
   // CHECK_OK(g_can->Start());

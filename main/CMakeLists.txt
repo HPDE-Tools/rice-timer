@@ -4,6 +4,7 @@ set(srcs
 
 "app/can_instance.cpp"
 "app/device_id.cpp"
+"app/encoder_button_input.cpp"
 "app/gps_instance.cpp"
 "app/imu_instance.cpp"
 "app/lap_timer.cpp"

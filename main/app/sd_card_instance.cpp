@@ -26,7 +26,7 @@ esp_err_t SetupSdCard() {
               .max_files = 4,
               .allocation_unit_size = 0,  // only needed if format
           },
-      .card_detect_pin = GPIO_NUM_27,
+      .card_detect_pin = card_detect_pin,
       .priority = kPrioritySdCard,
   });
   return g_sd_card ? ESP_OK : ESP_FAIL;
