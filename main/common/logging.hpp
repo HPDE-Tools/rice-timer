@@ -23,8 +23,6 @@
 
 #define TRY(x) OK_OR_RETURN(x, err)
 
-// TODO(summivox): add "unlikely" annotation
-
 #define CHECK(x)                                                    \
   do {                                                              \
     if (unlikely(!(x))) {                                           \

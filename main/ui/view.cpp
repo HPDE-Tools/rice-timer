@@ -69,7 +69,6 @@ esp_err_t SetupDisplayDriver() {
   } else if constexpr (CONFIG_HW_VERSION == 3) {
     TRY(app::g_oled->RegisterLvglDriver());
     TRY(app::g_oled->SetDisplayEnabled(true));
-    TRY(app::RegisterLvglInputDriver());
   } else {
     return ESP_FAIL;
   }
@@ -111,6 +110,7 @@ TaskHandle_t g_view_task{};
 
 esp_err_t ViewInit() {
   SetupDisplayDriver();
+  app::RegisterLvglInputDrivers();
   return ESP_OK;
 }
 

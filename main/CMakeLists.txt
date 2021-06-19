@@ -14,6 +14,7 @@ set(srcs
 "app/shared_spi_bus.cpp"
 "device/can.cpp"
 "device/capture_manager.cpp"
+"device/encoder.cpp"
 "device/gps_daemon.cpp"
 "device/gps_driver_mtk.cpp"
 "device/gps_utils.cpp"

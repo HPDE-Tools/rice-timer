@@ -34,3 +34,15 @@ constexpr int16_t Sint16LeAt(const uint8_t* bytes) {
   return static_cast<int16_t>(
       static_cast<uint16_t>(bytes[0]) | (static_cast<uint16_t>(bytes[1]) << uint16_t{8}));
 }
+
+// http://shimpossible.blogspot.com/2013/08/containerof-and-offsetof-in-c.html
+
+template <typename P, typename M>
+constexpr size_t OffsetOf(const M P::*member) {
+  return (size_t) & (reinterpret_cast<P*>(0)->*member);
+}
+
+template <typename P, typename M>
+constexpr P* ContainerOf(M* ptr, const M P::*member) {
+  return (P*)((char*)ptr - OffsetOf(member));
+}
