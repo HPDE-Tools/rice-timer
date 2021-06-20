@@ -153,7 +153,7 @@ void Main() {
 
   CHECK_OK(SetupSdCard());
   CHECK_OK(SetupLogger());
-  // CHECK_OK(SetupGps());
+  CHECK_OK(SetupGps());
   CHECK_OK(SetupCan());
   CHECK_OK(SetupImu());
   CHECK_OK(SetupOled());
@@ -165,7 +165,7 @@ void Main() {
 
   CHECK_OK(g_sd_card->Start(HandleSdCardStateChange));
   // the logger is started by the SD card daemon
-  // CHECK_OK(g_gpsd->Start(HandleGpsData, HandleGpsLine));
+  CHECK_OK(g_gpsd->Start(HandleGpsData, HandleGpsLine));
   CHECK_OK(g_can->Start());
   CHECK_OK(g_imu->Start(HandleImuRawData));
   // CHECK_OK(StartLapTimerTask());

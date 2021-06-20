@@ -12,6 +12,10 @@
 
 namespace app {
 
+namespace {
+static const char TAG[] = "spi";
+}  // namespace
+
 esp_err_t SetupSharedSpiBus() {
   static bool configured = false;
   if (configured) {

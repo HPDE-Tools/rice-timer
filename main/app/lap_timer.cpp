@@ -154,13 +154,15 @@ esp_err_t StartLapTimerTask() {
 }
 
 void ResetLapTimer() {
-  CHECK(g_lap_timer != nullptr);
-  g_lap_timer->Reset();
+  if (g_lap_timer) {
+    g_lap_timer->Reset();
+  }
 }
 
 void UpdateGps(const minmea_sentence_rmc& rmc) {
-  CHECK(g_lap_timer != nullptr);
-  g_lap_timer->UpdateGps(rmc);
+  if (g_lap_timer) {
+    g_lap_timer->UpdateGps(rmc);
+  }
 }
 
 }  // namespace app

@@ -8,8 +8,10 @@
 #include "driver/uart.h"
 #include "soc/uart_periph.h"
 
+#include "app/shared_i2c_bus.hpp"
 #include "common/logging.hpp"
 #include "device/gps_driver_mtk.hpp"
+#include "device/gps_driver_ublox.hpp"
 #include "device/gps_utils.hpp"
 #include "io/uart_line_reader.hpp"
 #include "priorities.hpp"
@@ -25,16 +27,7 @@ constexpr int kGpsUartQueueSize = 128;
 
 constexpr int kGpsDesiredOutputPeriodMs = 100;
 
-}  // namespace
-
-QueueHandle_t g_gps_uart_queue;
-std::unique_ptr<io::UartLineReader> g_gps_line_reader;
-std::unique_ptr<GpsDaemon> g_gpsd;
-
-esp_err_t SetupGps() {
-  const uart_port_t uart_num = UART_NUM_2;
-  uart_dev_t* const uart_dev = &UART2;
-
+esp_err_t SetupUartPins(uart_port_t uart_num, uart_dev_t* uart_dev) {
   gpio_num_t tx_pin = GPIO_NUM_NC;
   gpio_num_t rx_pin = GPIO_NUM_NC;
   gpio_num_t pps_pin = GPIO_NUM_NC;
@@ -67,6 +60,22 @@ esp_err_t SetupGps() {
       uart_num, kGpsUartRxBufSize, kGpsUartTxBufSize, kGpsUartQueueSize, &g_gps_uart_queue, 0));
   TRY(uart_param_config(uart_num, &config));
   TRY(uart_set_pin(uart_num, tx_pin, rx_pin, UART_PIN_NO_CHANGE, UART_PIN_NO_CHANGE));
+  TRY(mcpwm_gpio_init(MCPWM_UNIT_0, MCPWM_CAP_0, pps_pin));
+  return ESP_OK;
+}
+
+}  // namespace
+
+QueueHandle_t g_gps_uart_queue;
+std::unique_ptr<io::UartLineReader> g_gps_line_reader;
+std::unique_ptr<GpsDaemon> g_gpsd;
+
+esp_err_t SetupGps() {
+  TRY(SetupSharedI2cBus());
+
+  const uart_port_t uart_num = UART_NUM_2;
+  uart_dev_t* const uart_dev = &UART2;
+  TRY(SetupUartPins(uart_num, uart_dev));
 
   g_gps_line_reader = io::UartLineReader::Create(
       uart_num,
@@ -78,8 +87,6 @@ esp_err_t SetupGps() {
   if (!g_gps_line_reader) {
     return ESP_FAIL;
   }
-
-  TRY(mcpwm_gpio_init(MCPWM_UNIT_0, MCPWM_CAP_0, pps_pin));
 
   g_gpsd = GpsDaemon::Create(
       g_gps_line_reader.get(),
@@ -95,9 +102,15 @@ esp_err_t SetupGps() {
                   kGpsUartDesiredBaudRate,
                   kGpsDesiredOutputPeriodMs),
               false);
+        } else if constexpr (2 <= CONFIG_HW_VERSION && CONFIG_HW_VERSION <= 3) {
+          OK_OR_RETURN(
+              SetupUbloxGpsI2c(
+                  I2C_NUM_0,
+                  /*7-bit address*/ 0x42,
+                  kGpsUartDesiredBaudRate,
+                  kGpsDesiredOutputPeriodMs),
+              false);
         }
-        // HW v2 GPS is pre-configured and does not need autobaud or config command
-        // Using the MTK routine does not hurt though (it should be able to autobaud)
         return true;
       },
       GpsDaemon::Option{
