@@ -11,7 +11,6 @@
 #include "fmt/core.h"
 #include "freertos/FreeRTOS.h"
 #include "lvgl.h"
-#include "lvgl_helpers.h"
 
 #include "app/encoder_button_input.hpp"
 #include "app/oled_instance.hpp"
@@ -49,59 +48,13 @@ constexpr uint8_t inner_y[] = {34, 40, 45, 49, 51, 51, 49, 45, 40, 34,
 
 esp_err_t SetupDisplayDriver() {
   lv_init();
-
-  if constexpr (CONFIG_HW_VERSION <= 2) {
-    lvgl_driver_init();
-
-    static lv_color_t buf1[DISP_BUF_SIZE];
-    static lv_disp_buf_t disp_buf;
-    lv_disp_buf_init(&disp_buf, buf1, /*buf2*/ nullptr, DISP_BUF_SIZE);
-
-    lv_disp_drv_t disp_drv;
-    lv_disp_drv_init(&disp_drv);
-    disp_drv.flush_cb = disp_driver_flush;
-    disp_drv.rounder_cb = disp_driver_rounder;
-    disp_drv.set_px_cb = disp_driver_set_px;
-    disp_drv.buffer = &disp_buf;
-    if (lv_disp_drv_register(&disp_drv) == nullptr) {
-      return ESP_FAIL;
-    }
-  } else if constexpr (CONFIG_HW_VERSION == 3) {
+  if constexpr (CONFIG_HW_VERSION == 3) {
     TRY(app::g_oled->RegisterLvglDriver());
     TRY(app::g_oled->SetDisplayEnabled(true));
   } else {
-    return ESP_FAIL;
+    return ESP_ERR_NOT_SUPPORTED;
   }
-
   return ESP_OK;
-}
-
-uint8_t ReadButtons(uint8_t addr_7bit) {
-  if constexpr (CONFIG_HW_VERSION == 3) {
-    return 0;
-  }
-  constexpr uint8_t kRequest[] = {0x02, 0x04, 0x00, 0x04};
-  {
-    i2c_cmd_handle_t txn = i2c_cmd_link_create();
-    OK_OR_RETURN(i2c_master_start(txn), 0);
-    OK_OR_RETURN(i2c_master_write_byte(txn, addr_7bit << 1 | I2C_MASTER_WRITE, true), 0);
-    OK_OR_RETURN(i2c_master_write(txn, kRequest, sizeof(kRequest), true), 0);
-    OK_OR_RETURN(i2c_master_stop(txn), 0);
-    OK_OR_RETURN(i2c_master_cmd_begin(I2C_NUM_0, txn, 10), 0);
-    i2c_cmd_link_delete(txn);
-  }
-  vTaskDelay(pdMS_TO_TICKS(2));
-  uint8_t result[5];
-  {
-    i2c_cmd_handle_t txn = i2c_cmd_link_create();
-    OK_OR_RETURN(i2c_master_start(txn), 0);
-    OK_OR_RETURN(i2c_master_write_byte(txn, addr_7bit << 1 | I2C_MASTER_READ, true), 0);
-    OK_OR_RETURN(i2c_master_read(txn, result, sizeof(result), I2C_MASTER_ACK), 0);
-    OK_OR_RETURN(i2c_master_stop(txn), 0);
-    OK_OR_RETURN(i2c_master_cmd_begin(I2C_NUM_0, txn, 10), 0);
-    i2c_cmd_link_delete(txn);
-  }
-  return result[2];
 }
 
 }  // namespace
@@ -226,7 +179,7 @@ void ViewTask(void* /*unused*/) {
   while (true) {
     static int active_screen_index = 0;
     static uint8_t last_buttons = 0;
-    const uint8_t buttons = ReadButtons(0b0000010);
+    const uint8_t buttons{};
     const uint8_t click = last_buttons & ~buttons;
     if (click & 0b001) {
       // up button (fixed for switching screen)
