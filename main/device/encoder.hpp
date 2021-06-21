@@ -28,10 +28,10 @@
 class Encoder {
  public:
   struct Option {
-    pcnt_unit_t unit;
-    gpio_num_t a_pin;       // leading phase for count increase
-    gpio_num_t b_pin;       // trailing phase for count increase
-    uint16_t filter_value;  // 0 <= filter_value < 1024
+    pcnt_unit_t unit = PCNT_UNIT_0;
+    gpio_num_t a_pin = GPIO_NUM_NC;  // leading phase for count increase
+    gpio_num_t b_pin = GPIO_NUM_NC;  // trailing phase for count increase
+    uint16_t filter_value = 0;       // 0 <= filter_value < 1024
   };
 
   std::optional<int16_t> count() const;

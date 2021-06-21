@@ -26,6 +26,7 @@ esp_err_t RegisterEncoderDriver() {
       .unit = PCNT_UNIT_0,
       .a_pin = GPIO_NUM_22,
       .b_pin = GPIO_NUM_21,
+      .filter_value = kFilterValue,
   });
   if (!g_encoder) {
     return ESP_FAIL;
@@ -66,6 +67,10 @@ esp_err_t RegisterButtonDriver() {
   lv_indev_drv_t driver;
   lv_indev_drv_init(&driver);
   driver.type = LV_INDEV_TYPE_KEYPAD;
+  driver.read_cb = [](lv_indev_drv_t* drv, lv_indev_data_t* data) {
+    // TODO
+    return false;
+  };
   // TODO: maybe consider keypad?
   return g_buttons_indev ? ESP_OK : ESP_FAIL;
 }
@@ -81,6 +86,7 @@ esp_err_t RegisterLvglInputDrivers() {
   }
 
   TRY(RegisterEncoderDriver());
+  TRY(RegisterButtonDriver());
   return ESP_OK;
 }
 
