@@ -37,6 +37,6 @@ idf_component_register(
     INCLUDE_DIRS "."
 )
 
-target_compile_options(${COMPONENT_LIB} PRIVATE -std=gnu++2a -Wno-deprecated-declarations)
+target_compile_options(${COMPONENT_LIB} PRIVATE -std=gnu++2a -Wno-deprecated-declarations -Wno-multichar)
 target_compile_options(${COMPONENT_LIB} PUBLIC -DLV_LVGL_H_INCLUDE_SIMPLE)
 # target_link_libraries(${COMPONENT_LIB} PUBLIC stdc++fs)
