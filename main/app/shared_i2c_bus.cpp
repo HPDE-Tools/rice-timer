@@ -12,7 +12,10 @@
 namespace app {
 
 namespace {
-static const char TAG[] = "i2c";
+constexpr char TAG[] = "i2c";
+
+constexpr int kI2cClockSpeed = 486'912;           // NOTE: ~400 kbit/s after ESP32 distortion (?)
+constexpr int kI2cTimeout = APB_CLK_FREQ * 1e-3;  // 1ms timeout tolerance
 }  // namespace
 
 esp_err_t SetupSharedI2cBus() {
@@ -45,12 +48,13 @@ esp_err_t SetupSharedI2cBus() {
       .scl_pullup_en = false,
       .master =
           {
-              .clk_speed = 400'000,
+              .clk_speed = kI2cClockSpeed,
           },
       .clk_flags = I2C_SCLK_SRC_FLAG_FOR_NOMAL,
   };
 
   TRY(i2c_param_config(port, &conf));
+  TRY(i2c_set_timeout(port, kI2cTimeout));
   TRY(i2c_driver_install(port, I2C_MODE_MASTER, /*rx buf*/ 0, /*tx buf*/ 0, /*flags*/ 0));
   return ESP_OK;
 }
