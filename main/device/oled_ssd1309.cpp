@@ -117,15 +117,24 @@ esp_err_t OledSsd1309::Setup() {
 }
 
 esp_err_t OledSsd1309::SetDisplayEnabled(bool enabled) {
-  uint8_t command = enabled ? 0xAF : 0xAE;
+  const uint8_t command = enabled ? 0xAF : 0xAE;
   return SendCommand(&command, 1);
 }
 esp_err_t OledSsd1309::SetDisplayAllOn(bool enabled) {
-  uint8_t command = enabled ? 0xA5 : 0xA4;
+  const uint8_t command = enabled ? 0xA5 : 0xA4;
   return SendCommand(&command, 1);
 }
 esp_err_t OledSsd1309::SetDisplayInverted(bool inverted) {
-  uint8_t command = inverted ? 0xA7 : 0xA6;
+  const uint8_t command = inverted ? 0xA7 : 0xA6;
+  return SendCommand(&command, 1);
+}
+
+esp_err_t OledSsd1309::SetFlipLR(bool flipped) {
+  const uint8_t command = flipped ? 0xA1 : 0xA0;
+  return SendCommand(&command, 1);
+}
+esp_err_t OledSsd1309::SetFlipUD(bool flipped) {
+  const uint8_t command = flipped ? 0xC8 : 0xC0;
   return SendCommand(&command, 1);
 }
 
