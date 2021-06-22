@@ -3,11 +3,14 @@
 
 #include "device/oled_ssd1309.hpp"
 
+#include <array>
+
 #include "driver/gpio.h"
 #include "driver/spi_common.h"
 #include "driver/spi_master.h"
 
 #include "common/logging.hpp"
+#include "common/utils.hpp"
 
 namespace {
 
@@ -60,6 +63,15 @@ esp_err_t SetupSpi(
 
 }  // namespace
 
+std::pair<uint8_t, uint8_t> OledSsd1309::GetCommand(int index) {
+  CHECK(0 <= index && index < kNumCommands);
+  if (index < kNumFlags) {
+    return {kFlagCommands[index][flags_[index]], kNop};
+  }
+  index -= kNumFlags;
+  return {kFixedConfigCommands[index][0], kFixedConfigCommands[index][1]};
+}
+
 esp_err_t OledSsd1309::SendCommand(const uint8_t* command, int len) {
   spi_transaction_t txn{};
   txn.length = len * 8;
@@ -83,62 +95,68 @@ OledSsd1309::OledSsd1309(Option option) : option_(option) {
 }
 
 esp_err_t OledSsd1309::Setup() {
-  // clang-format off
-  constexpr uint8_t init_command[] {
-    0xFD, 0x12,  // unlock
-    0xAE,        // display off
-    0xA4,        // no display all on
-    0xA6,        // polarity: 0=black, 1=white
-
-    // ==== panel-specific settings ====
-    0xD5, 0xA0,  // clock
-    0xA8, 0x3F,  // multiplex ratio: 63 + 1 = 64
-    0xDA, 0x12,  // interleave mode
-    0x81, 0x7F,  // current control
-    0xD9, 0x82,  // pre-charge period
-    0xDB, 0x34,  // VCOMH deselect level
-
-    // ==== reset geometry settings ====
-    0xD3, 0x00,  // display offset
-    0x40,        // display start line
-    0xA0,        // LR no flip
-    0xC0,        // UD no flip
-
-    // ==== VRAM addressing settings ====
-    0x20, 0x20,    // horizontal addressing mode
-    0x21, 0, 127,  // column range
-    0x22, 0, 7,    // page (8-row) range
-  };
-  // clang-format on
+  // first things to do when powering up: unlock commands and turn off the screen
+  constexpr uint8_t preamble[]{0xFD, 0x12, 0xAE};
 
   TRY(SetupSpi(option_.spi, option_.cs_pin, option_.dc_pin, &spi_device_));
-  TRY(SendCommand(init_command, sizeof(init_command)));
+  TRY(SendCommand(preamble, sizeof(preamble)));
+  for (int i = 0; i < kNumCommands; i++) {
+    uint8_t command[2];
+    std::tie(command[0], command[1]) = GetCommand(i);
+    TRY(SendCommand(command, 2));
+  }
   return ESP_OK;
 }
 
 esp_err_t OledSsd1309::SetDisplayEnabled(bool enabled) {
-  const uint8_t command = enabled ? 0xAF : 0xAE;
+  flags_[kFlagDisplayEnabled] = enabled;
+  const auto [command, _] = GetCommand(kFlagDisplayEnabled);
   return SendCommand(&command, 1);
 }
 esp_err_t OledSsd1309::SetDisplayAllOn(bool enabled) {
-  const uint8_t command = enabled ? 0xA5 : 0xA4;
+  flags_[kFlagDisplayAllOn] = enabled;
+  const auto [command, _] = GetCommand(kFlagDisplayAllOn);
   return SendCommand(&command, 1);
 }
 esp_err_t OledSsd1309::SetDisplayInverted(bool inverted) {
-  const uint8_t command = inverted ? 0xA7 : 0xA6;
+  flags_[kFlagDisplayInverted] = inverted;
+  const auto [command, _] = GetCommand(kFlagDisplayInverted);
+  return SendCommand(&command, 1);
+}
+esp_err_t OledSsd1309::SetFlipLr(bool flipped) {
+  flags_[kFlagFlipLr] = flipped;
+  const auto [command, _] = GetCommand(kFlagFlipLr);
+  return SendCommand(&command, 1);
+}
+esp_err_t OledSsd1309::SetFlipUd(bool flipped) {
+  flags_[kFlagFlipUd] = flipped;
+  const auto [command, _] = GetCommand(kFlagFlipUd);
   return SendCommand(&command, 1);
 }
 
-esp_err_t OledSsd1309::SetFlipLR(bool flipped) {
-  const uint8_t command = flipped ? 0xA1 : 0xA0;
-  return SendCommand(&command, 1);
-}
-esp_err_t OledSsd1309::SetFlipUD(bool flipped) {
-  const uint8_t command = flipped ? 0xC8 : 0xC0;
-  return SendCommand(&command, 1);
+void OledSsd1309::SetPixel(uint8_t row, uint8_t col, bool on) {
+  const uint8_t page = row / 8;
+  const uint8_t bit = row % 8;
+  if (on) {
+    buf_[page * kNativeWidth + col] |= 1 << bit;
+  } else {
+    buf_[page * kNativeWidth + col] &= ~(1 << bit);
+  }
 }
 
 esp_err_t OledSsd1309::Flush() {
+  // clang-format off
+  uint8_t command[] = {
+    kNop, kNop,  // slot for 2-byte rolling command
+    0x21, 0, 127,  // column (segment) range
+    0x22, 0, 7,  // page (8-row) range
+  };
+  // clang-format on
+  std::tie(command[0], command[1]) = GetCommand(rolling_command_index_);
+  if (++rolling_command_index_ >= kNumCommands) {
+    rolling_command_index_ = 0;
+  }
+  TRY(SendCommand(command, sizeof(command)));
   TRY(SendData(buf_.data(), buf_.size()));
   return ESP_OK;
 }
@@ -168,6 +186,14 @@ esp_err_t OledSsd1309::RegisterLvglDriver() {
   return ESP_OK;
 }
 
+// NOTE: LVGL defaults to black-on-white for mono displays, so we use the following
+// pixel mapping to avoid having to double-invert everything.
+//
+//  | lv_color_t     | bit in buffer | OLED  |
+//  |----------------|---------------|-------|
+//  | LV_COLOR_WHITE | 0             | off   |
+//  | LV_COLOR_BLACK | 1             | on    |
+//
 void OledSsd1309::LvglSetPx(
     lv_disp_drv_t* disp_drv,
     uint8_t* buf,
@@ -176,20 +202,6 @@ void OledSsd1309::LvglSetPx(
     lv_coord_t y,
     lv_color_t color,
     lv_opa_t opa) {
-  const int page = y / 8;
-  const int bit = y % 8;
-
-  // NOTE: LVGL defaults to black-on-white for mono displays, so we use the following
-  // pixel mapping to avoid having to double-invert everything.
-  //
-  //  | lv_color_t     | bit in buffer | OLED  |
-  //  |----------------|---------------|-------|
-  //  | LV_COLOR_WHITE | 0             | off   |
-  //  | LV_COLOR_BLACK | 1             | on    |
-
-  if (color.full) {
-    buf[page * kNativeWidth + x] &= ~(1u << bit);
-  } else {
-    buf[page * kNativeWidth + x] |= (1u << bit);
-  }
+  auto self = reinterpret_cast<OledSsd1309*>(buf);
+  self->SetPixel(y, x, !color.full);
 }
