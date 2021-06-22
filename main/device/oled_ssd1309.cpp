@@ -157,7 +157,7 @@ esp_err_t OledSsd1309::RegisterLvglDriver() {
   };
   lv_disp_drv_.flush_cb = [](lv_disp_drv_t* drv, const lv_area_t* area, lv_color_t* color_map) {
     auto self = reinterpret_cast<OledSsd1309*>(drv->buffer->buf1);
-    self->Flush();
+    (void)self->Flush();  // NOTE: no way to report failure here
     lv_disp_flush_ready(drv);
   };
   lv_disp_drv_.set_px_cb = LvglSetPx;
@@ -178,6 +178,15 @@ void OledSsd1309::LvglSetPx(
     lv_opa_t opa) {
   const int page = y / 8;
   const int bit = y % 8;
+
+  // NOTE: LVGL defaults to black-on-white for mono displays, so we use the following
+  // pixel mapping to avoid having to double-invert everything.
+  //
+  //  | lv_color_t     | bit in buffer | OLED  |
+  //  |----------------|---------------|-------|
+  //  | LV_COLOR_WHITE | 0             | off   |
+  //  | LV_COLOR_BLACK | 1             | on    |
+
   if (color.full) {
     buf[page * kNativeWidth + x] &= ~(1u << bit);
   } else {
