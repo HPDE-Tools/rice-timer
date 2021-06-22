@@ -76,6 +76,8 @@ void HandleGpsData(
               g.millisecond = rmc.time.microseconds / 1000;
               g.latitude = minmea_tocoord(&rmc.latitude);
               g.longitude = minmea_tocoord(&rmc.longitude);
+              g.speed_knot = minmea_tofloat(&rmc.speed);
+              g.course_deg = minmea_tofloat(&rmc.course);
               ++ui::g_model.counter.gps;
               UpdateGps(rmc);
             }

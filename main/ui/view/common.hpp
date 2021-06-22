@@ -29,5 +29,15 @@ constexpr char SignChar(TFloat t) {
   return t >= 0 ? '+' : '-';
 }
 
+constexpr char const* kCourseStrings[] = {"N", "NE", "E", "SE", "S", "SW", "W", "NW", "N"};
+
+template <typename TFloat>
+const char* CourseToString(TFloat course_deg) {
+  if (0 <= course_deg && course_deg <= 360) {
+    return kCourseStrings[(int)std::round(course_deg * TFloat{8.0 / 360.0})];
+  }
+  return "?";
+}
+
 }  // namespace view
 }  // namespace ui

@@ -55,6 +55,15 @@ struct Style {
     return s;
   }();
 
+  lv_style_t text_medium = []() {
+    lv_style_t s;
+    lv_style_init(&s);
+    lv_style_set_text_font(&s, LV_STATE_DEFAULT, &iosevka12);
+    lv_style_set_text_letter_space(&s, LV_STATE_DEFAULT, 1);
+    lv_style_set_text_line_space(&s, LV_STATE_DEFAULT, -2);
+    return s;
+  }();
+
   lv_style_t text_big = []() {
     lv_style_t s;
     lv_style_init(&s);

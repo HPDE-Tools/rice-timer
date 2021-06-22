@@ -26,6 +26,9 @@ using ParsedNmea = std::variant<
     minmea_sentence_gst,
     minmea_sentence_zda>;
 
+constexpr float kKnotInMph = 1.151f;
+constexpr float kKnotInKph = 1.852f;
+
 /// Attempt to parse an NMEA sentence
 ///
 /// \returns one of the minmea_sentence_xxx variants, if the line successfully parsed;

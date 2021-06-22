@@ -23,6 +23,8 @@ struct Model {
     uint16_t millisecond;
     float latitude;
     float longitude;
+    float speed_knot;
+    float course_deg;
   };
   std::optional<Gps> gps{};
 

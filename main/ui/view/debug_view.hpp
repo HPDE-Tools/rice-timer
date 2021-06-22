@@ -5,6 +5,8 @@
 
 #include "ui/view/common.hpp"
 
+#include "device/gps_utils.hpp"
+
 namespace ui {
 namespace view {
 
@@ -38,15 +40,19 @@ struct DebugView {
     lv_obj_set_style_local_pad_top(table, 1, LV_STATE_DEFAULT, 1);
 
     lv_obj_add_style(table, 2, &g_style->text_tiny);
-    lv_obj_set_style_local_pad_top(table, 2, LV_STATE_DEFAULT, 1);
+    lv_obj_set_style_local_pad_top(table, 1, LV_STATE_DEFAULT, 1);
+
+    lv_obj_add_style(table, 3, &g_style->text_medium);
+    lv_obj_add_style(table, 3, &g_style->container_hr_bottom);
+    lv_obj_set_style_local_pad_top(table, 3, LV_STATE_DEFAULT, 1);
 
     lv_table_set_row_cnt(table, 3);
     lv_table_set_col_cnt(table, 5);
     lv_table_set_col_width(table, 0, 34);
-    lv_table_set_col_width(table, 1, 26);
-    lv_table_set_col_width(table, 2, 24);
-    lv_table_set_col_width(table, 3, 10);
-    lv_table_set_col_width(table, 4, 34);
+    lv_table_set_col_width(table, 1, 24);
+    lv_table_set_col_width(table, 2, 28);
+    lv_table_set_col_width(table, 3, 9);
+    lv_table_set_col_width(table, 4, 33);
 
     lv_table_set_cell_merge_right(table, 0, 0, true);
     lv_table_set_cell_merge_right(table, 0, 1, true);
@@ -60,7 +66,10 @@ struct DebugView {
     lv_table_set_cell_merge_right(table, 2, 3, true);
     lv_table_set_cell_merge_right(table, 2, 4, true);
 
+    lv_table_set_cell_type(table, 1, 2, 3);
+    lv_table_set_cell_align(table, 1, 2, LV_LABEL_ALIGN_CENTER);
     lv_table_set_cell_value(table, 1, 3, "G\nI\nC");
+
     lv_table_set_cell_type(table, 2, 0, 2);
     lv_table_set_cell_type(table, 2, 1, 2);
     lv_table_set_cell_type(table, 2, 2, 2);
@@ -144,6 +153,20 @@ struct DebugView {
     }
   }
 
+  void RenderSpeedCourse(const std::optional<Model::Gps>& gps) {
+    if (gps) {
+      lv_table_set_cell_value_fmt(
+          table,
+          1,
+          2,
+          "%03d\n%s",
+          (int)std::round(gps->speed_knot * kKnotInMph),
+          CourseToString(gps->course_deg));
+    } else {
+      lv_table_set_cell_value(table, 1, 2, "?\n");
+    }
+  }
+
   void RenderThroughput(int dt, const Model::Counter& counter) {
     const int curr_gps = counter.gps.load();
     const int curr_imu = counter.imu.load();
@@ -190,6 +213,7 @@ struct DebugView {
   void RenderFast(const Model& model) {
     RenderGps(model.gps);
     RenderImu(model.imu);
+    RenderSpeedCourse(model.gps);
   }
 
   void RenderSlow(int dt, const Model& model) {
