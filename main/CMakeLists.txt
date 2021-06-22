@@ -29,6 +29,7 @@ set(srcs
 "io/uart_line_reader.cpp"
 "ui/model.cpp"
 "ui/view.cpp"
+"ui/style.cpp"
 )
 file(GLOB fonts "ui/fonts/*.c")
 

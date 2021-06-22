@@ -5,11 +5,8 @@
 
 #include <optional>
 
-#include "driver/gpio.h"
-#include "driver/i2c.h"
-#include "esp_log.h"
-#include "fmt/core.h"
 #include "freertos/FreeRTOS.h"
+#include "freertos/task.h"
 #include "lvgl.h"
 
 #include "app/encoder_button_input.hpp"
@@ -18,13 +15,8 @@
 #include "common/times.hpp"
 #include "priorities.hpp"
 #include "ui/model.hpp"
-
-extern lv_font_t iosevka10l;
-extern lv_font_t iosevka12;
-extern lv_font_t mononoki10;
-extern lv_font_t mononoki22;
-extern lv_font_t liberation18bn;
-extern lv_font_t liberation22bn;
+#include "ui/style.hpp"
+#include "ui/view_impl.hpp"
 
 namespace ui {
 
@@ -33,24 +25,15 @@ namespace {
 constexpr char TAG[] = "ui/view";
 constexpr int kRefreshPeriodMs = 50;
 
-constexpr int kViewStackSize = 6000;
-
-// TODO(summivox): rename or remove or something
-// pixel coordinates for the IMU G-circle
-constexpr uint8_t outer_x[] = {62, 61, 58, 55, 51, 46, 40, 34, 28, 22, 16, 11, 7,  4,  1,  0,
-                               0,  1,  4,  7,  11, 16, 22, 28, 34, 40, 46, 51, 55, 58, 61, 62};
-constexpr uint8_t outer_y[] = {34, 40, 46, 51, 55, 58, 61, 62, 62, 61, 58, 55, 51, 46, 40, 34,
-                               28, 22, 16, 11, 7,  4,  1,  0,  0,  1,  4,  7,  11, 16, 22, 28};
-constexpr uint8_t inner_x[] = {51, 49, 45, 40, 34, 28, 22, 17, 13, 11,
-                               11, 13, 17, 22, 28, 34, 40, 45, 49, 51};
-constexpr uint8_t inner_y[] = {34, 40, 45, 49, 51, 51, 49, 45, 40, 34,
-                               28, 22, 17, 13, 11, 11, 13, 17, 22, 28};
+constexpr int kViewStackSize = 8000;
 
 esp_err_t SetupDisplayDriver() {
   lv_init();
   if constexpr (CONFIG_HW_VERSION == 3) {
+    TRY(app::SetupOled());
     TRY(app::g_oled->RegisterLvglDriver());
     TRY(app::g_oled->SetDisplayEnabled(true));
+    TRY(app::RegisterLvglInputDrivers());
   } else {
     return ESP_ERR_NOT_SUPPORTED;
   }
@@ -59,198 +42,45 @@ esp_err_t SetupDisplayDriver() {
 
 }  // namespace
 
-TaskHandle_t g_view_task{};
+std::unique_ptr<View> g_view{};
 
-esp_err_t ViewInit() {
-  SetupDisplayDriver();
-  app::RegisterLvglInputDrivers();
+esp_err_t SetupView() {
+  g_view = View::Create();
+  return g_view ? ESP_OK : ESP_FAIL;
+}
+
+View::View() = default;
+View::~View() = default;
+
+esp_err_t View::Setup() {
+  TRY(SetupDisplayDriver());
+  TRY(SetupStyle());
+  root_ = std::make_unique<view::Root>(lv_scr_act());
+  return root_ ? ESP_OK : ESP_FAIL;
+}
+
+esp_err_t View::Start() {
+  TRY(Task::SpawnSame(TAG, kViewStackSize, kPriorityUi));
   return ESP_OK;
 }
 
-esp_err_t ViewStart() {
-  return xTaskCreatePinnedToCore(
-             ViewTask, "ui/view", kViewStackSize, nullptr, kPriorityUi, &g_view_task, APP_CPU_NUM) ?
-             ESP_OK :
-             ESP_FAIL;
-}
+void View::Stop() { Task::Kill(); }
 
-void ViewStop() {
-  if (g_view_task) {
-    vTaskDelete(g_view_task);
-    g_view_task = nullptr;
-  }
-}
-
-void ViewTask(void* /*unused*/) {
-  constexpr lv_color_t kOn = LV_COLOR_BLACK;
-  constexpr lv_color_t kOff = LV_COLOR_WHITE;
-
-  TickType_t last_wake_time = xTaskGetTickCount();
-
-  static std::array screens = {
-      lv_disp_get_scr_act(nullptr),
-      lv_obj_create(nullptr, nullptr),
-      lv_obj_create(nullptr, nullptr),
-      lv_obj_create(nullptr, nullptr),
-  };
-
-  static lv_style_t small_text;
-  lv_style_init(&small_text);
-  lv_style_set_text_font(&small_text, LV_STATE_DEFAULT, &iosevka10l);
-  lv_style_set_text_letter_space(&small_text, LV_STATE_DEFAULT, 1);
-
-  static lv_style_t big_text;
-  lv_style_init(&big_text);
-  lv_style_set_text_font(&big_text, LV_STATE_DEFAULT, &mononoki22);
-  lv_style_set_text_letter_space(&big_text, LV_STATE_DEFAULT, 1);
-
-  static lv_style_t lap_text;
-  lv_style_init(&lap_text);
-  lv_style_set_text_font(&lap_text, LV_STATE_DEFAULT, &liberation22bn);
-  lv_style_set_text_letter_space(&lap_text, LV_STATE_DEFAULT, 1);
-
-  static lv_draw_line_dsc_t solid_line;
-  lv_draw_line_dsc_init(&solid_line);
-  solid_line.opa = LV_OPA_100;
-  solid_line.color = kOn;
-  solid_line.width = 1;
-
-  static lv_draw_line_dsc_t dotted_line;
-  lv_draw_line_dsc_init(&dotted_line);
-  solid_line.opa = LV_OPA_100;
-  dotted_line.color = kOn;
-  dotted_line.width = 1;
-  dotted_line.dash_width = 1;
-  dotted_line.dash_gap = 9;
-
-  // Screen 0: Device Dashboard
-
-  static lv_obj_t* label_latlong = lv_label_create(screens[0], nullptr);
-  lv_obj_reset_style_list(label_latlong, 0);
-  lv_obj_add_style(label_latlong, 0, &small_text);
-  lv_label_set_text(label_latlong, "+12.34567 -123.12345");
-  lv_obj_align(label_latlong, nullptr, LV_ALIGN_IN_TOP_MID, 0, 1);
-  lv_obj_set_auto_realign(label_latlong, true);
-
-  static lv_obj_t* label_clock = lv_label_create(screens[0], nullptr);
-  lv_obj_reset_style_list(label_clock, 0);
-  lv_obj_add_style(label_clock, 0, &big_text);
-  lv_label_set_text(label_clock, "12:34:56");
-  lv_obj_align(label_clock, label_latlong, LV_ALIGN_OUT_BOTTOM_MID, 0, 0);
-  lv_obj_set_auto_realign(label_clock, true);
-
-  static lv_obj_t* bar_file = lv_bar_create(screens[0], nullptr);
-  lv_obj_set_size(bar_file, 100, 4);
-  lv_bar_set_range(bar_file, 0, CONFIG_MAX_LINES_PER_FILE);
-  lv_obj_set_style_local_outline_width(bar_file, 0, LV_STATE_DEFAULT, 0);
-  // lv_obj_set_style_local_outline_color(bar_file, 0, LV_STATE_DEFAULT, LV_COLOR_WHITE);
-  lv_bar_set_value(bar_file, 2500, LV_ANIM_OFF);
-  lv_obj_align(bar_file, nullptr, LV_ALIGN_IN_BOTTOM_MID, 0, -1);
-
-  static lv_obj_t* label_imu = lv_label_create(screens[0], label_latlong);
-  lv_obj_align(label_imu, label_clock, LV_ALIGN_OUT_BOTTOM_MID, 0, -2);
-
-  // Screen 1: IMU G-circle in the X-Y plane
-
-  static lv_obj_t* canvas_imu = lv_canvas_create(screens[1], nullptr);
-  lv_obj_set_size(canvas_imu, 63, 63);
-  lv_obj_align(canvas_imu, nullptr, LV_ALIGN_CENTER, 0, 0);
-  static uint8_t canvas_buf[LV_CANVAS_BUF_SIZE_INDEXED_1BIT(63, 63)];
-  lv_canvas_set_buffer(canvas_imu, canvas_buf, 63, 63, LV_IMG_CF_INDEXED_1BIT);
-  lv_canvas_set_palette(canvas_imu, 0, LV_COLOR_BLACK);
-  lv_canvas_set_palette(canvas_imu, 1, LV_COLOR_WHITE);
-
-  // Screen 2: Lap Timing
-
-  static lv_obj_t* label_lap_time = lv_label_create(screens[2], nullptr);
-  lv_obj_reset_style_list(label_lap_time, 0);
-  lv_obj_add_style(label_lap_time, 0, &lap_text);
-  lv_label_set_text(label_lap_time, "12#34'56\"78");
-  lv_obj_align(label_lap_time, nullptr, LV_ALIGN_CENTER, 0, 0);
-  lv_obj_set_auto_realign(label_lap_time, true);
-
-  static lv_obj_t* label_lap_xy = lv_label_create(screens[2], nullptr);
-  lv_obj_reset_style_list(label_lap_xy, 0);
-  lv_obj_add_style(label_lap_xy, 0, &small_text);
-  lv_label_set_text(label_lap_xy, "+1234.56 +1234.56");
-  lv_obj_align(label_lap_xy, label_lap_time, LV_ALIGN_OUT_TOP_MID, 0, -3);
-  lv_obj_set_auto_realign(label_lap_xy, true);
+void View::Run() {
+  static TickType_t last_wake_time = xTaskGetTickCount();
 
   while (true) {
-    static int active_screen_index = 0;
-    static uint8_t last_buttons = 0;
-    const uint8_t buttons{};
-    const uint8_t click = last_buttons & ~buttons;
-    if (click & 0b001) {
-      // up button (fixed for switching screen)
-      if (--active_screen_index < 0) {
-        active_screen_index = screens.size() - 1;
-      }
-      lv_scr_load(screens[active_screen_index]);
-    } else if (click & 0b010) {
-      // center button (NOP for now)
-    } else if (click & 0b100) {
-      if (++active_screen_index >= screens.size()) {
-        active_screen_index = 0;
-      }
-      lv_scr_load(screens[active_screen_index]);
-    }
-    last_buttons = buttons;
-    ESP_LOGD(TAG, "buttons: %d; click: %d", buttons, click);
-
-    const TimeUnixWithUs begin = NowUnixWithUs();
-
-    if (const auto& gps = g_model.gps) {
-      lv_label_set_text_fmt(label_clock, "%02d:%02d:%02d", gps->hour, gps->minute, gps->second);
-      lv_label_set_text_fmt(label_latlong, "%+09.5f %+010.5f", gps->latitude, gps->longitude);
-    } else {
-      lv_label_set_text(label_clock, "--:--:--");
-      lv_label_set_text(label_latlong, "");
-    }
-    lv_bar_set_value(bar_file, g_model.logger_lines, LV_ANIM_OFF);
-    if (const auto& imu = g_model.imu) {
-      lv_label_set_text_fmt(label_imu, "%+6.3f %+6.3f %+6.3f", imu->ax, imu->ay, imu->az);
-      lv_canvas_fill_bg(canvas_imu, kOff, LV_OPA_100);
-      for (int x = 0; x <= 63; x += 3) {
-        lv_canvas_set_px(canvas_imu, x, 31, kOn);
-      }
-      for (int y = 0; y <= 63; y += 3) {
-        lv_canvas_set_px(canvas_imu, 31, y, kOn);
-      }
-      for (int i = 0; i < sizeof(inner_x) / sizeof(inner_x[0]); i++) {
-        lv_canvas_set_px(canvas_imu, inner_x[i], inner_y[i], kOn);
-      }
-      for (int i = 0; i < sizeof(outer_x) / sizeof(outer_x[0]); i++) {
-        lv_canvas_set_px(canvas_imu, outer_x[i], outer_y[i], kOn);
-      }
-      const int ax_p = std::round(imu->ax * 31 / 1.5 + 31);
-      const int ay_p = std::round(imu->ay * 31 / 1.5 + 31);
-      for (int z = -4; z <= 4; z++) {
-        lv_canvas_set_px(canvas_imu, std::clamp(ax_p - z, 0, 62), std::clamp(ay_p - z, 0, 62), kOn);
-        lv_canvas_set_px(canvas_imu, std::clamp(ax_p - z, 0, 62), std::clamp(ay_p + z, 0, 62), kOn);
-      }
-    } else {
-      lv_label_set_text(label_imu, "");
-    }
-
-    if (const auto& lap_start_time_ms = g_model.lap_start_time_ms) {
-      const int64_t diff_total_ms = ToMilliseconds(begin) - *lap_start_time_ms;
-      const int diff_ms = diff_total_ms % 1'000;
-      const int diff_sec = (diff_total_ms / 1'000) % 60;
-      const int diff_min = diff_total_ms / 60'000;
-      lv_label_set_text_fmt(
-          label_lap_time, "%2d#%2d'%02d\"%02d", g_model.num_laps, diff_min, diff_sec, diff_ms / 10);
-    } else {
-      lv_label_set_text(label_lap_time, "no lap");
-      // lv_label_set_text_fmt(label_lap_time, "%2d#%2d'%02d\"%02d", 12, 34, 56, 78);
-    }
-    lv_label_set_text_fmt(label_lap_xy, "%+09.2f %+09.2f", g_model.ltm_x, g_model.ltm_y);
-
-    const TimeUnixWithUs end_update = NowUnixWithUs();
+    const TimeUnixWithUs render_begin_time = NowUnixWithUs();
+    root_->Render(g_model);
+    const TimeUnixWithUs lv_begin_time = NowUnixWithUs();
     lv_task_handler();
-    const TimeUnixWithUs end_render = NowUnixWithUs();
-    ESP_LOGD(TAG, "update: %lld; all: %lld", end_update - begin, end_render - begin);
-
+    const TimeUnixWithUs end_time = NowUnixWithUs();
+    ESP_LOGD(
+        TAG,
+        "%lld (render) + %lld (lv) = %lld (total)",
+        lv_begin_time - render_begin_time,
+        end_time - lv_begin_time,
+        end_time - render_begin_time);
     vTaskDelayUntil(&last_wake_time, pdMS_TO_TICKS(kRefreshPeriodMs));
   }
 }

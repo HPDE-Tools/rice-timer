@@ -72,7 +72,7 @@ esp_err_t RegisterEncoderDriver() {
       .filter_value = kFilterValue,
   });
   if (!g_encoder) {
-    return ESP_FAIL;
+    return ESP_ERR_NO_MEM;
   }
 
   lv_indev_drv_t driver;
@@ -102,7 +102,7 @@ esp_err_t RegisterEncoderDriver() {
     }
     const uint16_t button_raw = PollAdc();
     if (kButton2Low <= button_raw && button_raw < kButton2High) {
-      ESP_LOGW(TAG, "btn2");
+      ESP_LOGD(TAG, "btn2");
       data->state = LV_INDEV_STATE_PR;
     } else {
       data->state = LV_INDEV_STATE_REL;
@@ -121,11 +121,11 @@ esp_err_t RegisterButtonDriver() {
     const uint16_t button_raw = PollAdc();
     // TODO(summivox): state machine (only allow 1KRO)
     if (kButton1Low <= button_raw && button_raw < kButton1High) {
-      ESP_LOGW(TAG, "btn1");
+      ESP_LOGD(TAG, "btn1");
       data->key = LV_KEY_PREV;
       data->state = LV_INDEV_STATE_PR;
     } else if (kButton3Low <= button_raw && button_raw < kButton3High) {
-      ESP_LOGW(TAG, "btn3");
+      ESP_LOGD(TAG, "btn3");
       data->key = LV_KEY_NEXT;
       data->state = LV_INDEV_STATE_PR;
     } else {
