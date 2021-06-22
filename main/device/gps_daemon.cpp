@@ -240,7 +240,7 @@ void GpsDaemon::AdjustSystemTime(const GpsTimeFix& time_fix, const CaptureChanne
   const auto d_s = b_s - a_s;
   const auto d_us = b_us - a_us;
 
-  ESP_LOGI(
+  ESP_LOGV(
       TAG,
       "sys=%" PRIi64 ".%06" PRIi64 " gps=%" PRIi64 ".%06" PRIi64 " ds=%" PRIi64 " dus=%" PRIi64,
       static_cast<int64_t>(a_s),
