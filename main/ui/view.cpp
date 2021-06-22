@@ -16,7 +16,7 @@
 #include "priorities.hpp"
 #include "ui/model.hpp"
 #include "ui/style.hpp"
-#include "ui/view_impl.hpp"
+#include "ui/view/root.hpp"
 
 namespace ui {
 
