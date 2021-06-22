@@ -1,13 +1,15 @@
 // Copyright 2021 summivox. All rights reserved.
 // Authors: summivox@gmail.com
 
-#include <inttypes.h>
+#include <charconv>
+#include <cinttypes>
 #include <memory>
 #include <optional>
 #include <string>
 #include <string_view>
 
 #include "driver/gpio.h"
+#include "driver/twai.h"
 #include "fmt/chrono.h"
 #include "fmt/core.h"
 #include "freertos/FreeRTOS.h"
@@ -30,7 +32,7 @@
 
 namespace {
 constexpr char TAG[] = "main";
-constexpr int kCanaryPeriodMs = 10000;
+constexpr int kCanaryPeriodMs = 9973;
 }  // namespace
 
 using namespace app;  // TODO: move this file altogether
@@ -65,12 +67,16 @@ void HandleGpsData(
                 (double)minmea_tocoord(&rmc.longitude));
             if (rmc.valid) {
               auto& g = ui::g_model.gps.emplace();
+              g.year = rmc.date.year + GpsDaemon::kBuildCentury;
+              g.month = rmc.date.month;
+              g.day = rmc.date.day;
               g.hour = rmc.time.hours;
               g.minute = rmc.time.minutes;
               g.second = rmc.time.seconds;
               g.millisecond = rmc.time.microseconds / 1000;
               g.latitude = minmea_tocoord(&rmc.latitude);
               g.longitude = minmea_tocoord(&rmc.longitude);
+              ++ui::g_model.counter.gps;
               UpdateGps(rmc);
             }
           },
@@ -105,10 +111,14 @@ void HandleGpsLine(std::string_view line, bool is_valid_nmea) {
 
 void HandleImuRawData(const Lsm6dsr::RawImuData& data) {
   ui::g_model.imu = ui::Model::Imu{
-      .ax = app::g_imu->AccelRawToG(data.ax),
-      .ay = app::g_imu->AccelRawToG(data.ay),
-      .az = app::g_imu->AccelRawToG(data.az),
+      .ax_g = app::g_imu->AccelRawToG(data.ax),
+      .ay_g = app::g_imu->AccelRawToG(data.ay),
+      .az_g = app::g_imu->AccelRawToG(data.az),
+      .wx_dps = app::g_imu->GyroRawToDps(data.wx),
+      .wy_dps = app::g_imu->GyroRawToDps(data.wy),
+      .wz_dps = app::g_imu->GyroRawToDps(data.wz),
   };
+  ++ui::g_model.counter.imu;
   SendToLogger(fmt::format(
       "i,{},{:+06d},{:+06d},{:+06d},{:+06d},{:+06d},{:+06d}",
       data.capture,
@@ -120,14 +130,54 @@ void HandleImuRawData(const Lsm6dsr::RawImuData& data) {
       data.wz));
 }
 
+char* WriteHexUpper(char* s, uint32_t value, int len) {
+  for (char* p = s + len - 1; p >= s; --p, value >>= 4) {
+    *p = HexDigitUpper(value & 0xf);
+  }
+  return s + len;
+}
+
+void HandleCanMessage(uint32_t current_capture, twai_message_t message) {
+  // NOTE: This is hot but the format is simple, so do manual formatting.
+  static char buf[] = "c,2147483647,b0b1b2b3,8,d0d1d2d3d4d5d6d7";
+  char* const buf_begin = buf + 2;
+  char* const buf_end = buf + sizeof(buf);
+
+  char* p = buf_begin;
+  p = std::to_chars(p, buf_end, current_capture, /*base*/ 10).ptr;
+  *p++ = ',';
+  p = WriteHexUpper(p, message.identifier, message.extd ? 8 : 3);
+  *p++ = ',';
+  *p++ = '0' + message.data_length_code;
+  *p++ = ',';
+  for (int i = 0; i < message.data_length_code; i++) {
+    p = WriteHexUpper(p, message.data[i], 2);
+  }
+  *p++ = '\0';
+  CHECK(p < buf_end);
+  app::SendToLogger(std::string_view(buf));
+#if 1
+  {
+    static TickType_t last_print = xTaskGetTickCount();
+    if (xTaskGetTickCount() - last_print >= pdMS_TO_TICKS(100)) {
+      last_print = xTaskGetTickCount();
+      ESP_LOGW(TAG, "(%d)%s", p - buf, buf);
+    }
+  }
+#endif
+}
+
 void HandleLoggerCommit(const io::Logger& logger, TickType_t now) {
-  ui::g_model.logger_session_id = logger.session_id();
-  ui::g_model.logger_split_id = logger.split_id();
-  ui::g_model.logger_lines = logger.lines_committed();
+  ui::g_model.logger = ui::Model::Logger{
+      .session_id = logger.session_id(),
+      .split_id = logger.split_id(),
+      .lines = logger.lines_committed(),
+  };
 }
 
 void HandleLoggerExit(const io::Logger::Error error) {
   ESP_LOGE(TAG, "logger exit: %d", (int)error);
+  ui::g_model.logger.reset();
 }
 
 void HandleSdCardStateChange(bool mounted) {
@@ -156,9 +206,8 @@ void Main() {
   CHECK_OK(SetupGps());
   CHECK_OK(SetupCan());
   CHECK_OK(SetupImu());
-  CHECK_OK(SetupOled());
   // CHECK_OK(SetupLapTimer());
-  CHECK_OK(ui::ViewInit());
+  CHECK_OK(ui::SetupView());
 
   ESP_LOGI(TAG, "MainTask setup complete");
   heap_caps_print_heap_info(MALLOC_CAP_8BIT);
@@ -166,10 +215,10 @@ void Main() {
   CHECK_OK(g_sd_card->Start(HandleSdCardStateChange));
   // the logger is started by the SD card daemon
   CHECK_OK(g_gpsd->Start(HandleGpsData, HandleGpsLine));
-  CHECK_OK(g_can->Start());
+  CHECK_OK(g_can->Start(HandleCanMessage));
   CHECK_OK(g_imu->Start(HandleImuRawData));
   // CHECK_OK(StartLapTimerTask());
-  CHECK_OK(ui::ViewStart());
+  CHECK_OK(ui::g_view->Start());
 }
 
 TaskHandle_t g_main_task{};
@@ -199,7 +248,9 @@ void CanaryTask(void* /*unused*/) {
       LOG_WATER_MARK("sd", g_sd_card->handle());
     }
     LOG_WATER_MARK("lap", GetLapTimerTask());
-    LOG_WATER_MARK("ui/view", ui::g_view_task);
+    if (ui::g_view) {
+      LOG_WATER_MARK("ui/view", ui::g_view->handle());
+    }
     vTaskDelayUntil(&last_wake_tick, pdMS_TO_TICKS(kCanaryPeriodMs));
   }
 }

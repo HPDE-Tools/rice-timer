@@ -27,7 +27,7 @@ esp_err_t SetupCan() {
   } else {
     return ESP_ERR_NOT_SUPPORTED;
   }
-  g_can = CanManager::Create({
+  g_can = CanManager::Create(CanManager::Option{
       .tx_pin = tx_pin,
       .rx_pin = rx_pin,
       .priority = kPriorityCan,

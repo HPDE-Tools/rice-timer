@@ -4,6 +4,7 @@
 #pragma once
 
 #include <cstdint>
+#include <functional>
 #include <memory>
 
 #include "driver/gpio.h"
@@ -13,6 +14,7 @@
 #include "freertos/task.h"
 #include "soc/soc.h"
 
+#include "common/macros.hpp"
 #include "common/task.hpp"
 
 class CanManager : public Task {
@@ -28,24 +30,23 @@ class CanManager : public Task {
     int priority = 0;
   };
 
-  static std::unique_ptr<CanManager> Create(Option option) {
-    auto self = std::unique_ptr<CanManager>(new CanManager(option));
-    if (self->Setup() != ESP_OK) {
-      self.reset();
-    }
-    return self;
-  }
+  using CanMessageSubscriber =
+      std::function<void(uint32_t current_capture, const twai_message_t& message)>;
 
   virtual ~CanManager();
 
-  esp_err_t Start();
+  esp_err_t Start(CanMessageSubscriber subscriber);
   void Stop();
+
+  DEFINE_CREATE(CanManager)
 
  protected:
   void Run() override;
 
  private:
   Option option_;
+  CanMessageSubscriber subscriber_{};
+
   explicit CanManager(Option option);
 
   esp_err_t Setup();
