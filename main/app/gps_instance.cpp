@@ -83,6 +83,9 @@ esp_err_t SetupGps() {
       {
           .delimiter = '\n',
           .repeat = 1,
+
+          // NOTE(summivox): queue size increased due to buffer full events observed in the wild
+          .queue_size = 64,
       });
   if (!g_gps_line_reader) {
     return ESP_FAIL;
