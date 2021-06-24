@@ -28,7 +28,7 @@ esp_err_t NvsInit() {
 }  // namespace
 
 // statically initialize using IIFE
-std::array<uint8_t, 6> g_device_mac{[]() {
+const std::array<uint8_t, 6> g_device_mac{[]() {
   std::array<uint8_t, 6> ret;
   esp_efuse_mac_get_default(ret.data());
   return ret;

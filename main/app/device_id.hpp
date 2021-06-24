@@ -9,7 +9,7 @@
 namespace app {
 
 /// Statically initialized to the device's "default" base MAC address stored in OTP.
-extern std::array<uint8_t, 6> g_device_mac;
+extern const std::array<uint8_t, 6> g_device_mac;
 
 /// Get the device's auto-incrementing "session id" from non-volatile storage
 ///
