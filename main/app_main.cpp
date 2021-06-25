@@ -158,6 +158,7 @@ void HandleCanMessage(uint32_t current_capture, twai_message_t message) {
   *p++ = '\0';
   CHECK(p < buf_end);
   app::SendToLogger(std::string_view(buf));
+  ++ui::g_model.counter.can;
 #if 1
   {
     static TickType_t last_print = xTaskGetTickCount();
