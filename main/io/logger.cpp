@@ -27,6 +27,7 @@
 #include "priorities.hpp"
 #include "ui/model.hpp"
 
+// TODO(summivox): Decouple from SD card instance
 using app::g_sd_card;
 
 namespace io {
