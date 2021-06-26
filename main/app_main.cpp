@@ -1,6 +1,7 @@
 // Copyright 2021 summivox. All rights reserved.
 // Authors: summivox@gmail.com
 
+#include <algorithm>
 #include <charconv>
 #include <cinttypes>
 #include <memory>
@@ -145,24 +146,26 @@ void HandleCanMessage(uint32_t current_capture, twai_message_t message) {
   char* const buf_begin = buf + 2;
   char* const buf_end = buf + sizeof(buf);
 
+  const uint8_t dlc = std::min(message.data_length_code, uint8_t{8});
+
   char* p = buf_begin;
   p = std::to_chars(p, buf_end, current_capture, /*base*/ 10).ptr;
   *p++ = ',';
   p = WriteHexUpper(p, message.identifier, message.extd ? 8 : 3);
   *p++ = ',';
-  *p++ = '0' + message.data_length_code;
+  *p++ = '0' + dlc;
   *p++ = ',';
-  for (int i = 0; i < message.data_length_code; i++) {
+  for (int i = 0; i < dlc; i++) {
     p = WriteHexUpper(p, message.data[i], 2);
   }
   *p++ = '\0';
   CHECK(p < buf_end);
-  app::SendToLogger(std::string_view(buf));
+  app::SendToLogger(std::string_view(buf, p - buf - 1));
   ++ui::g_model.counter.can;
 #if 1
   {
     static TickType_t last_print = xTaskGetTickCount();
-    if (xTaskGetTickCount() - last_print >= pdMS_TO_TICKS(100)) {
+    if (xTaskGetTickCount() - last_print >= pdMS_TO_TICKS(197)) {
       last_print = xTaskGetTickCount();
       ESP_LOGW(TAG, "(%d)%s", p - buf, buf);
     }
