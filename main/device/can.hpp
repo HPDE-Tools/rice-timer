@@ -52,5 +52,21 @@ class CanManager : public Task {
   esp_err_t Setup();
 };
 
-// TODO: implement
-twai_timing_config_t CalculateCanTiming(int baud_hz, int tseg_1, int tseg_2, int sjw);
+/// Wrapper for calculating CAN baud rate prescaler.
+/// This does NOT check the validity of the generated timing config --- the driver will anyway.
+/// @see twai_timing_config_t for meaning of arguments.
+///
+constexpr twai_timing_config_t CalculateCanTiming(
+    int baud_hz, uint8_t tseg_1, uint8_t tseg_2, uint8_t sjw, bool triple_sampling = false) {
+  const uint8_t t_total = 1 + tseg_1 + tseg_2;
+  const int denominator = t_total * baud_hz;
+  const int prescaler = APB_CLK_FREQ / denominator;
+
+  return twai_timing_config_t{
+      .brp = uint32_t(prescaler),
+      .tseg_1 = tseg_1,
+      .tseg_2 = tseg_2,
+      .sjw = sjw,
+      .triple_sampling = triple_sampling,
+  };
+}

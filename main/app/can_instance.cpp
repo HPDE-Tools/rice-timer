@@ -27,9 +27,12 @@ esp_err_t SetupCan() {
   } else {
     return ESP_ERR_NOT_SUPPORTED;
   }
+  // TODO(summivox): configurable CAN baud rate
   g_can = CanManager::Create(CanManager::Option{
       .tx_pin = tx_pin,
       .rx_pin = rx_pin,
+      .timing = CalculateCanTiming(500'000, 15, 4, 3, false),
+
       .priority = kPriorityCan,
   });
   return g_can ? ESP_OK : ESP_FAIL;
