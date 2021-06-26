@@ -20,7 +20,7 @@ namespace {
 
 constexpr char TAG[] = "can";
 
-constexpr int kCanStackSize = 4096;
+constexpr int kCanStackSize = 6000;
 
 }  // namespace
 
