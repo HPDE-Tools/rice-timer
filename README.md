@@ -1,10 +1,10 @@
-# ShiftWatch (ESP32 edition)
+# RiceTimer
 
-ShiftWatch is a portable standalone data logger intended for collecting automotive performance data. Its core function is to pipe synchronized raw [GNSS][] + [IMU][] + [CAN][] data streams to a MicroSD card.
+RiceTimer (previously known as "ShiftWatch") is a portable standalone data logger intended for collecting automotive performance data. Its core function is to pipe synchronized raw [GNSS][] + [IMU][] + [CAN][] data streams to a MicroSD card.
 
 Photo of current prototype hardware:
 
-![pcb-photo](doc/image/pcb-v2.0-photo-1.jpg "photo of ShiftWatch ESP32 v2.0 PCB")
+![pcb-photo](doc/image/pcb-v2.0-photo-1.jpg "photo of RiceTimer v2.0 PCB")
 
 
 ## Features
@@ -62,9 +62,9 @@ The firmware is built through [ESP-IDF][], preferrably using the [official VSCod
 
 More details on the current prototype PCB platform:
 
-![pcb-sch](doc/image/pcb-v2.0-sch-1.png "schematic of ShiftWatch ESP32 v2.0 PCB")
+![pcb-sch](doc/image/pcb-v2.0-sch-1.png "schematic of RiceTimer v2.0 PCB")
 
-![pcb-render](doc/image/pcb-v2.0-render-1.png "render of ShiftWatch ESP32 v2.0 PCB")
+![pcb-render](doc/image/pcb-v2.0-render-1.png "render of RiceTimer v2.0 PCB")
 
 While ESP32 has flexible GPIO routing, the following components are fixed in order to take advantage of fast "IOMux" pins:
 
