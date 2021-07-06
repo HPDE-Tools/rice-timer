@@ -57,7 +57,8 @@ esp_err_t Logger::Start(
   commit_callback_ = commit_callback;
   stopped_callback_ = stopped_callback;
   DrainQueue();
-  return Task::SpawnSame(TAG, kLoggerStackSize, kPriorityLogger);
+  return Task::SpawnPinned(TAG, kLoggerStackSize, kPriorityLogger, PRO_CPU_NUM);
+  // return Task::SpawnSame(TAG, kLoggerStackSize, kPriorityLogger);
 }
 
 void Logger::Stop(Error error) {

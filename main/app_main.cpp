@@ -34,6 +34,11 @@
 namespace {
 constexpr char TAG[] = "main";
 constexpr int kCanaryPeriodMs = 9973;
+
+int64_t g_gps_lost = 0;
+int64_t g_imu_lost = 0;
+int64_t g_can_lost = 0;
+
 }  // namespace
 
 using namespace app;  // TODO: move this file altogether
@@ -96,9 +101,12 @@ void HandleGpsData(
           [](const auto&) { /* default NOP */ }},
       nmea);
   if (time_fix) {
-    SendToLogger(
+    const esp_err_t err = SendToLogger(
         fmt::format("p,{},{}", time_fix->pps_capture, time_fix->parsed_time_unix),
-        pdMS_TO_TICKS(500));
+        pdMS_TO_TICKS(200));
+    if (err == ESP_FAIL) {
+      ++g_gps_lost;
+    }
   }
 }
 
@@ -110,11 +118,16 @@ void HandleGpsLine(std::string_view line, bool is_valid_nmea) {
   ESP_LOGV(TAG, "gps line (valid=%d):%.*s", (int)is_valid_nmea, trimmed.size(), trimmed.data());
   if (is_valid_nmea) {
     const uint32_t capture = channel.TriggerNow();
-    SendToLogger(fmt::format("g,{},{}", capture, trimmed), 0);
+    const esp_err_t err =
+        SendToLogger(fmt::format("g,{},{}", capture, trimmed), pdMS_TO_TICKS(200));
+    if (err == ESP_FAIL) {
+      ++g_gps_lost;
+    }
   }
 }
 
 void HandleImuRawData(const Lsm6dsr::RawImuData& data) {
+#if 0
   ui::g_model.imu = ui::Model::Imu{
       .ax_g = app::g_imu->AccelRawToG(data.ax),
       .ay_g = app::g_imu->AccelRawToG(data.ay),
@@ -123,6 +136,16 @@ void HandleImuRawData(const Lsm6dsr::RawImuData& data) {
       .wy_dps = app::g_imu->GyroRawToDps(data.wy),
       .wz_dps = app::g_imu->GyroRawToDps(data.wz),
   };
+#else
+  ui::g_model.imu_raw = ui::Model::ImuRaw{
+      .ax_raw = data.ax,
+      .ay_raw = data.ay,
+      .az_raw = data.az,
+      .wx_raw = data.wx,
+      .wy_raw = data.wy,
+      .wz_raw = data.wz,
+  };
+#endif
   ++ui::g_model.counter.imu;
   static char buf[] = "i,2147483647,-32768,-32768,-32768,-32768,-32768,-32768";
   char* const buf_begin = buf + 2;
@@ -143,7 +166,10 @@ void HandleImuRawData(const Lsm6dsr::RawImuData& data) {
   p = std::to_chars(p, buf_end, data.wz, /*base*/ 10).ptr;
   *p++ = '\0';
   CHECK(p < buf_end);
-  SendToLogger(std::string_view(buf, p - buf - 1), 0);
+  const esp_err_t err = SendToLogger(std::string_view(buf, p - buf - 1), pdMS_TO_TICKS(50));
+  if (err == ESP_FAIL) {
+    ++g_imu_lost;
+  }
 }
 
 char* WriteHexUpper(char* s, uint32_t value, int len) {
@@ -172,7 +198,10 @@ void HandleCanMessage(uint32_t current_capture, twai_message_t message) {
   }
   *p++ = '\0';
   CHECK(p < buf_end);
-  app::SendToLogger(std::string_view(buf, p - buf - 1), 0);
+  const esp_err_t err = SendToLogger(std::string_view(buf, p - buf - 1), pdMS_TO_TICKS(1));
+  if (err == ESP_FAIL) {
+    ++g_imu_lost;
+  }
   ++ui::g_model.counter.can;
 #if 0
   {
@@ -252,6 +281,12 @@ TaskHandle_t g_canary_task{};
 void CanaryTask(void* /*unused*/) {
   TickType_t last_wake_tick = xTaskGetTickCount();
   while (true) {
+    ESP_LOGW(
+        "canary",
+        "loss: g=%" PRId64 " i=%" PRId64 " c=%" PRId64,
+        g_gps_lost,
+        g_imu_lost,
+        g_can_lost);
     LOG_WATER_MARK("canary", g_canary_task);
     if (g_logger) {
       LOG_WATER_MARK("logger", g_logger->handle());

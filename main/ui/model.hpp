@@ -36,7 +36,16 @@ struct Model {
     float wy_dps;
     float wz_dps;
   };
+  struct ImuRaw {
+    int ax_raw;
+    int ay_raw;
+    int az_raw;
+    int wx_raw;
+    int wy_raw;
+    int wz_raw;
+  };
   std::optional<Imu> imu{};
+  std::optional<ImuRaw> imu_raw{};
 
   struct Logger {
     int64_t session_id = 0;
