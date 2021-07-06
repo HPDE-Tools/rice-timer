@@ -21,7 +21,7 @@ namespace app {
 namespace {
 
 constexpr int kGpsUartDesiredBaudRate = 921600;
-constexpr int kGpsUartRxBufSize = 1024;
+constexpr int kGpsUartRxBufSize = 4096;
 constexpr int kGpsUartTxBufSize = 0;
 constexpr int kGpsUartQueueSize = 128;
 
