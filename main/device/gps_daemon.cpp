@@ -16,7 +16,6 @@
 
 #include "common/logging.hpp"
 #include "common/perishable.hpp"
-#include "common/scope_guard.hpp"
 #include "common/strings.hpp"
 #include "common/times.hpp"
 #include "common/utils.hpp"
