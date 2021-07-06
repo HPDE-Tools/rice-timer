@@ -96,7 +96,9 @@ void HandleGpsData(
           [](const auto&) { /* default NOP */ }},
       nmea);
   if (time_fix) {
-    SendToLogger(fmt::format("p,{},{}", time_fix->pps_capture, time_fix->parsed_time_unix));
+    SendToLogger(
+        fmt::format("p,{},{}", time_fix->pps_capture, time_fix->parsed_time_unix),
+        pdMS_TO_TICKS(500));
   }
 }
 
@@ -108,7 +110,7 @@ void HandleGpsLine(std::string_view line, bool is_valid_nmea) {
   ESP_LOGV(TAG, "gps line (valid=%d):%.*s", (int)is_valid_nmea, trimmed.size(), trimmed.data());
   if (is_valid_nmea) {
     const uint32_t capture = channel.TriggerNow();
-    SendToLogger(fmt::format("g,{},{}", capture, trimmed));
+    SendToLogger(fmt::format("g,{},{}", capture, trimmed), 0);
   }
 }
 
@@ -122,15 +124,26 @@ void HandleImuRawData(const Lsm6dsr::RawImuData& data) {
       .wz_dps = app::g_imu->GyroRawToDps(data.wz),
   };
   ++ui::g_model.counter.imu;
-  SendToLogger(fmt::format(
-      "i,{},{:+06d},{:+06d},{:+06d},{:+06d},{:+06d},{:+06d}",
-      data.capture,
-      data.ax,
-      data.ay,
-      data.az,
-      data.wx,
-      data.wy,
-      data.wz));
+  static char buf[] = "i,2147483647,-32768,-32768,-32768,-32768,-32768,-32768";
+  char* const buf_begin = buf + 2;
+  char* const buf_end = buf + sizeof(buf);
+  char* p = buf_begin;
+  p = std::to_chars(p, buf_end, data.capture, /*base*/ 10).ptr;
+  *p++ = ',';
+  p = std::to_chars(p, buf_end, data.ax, /*base*/ 10).ptr;
+  *p++ = ',';
+  p = std::to_chars(p, buf_end, data.ay, /*base*/ 10).ptr;
+  *p++ = ',';
+  p = std::to_chars(p, buf_end, data.az, /*base*/ 10).ptr;
+  *p++ = ',';
+  p = std::to_chars(p, buf_end, data.wx, /*base*/ 10).ptr;
+  *p++ = ',';
+  p = std::to_chars(p, buf_end, data.wy, /*base*/ 10).ptr;
+  *p++ = ',';
+  p = std::to_chars(p, buf_end, data.wz, /*base*/ 10).ptr;
+  *p++ = '\0';
+  CHECK(p < buf_end);
+  SendToLogger(std::string_view(buf, p - buf - 1), 0);
 }
 
 char* WriteHexUpper(char* s, uint32_t value, int len) {
@@ -141,7 +154,6 @@ char* WriteHexUpper(char* s, uint32_t value, int len) {
 }
 
 void HandleCanMessage(uint32_t current_capture, twai_message_t message) {
-  // NOTE: This is hot but the format is simple, so do manual formatting.
   static char buf[] = "c,2147483647,b0b1b2b3,8,d0d1d2d3d4d5d6d7";
   char* const buf_begin = buf + 2;
   char* const buf_end = buf + sizeof(buf);
@@ -160,9 +172,9 @@ void HandleCanMessage(uint32_t current_capture, twai_message_t message) {
   }
   *p++ = '\0';
   CHECK(p < buf_end);
-  app::SendToLogger(std::string_view(buf, p - buf - 1));
+  app::SendToLogger(std::string_view(buf, p - buf - 1), 0);
   ++ui::g_model.counter.can;
-#if 1
+#if 0
   {
     static TickType_t last_print = xTaskGetTickCount();
     if (xTaskGetTickCount() - last_print >= pdMS_TO_TICKS(197)) {
