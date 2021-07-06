@@ -86,13 +86,14 @@ std::string UartLineReader::TryReadOneLine(TickType_t read_timeout) {
 }
 
 std::string UartLineReader::ReadOneLine(TickType_t wait_timeout, TickType_t read_timeout) {
+  std::string line{};
   if (!active_) {
     ESP_LOGE(TAG, "instance not active");
-    return {};
+    return line;
   }
   TickType_t start_time_tick = xTaskGetTickCount();
   while (static_cast<int>(xTaskGetTickCount() - start_time_tick) <= wait_timeout) {
-    if (std::string line = TryReadOneLine(read_timeout); !line.empty()) {
+    if (line = TryReadOneLine(read_timeout); !line.empty()) {
       return line;
     }
     uart_event_t event;
@@ -108,16 +109,16 @@ std::string UartLineReader::ReadOneLine(TickType_t wait_timeout, TickType_t read
       case UART_BUFFER_FULL: {
         ESP_LOGE(TAG, "uart buffer full; will clear input");
         DiscardInputBuffer();
-        return {};
+        return line;
       }
       default: {
         ESP_LOGW(TAG, "unhandled uart event %d", event.type);
         // TODO(summivox): pass through all other events through some mechanism
-        return {};
+        return line;
       }
     }
   }  // while not timeout
-  return {};
+  return line;
 }
 
 esp_err_t UartLineReader::ReadLinesAsync(uint32_t priority, uint32_t cpu, Callback callback) {
@@ -138,8 +139,8 @@ void UartLineReader::Run() {
   while (true) {
     std::string line = ReadOneLine();
     if (!line.empty()) {
-      if (Callback callback = callback_) {
-        callback(std::move(line));
+      if (callback_) {
+        callback_(std::move(line));
       } else {
         StopReadLinesAsync();
       }
