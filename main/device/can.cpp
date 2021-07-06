@@ -42,7 +42,7 @@ CanManager::~CanManager() { Stop(); }
 esp_err_t CanManager::Start(CanMessageSubscriber subscriber) {
   subscriber_ = subscriber;
   TRY(twai_start());
-  return Task::SpawnSame(TAG, kCanStackSize, option_.priority);
+  return Task::SpawnPinned(TAG, kCanStackSize, option_.priority, PRO_CPU_NUM);
 }
 
 void CanManager::Stop() {
