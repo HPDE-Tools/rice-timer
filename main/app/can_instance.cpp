@@ -32,7 +32,7 @@ esp_err_t SetupCan() {
       .tx_pin = tx_pin,
       .rx_pin = rx_pin,
       .tx_queue_len = 8,
-      .rx_queue_len = 128,
+      .rx_queue_len = 1024,
       .timing = CalculateCanTiming(500'000, 15, 4, 3, false),
 
       .priority = kPriorityCan,

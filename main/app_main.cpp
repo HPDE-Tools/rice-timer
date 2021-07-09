@@ -200,20 +200,26 @@ void HandleCanMessage(uint32_t current_capture, twai_message_t message) {
   }
   *p++ = '\0';
   CHECK(p < buf_end);
-  const esp_err_t err = SendToLogger(app::kCanProducer, std::string_view(buf, p - buf - 1));
-  if (err == ESP_FAIL) {
+
+  constexpr int kMinDelay = pdMS_TO_TICKS(5);
+  constexpr int kMaxDelay = kMinDelay * 16;
+  constexpr int kRetries = 3;
+  esp_err_t err{};
+  static int delay = kMinDelay;
+  for (int i = 0; i < kRetries; i++) {
+    err = SendToLogger(app::kCanProducer, std::string_view(buf, p - buf - 1));
+    if (err == ESP_OK) {
+      delay = kMinDelay;
+      break;
+    }
+    vTaskDelay(delay);
+    delay = std::min(delay * 2, kMaxDelay);
+  }
+  if (err != ESP_OK) {
     ++g_can_lost;
   }
+
   ++ui::g_model.counter.can;
-#if 0
-  {
-    static TickType_t last_print = xTaskGetTickCount();
-    if (xTaskGetTickCount() - last_print >= pdMS_TO_TICKS(197)) {
-      last_print = xTaskGetTickCount();
-      ESP_LOGW(TAG, "(%d)%s", p - buf, buf);
-    }
-  }
-#endif
 }
 
 void HandleLoggerCommit(const io::Logger& logger, TickType_t now) {
@@ -318,7 +324,8 @@ extern "C" void app_main(void) {
       "canary",
       2500,
       /*arg*/ nullptr,
-      configMAX_PRIORITIES - 2,
+      // configMAX_PRIORITIES - 2,
+      0,
       &g_canary_task,
       PRO_CPU_NUM);
   xTaskCreatePinnedToCore(

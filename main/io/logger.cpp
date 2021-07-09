@@ -208,11 +208,13 @@ Logger::Error Logger::WriteIncomingLinesToFile(FILE* file) {
   last_commit_time_ = xTaskGetTickCount();
 
   int64_t bytes_written = 0;
-  for (int line_i = 0; line_i < option_.max_num_lines_per_split; ++line_i) {
+  int lines_written = 0;
+  while (lines_written < option_.max_num_lines_per_split) {
     size_t size = 0;
     size_t offset = 0;
-    while (true) {
+    {
       if ((size = ringbuf_consume(ringbuf_, &offset)) == 0) {
+        // polling is cheap so let's keep doing it
         vTaskDelay(1);
         continue;
       }
@@ -222,7 +224,8 @@ Logger::Error Logger::WriteIncomingLinesToFile(FILE* file) {
         return kWriteError;
       }
       bytes_written += size;
-      break;
+      lines_written += std::count(&buf_[offset], &buf_[offset + size], '\n');
+      // lines_written++;  // DEBUG
     }
 
     const TickType_t now = xTaskGetTickCount();
@@ -231,7 +234,7 @@ Logger::Error Logger::WriteIncomingLinesToFile(FILE* file) {
         ESP_LOGE(TAG, "fail to flush (%s)", strerror(errno));
         return kFlushError;
       }
-      lines_committed_ = line_i + 1;
+      lines_committed_ = lines_written;
       bytes_committed_ = bytes_written;
       last_commit_time_ = now;
       if (commit_callback_) {
