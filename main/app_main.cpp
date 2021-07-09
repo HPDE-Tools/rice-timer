@@ -11,6 +11,7 @@
 
 #include "driver/gpio.h"
 #include "driver/twai.h"
+#include "esp_freertos_hooks.h"
 #include "fmt/chrono.h"
 #include "fmt/core.h"
 #include "freertos/FreeRTOS.h"
@@ -33,7 +34,9 @@
 
 namespace {
 constexpr char TAG[] = "main";
-constexpr int kCanaryPeriodMs = 9973;
+
+constexpr int kCanaryPeriodMs = 991;
+// constexpr int kCanaryPeriodMs = 9973;
 
 int64_t g_gps_lost = 0;
 int64_t g_imu_lost = 0;
@@ -200,7 +203,7 @@ void HandleCanMessage(uint32_t current_capture, twai_message_t message) {
   CHECK(p < buf_end);
   const esp_err_t err = SendToLogger(std::string_view(buf, p - buf - 1), pdMS_TO_TICKS(1));
   if (err == ESP_FAIL) {
-    ++g_imu_lost;
+    ++g_can_lost;
   }
   ++ui::g_model.counter.can;
 #if 0
@@ -287,6 +290,7 @@ void CanaryTask(void* /*unused*/) {
         g_gps_lost,
         g_imu_lost,
         g_can_lost);
+#if 0
     LOG_WATER_MARK("canary", g_canary_task);
     if (g_logger) {
       LOG_WATER_MARK("logger", g_logger->handle());
@@ -304,6 +308,7 @@ void CanaryTask(void* /*unused*/) {
     if (ui::g_view) {
       LOG_WATER_MARK("ui/view", ui::g_view->handle());
     }
+#endif
     vTaskDelayUntil(&last_wake_tick, pdMS_TO_TICKS(kCanaryPeriodMs));
   }
 }
@@ -319,4 +324,15 @@ extern "C" void app_main(void) {
       PRO_CPU_NUM);
   xTaskCreatePinnedToCore(
       MainTask, "main", 4096, /*arg*/ nullptr, configMAX_PRIORITIES - 1, &g_main_task, APP_CPU_NUM);
+
+  // DEBUG: use SCL pin as idle indicator
+  gpio_set_direction(GPIO_NUM_17, GPIO_MODE_OUTPUT);
+  gpio_pad_select_gpio(GPIO_NUM_17);
+  esp_register_freertos_idle_hook_for_cpu(
+      []() {
+        static bool level = false;
+        gpio_set_level(GPIO_NUM_17, level ^= 1);
+        return true;
+      },
+      PRO_CPU_NUM);
 }

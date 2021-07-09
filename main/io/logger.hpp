@@ -40,7 +40,7 @@ class Logger : public Task {
     int max_num_lines_per_split = CONFIG_MAX_LINES_PER_FILE;
 
     /// Force flushing log to the card every once in a while.
-    int flush_interval_ms = 1'000;
+    int flush_interval_ms = 1'013;
 
     /// Max number of bytes the incoming queue of the logger can hold.
     int queue_size_bytes = 1024;

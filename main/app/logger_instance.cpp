@@ -20,7 +20,7 @@ esp_err_t SetupLogger() {
   g_logger = std::make_unique<io::Logger>(
       g_device_dir,
       io::Logger::Option{
-          .queue_size_bytes = 4096,
+          .queue_size_bytes = 32768,
       });
   return g_logger ? ESP_OK : ESP_FAIL;
 }

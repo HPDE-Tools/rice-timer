@@ -190,6 +190,7 @@ bool Logger::MaintainRollingLogHeadroom() {
 }
 
 Logger::Error Logger::WriteIncomingLinesToFile(FILE* file) {
+  const size_t min_free_size_for_flushing = xRingbufferGetMaxItemSize(ringbuf_) * 3 / 4;
   lines_committed_ = 0;
   bytes_committed_ = 0;
   last_commit_time_ = xTaskGetTickCount();
@@ -209,6 +210,12 @@ Logger::Error Logger::WriteIncomingLinesToFile(FILE* file) {
 
     const TickType_t now = xTaskGetTickCount();
     if (SignedMinus(now, last_commit_time_) >= pdMS_TO_TICKS(option_.flush_interval_ms)) {
+      const size_t free_size = xRingbufferGetCurFreeSize(ringbuf_);
+      ESP_LOGW(TAG, "freesize %d (min %d)", (int)free_size, (int)min_free_size_for_flushing);
+      if (free_size < min_free_size_for_flushing) {
+        last_commit_time_ = now;
+        continue;
+      }
       if (const esp_err_t err = ReallyFlush(file); err != ESP_OK) {
         ESP_LOGE(TAG, "fail to flush (%s)", strerror(errno));
         return kFlushError;

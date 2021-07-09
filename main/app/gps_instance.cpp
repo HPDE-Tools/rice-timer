@@ -56,8 +56,9 @@ esp_err_t SetupUartPins(uart_port_t uart_num, uart_dev_t* uart_dev) {
       .rx_flow_ctrl_thresh = 0,
       .source_clk = UART_SCLK_APB,
   };
+  const int flags = CONFIG_UART_ISR_IN_IRAM ? ESP_INTR_FLAG_IRAM : 0;
   TRY(uart_driver_install(
-      uart_num, kGpsUartRxBufSize, kGpsUartTxBufSize, kGpsUartQueueSize, &g_gps_uart_queue, 0));
+      uart_num, kGpsUartRxBufSize, kGpsUartTxBufSize, kGpsUartQueueSize, &g_gps_uart_queue, flags));
   TRY(uart_param_config(uart_num, &config));
   TRY(uart_set_pin(uart_num, tx_pin, rx_pin, UART_PIN_NO_CHANGE, UART_PIN_NO_CHANGE));
   TRY(mcpwm_gpio_init(MCPWM_UNIT_0, MCPWM_CAP_0, pps_pin));
@@ -106,6 +107,8 @@ esp_err_t SetupGps() {
                   kGpsDesiredOutputPeriodMs),
               false);
         } else if constexpr (2 <= CONFIG_HW_VERSION && CONFIG_HW_VERSION <= 3) {
+      // DEBUG: don't do I2C
+#if 0
           OK_OR_RETURN(
               SetupUbloxGpsI2c(
                   I2C_NUM_0,
@@ -113,6 +116,7 @@ esp_err_t SetupGps() {
                   kGpsUartDesiredBaudRate,
                   kGpsDesiredOutputPeriodMs),
               false);
+#endif
         }
         return true;
       },

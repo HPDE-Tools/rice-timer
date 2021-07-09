@@ -34,7 +34,9 @@ esp_err_t SetupSharedI2cBus() {
     scl_pin = GPIO_NUM_26;
     sda_pin = GPIO_NUM_25;
   } else if constexpr (CONFIG_HW_VERSION == 3) {
-    scl_pin = GPIO_NUM_17;
+    // DEBUG: use SCL pin as idle output
+    scl_pin = GPIO_NUM_NC;
+    // scl_pin = GPIO_NUM_17;
     sda_pin = GPIO_NUM_16;
   } else {
     return ESP_ERR_NOT_SUPPORTED;
