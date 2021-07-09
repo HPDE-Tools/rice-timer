@@ -13,7 +13,13 @@
 #include "freertos/ringbuf.h"  // NOTE: specific to ESP32 port
 #include "freertos/task.h"
 
+#include "common/macros.hpp"
 #include "common/task.hpp"
+
+struct ringbuf;
+typedef struct ringbuf ringbuf_t;
+struct ringbuf_worker;
+typedef struct ringbuf_worker ringbuf_worker_t;
 
 namespace io {
 
@@ -72,7 +78,7 @@ class Logger : public Task {
 
   /// \param root_path parent of all session dirs
   /// \param option options
-  Logger(std::string_view root_path, Option option);
+  Logger(std::string_view root_path, int num_producers, Option option);
   virtual ~Logger();
 
   esp_err_t Start(
@@ -83,10 +89,7 @@ class Logger : public Task {
   void Stop(Error error = kForced);
 
   /// \param line content of the line (without line ending char)
-  esp_err_t AppendLine(std::string_view line, TickType_t timeout);
-
-  /// \param line content of the line (without line ending char)
-  esp_err_t AppendLineFromIsr(std::string_view line);
+  esp_err_t AppendLine(int producer_id, std::string_view line);
 
   // split file path parts
 
@@ -105,8 +108,8 @@ class Logger : public Task {
 
  private:
   std::string root_;
+  int num_producers_;
   const Option option_;
-  RingbufHandle_t ringbuf_;
   CommitCallback commit_callback_ = nullptr;
   StoppedCallback stopped_callback_ = nullptr;
 
@@ -119,11 +122,17 @@ class Logger : public Task {
   int64_t bytes_committed_ = 0;
   TickType_t last_commit_time_{};
 
+  ringbuf_t* ringbuf_;
+  std::unique_ptr<ringbuf_worker_t*[]> producers_;
+  std::unique_ptr<uint8_t[]> buf_;
+
   void DrainQueue();
   bool EnsureSessionDir();
   bool EnsureSplitPath();
   bool MaintainRollingLogHeadroom();
   Error WriteIncomingLinesToFile(FILE* file);
+
+  NON_COPYABLE_NOR_MOVABLE(Logger)
 };
 
 }  // namespace io

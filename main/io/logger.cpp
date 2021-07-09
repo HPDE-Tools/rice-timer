@@ -15,7 +15,7 @@
 #include "esp_log.h"
 #include "esp_system.h"
 #include "fmt/core.h"
-#include "freertos/ringbuf.h"  // NOTE: only in ESP32 port
+#include "ringbuf_c/ringbuf.h"
 
 #include "app/device_id.hpp"
 #include "app/sd_card_instance.hpp"
@@ -37,14 +37,27 @@ constexpr char TAG[] = "logger";
 constexpr int kLoggerStackSize = 4096;
 }  // namespace
 
-Logger::Logger(std::string_view root_path, Option option)
-    : root_(root_path),
-      option_(option),
-      ringbuf_(CHECK_NOTNULL(xRingbufferCreate(option.queue_size_bytes, RINGBUF_TYPE_NOSPLIT))) {}
+Logger::Logger(std::string_view root_path, int num_producers, Option option)
+    : root_(root_path), num_producers_(num_producers), option_(option) {
+  size_t ringbuf_t_size{};
+  ringbuf_get_sizes(num_producers, &ringbuf_t_size, nullptr);
+  ringbuf_ = (ringbuf_t*)malloc(ringbuf_t_size);
+  CHECK(ringbuf_ != nullptr);
+  ringbuf_setup(ringbuf_, num_producers, option.queue_size_bytes);
+
+  producers_ = std::make_unique<ringbuf_worker_t*[]>(num_producers);
+  CHECK(producers_);
+  for (int i = 0; i < num_producers; i++) {
+    producers_[i] = ringbuf_register(ringbuf_, i);
+  }
+
+  buf_ = std::make_unique<uint8_t[]>(option.queue_size_bytes);
+  CHECK(buf_);
+}
 
 Logger::~Logger() {
   Stop();
-  vRingbufferDelete(ringbuf_);
+  free(ringbuf_);
 }
 
 esp_err_t Logger::Start(
@@ -68,19 +81,19 @@ void Logger::Stop(Error error) {
   Task::Kill();
 }
 
-esp_err_t Logger::AppendLine(std::string_view line, TickType_t timeout) {
+esp_err_t Logger::AppendLine(int producer_id, std::string_view line) {
+  CHECK(0 <= producer_id && producer_id < num_producers_);
   if (!Task::handle()) {
     return ESP_ERR_INVALID_STATE;
   }
-  return xRingbufferSend(ringbuf_, line.data(), line.size(), timeout) == pdTRUE ? ESP_OK : ESP_FAIL;
-}
-
-esp_err_t Logger::AppendLineFromIsr(std::string_view line) {
-  if (!Task::handle()) {
-    return ESP_ERR_INVALID_STATE;
+  const int offset = ringbuf_acquire(ringbuf_, producers_[producer_id], line.size() + 1);
+  if (offset < 0) {
+    return ESP_FAIL;
   }
-  return xRingbufferSendFromISR(ringbuf_, line.data(), line.size(), nullptr) == pdTRUE ? ESP_OK :
-                                                                                         ESP_FAIL;
+  std::copy(line.begin(), line.end(), &buf_[offset]);
+  buf_[offset + line.size()] = '\n';
+  ringbuf_produce(ringbuf_, producers_[producer_id]);
+  return ESP_OK;
 }
 
 void Logger::Run() {
@@ -127,10 +140,10 @@ void Logger::Run() {
 void Logger::DrainQueue() {
   // NOTE: this must be called BEFORE starting the task, so that there won't be new items pushed
   // into the queue (see `AppendLine`)
-  size_t unused_size;
-  void* item;
-  while ((item = xRingbufferReceive(ringbuf_, &unused_size, 0)) != nullptr) {
-    vRingbufferReturnItem(ringbuf_, item);
+  size_t offset{};
+  size_t len{};
+  while ((len = ringbuf_consume(ringbuf_, &offset)) > 0) {
+    ringbuf_release(ringbuf_, len);
   }
 }
 
@@ -190,37 +203,35 @@ bool Logger::MaintainRollingLogHeadroom() {
 }
 
 Logger::Error Logger::WriteIncomingLinesToFile(FILE* file) {
-  const size_t min_free_size_for_flushing = xRingbufferGetMaxItemSize(ringbuf_) * 3 / 4;
   lines_committed_ = 0;
   bytes_committed_ = 0;
   last_commit_time_ = xTaskGetTickCount();
 
   int64_t bytes_written = 0;
-  for (int line = 0; line < option_.max_num_lines_per_split; ++line) {
+  for (int line_i = 0; line_i < option_.max_num_lines_per_split; ++line_i) {
     size_t size = 0;
-    if (auto line =
-            static_cast<char*>(xRingbufferReceive(ringbuf_, &size, option_.flush_interval_ms))) {
-      SCOPE_EXIT { vRingbufferReturnItem(ringbuf_, line); };
-      if (fwrite(line, size, 1, file) != 1 || fputc('\n', file) < 0) {
-        ESP_LOGE(TAG, "fail to write (%s):%.*s", strerror(errno), size, line);
+    size_t offset = 0;
+    while (true) {
+      if ((size = ringbuf_consume(ringbuf_, &offset)) == 0) {
+        vTaskDelay(1);
+        continue;
+      }
+      SCOPE_EXIT { ringbuf_release(ringbuf_, size); };
+      if (fwrite(&buf_[offset], size, 1, file) != 1) {
+        ESP_LOGE(TAG, "fail to write (%s):%.*s", strerror(errno), size, &buf_[offset]);
         return kWriteError;
       }
+      bytes_written += size;
+      break;
     }
-    bytes_written += size;
 
     const TickType_t now = xTaskGetTickCount();
     if (SignedMinus(now, last_commit_time_) >= pdMS_TO_TICKS(option_.flush_interval_ms)) {
-      const size_t free_size = xRingbufferGetCurFreeSize(ringbuf_);
-      ESP_LOGW(TAG, "freesize %d (min %d)", (int)free_size, (int)min_free_size_for_flushing);
-      if (free_size < min_free_size_for_flushing) {
-        last_commit_time_ = now;
-        continue;
-      }
       if (const esp_err_t err = ReallyFlush(file); err != ESP_OK) {
         ESP_LOGE(TAG, "fail to flush (%s)", strerror(errno));
         return kFlushError;
       }
-      lines_committed_ = line + 1;
+      lines_committed_ = line_i + 1;
       bytes_committed_ = bytes_written;
       last_commit_time_ = now;
       if (commit_callback_) {

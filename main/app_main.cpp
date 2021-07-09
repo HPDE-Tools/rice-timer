@@ -105,8 +105,8 @@ void HandleGpsData(
       nmea);
   if (time_fix) {
     const esp_err_t err = SendToLogger(
-        fmt::format("p,{},{}", time_fix->pps_capture, time_fix->parsed_time_unix),
-        pdMS_TO_TICKS(200));
+        app::kGpsProducer,
+        fmt::format("p,{},{}", time_fix->pps_capture, time_fix->parsed_time_unix));
     if (err == ESP_FAIL) {
       ++g_gps_lost;
     }
@@ -121,8 +121,7 @@ void HandleGpsLine(std::string_view line, bool is_valid_nmea) {
   ESP_LOGV(TAG, "gps line (valid=%d):%.*s", (int)is_valid_nmea, trimmed.size(), trimmed.data());
   if (is_valid_nmea) {
     const uint32_t capture = channel.TriggerNow();
-    const esp_err_t err =
-        SendToLogger(fmt::format("g,{},{}", capture, trimmed), pdMS_TO_TICKS(200));
+    const esp_err_t err = SendToLogger(app::kGpsProducer, fmt::format("g,{},{}", capture, trimmed));
     if (err == ESP_FAIL) {
       ++g_gps_lost;
     }
@@ -169,7 +168,7 @@ void HandleImuRawData(const Lsm6dsr::RawImuData& data) {
   p = std::to_chars(p, buf_end, data.wz, /*base*/ 10).ptr;
   *p++ = '\0';
   CHECK(p < buf_end);
-  const esp_err_t err = SendToLogger(std::string_view(buf, p - buf - 1), pdMS_TO_TICKS(50));
+  const esp_err_t err = SendToLogger(app::kImuProducer, std::string_view(buf, p - buf - 1));
   if (err == ESP_FAIL) {
     ++g_imu_lost;
   }
@@ -201,7 +200,7 @@ void HandleCanMessage(uint32_t current_capture, twai_message_t message) {
   }
   *p++ = '\0';
   CHECK(p < buf_end);
-  const esp_err_t err = SendToLogger(std::string_view(buf, p - buf - 1), pdMS_TO_TICKS(1));
+  const esp_err_t err = SendToLogger(app::kCanProducer, std::string_view(buf, p - buf - 1));
   if (err == ESP_FAIL) {
     ++g_can_lost;
   }

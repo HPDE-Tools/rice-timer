@@ -19,6 +19,7 @@ esp_err_t SetupLogger() {
       g_device_mac[5]);
   g_logger = std::make_unique<io::Logger>(
       g_device_dir,
+      kNumProducers,
       io::Logger::Option{
           .queue_size_bytes = 32768,
       });
