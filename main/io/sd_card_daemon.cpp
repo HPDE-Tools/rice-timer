@@ -8,6 +8,7 @@
 #include "driver/gpio.h"
 #include "freertos/FreeRTOS.h"
 
+#include "common/isr_yielder.hpp"
 #include "common/logging.hpp"
 #include "common/scope_guard.hpp"
 
@@ -88,7 +89,8 @@ void SdCardDaemon::Ping() {
 
 void SdCardDaemon::PingFromIsr() {
   if (const TaskHandle_t handle = Task::handle()) {
-    xTaskNotifyFromISR(handle, 1, eSetBits, nullptr);
+    IsrYielder yielder;
+    xTaskNotifyFromISR(handle, 1, eSetBits, yielder);
   }
 }
 

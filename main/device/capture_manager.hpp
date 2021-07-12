@@ -43,7 +43,7 @@ class CaptureManager {
   std::array<Callback, 3> callbacks_ = {};
 
   CaptureManager(mcpwm_unit_t unit, mcpwm_dev_t* dev);
-  static void InterruptHandler(CaptureManager* self);
+  IRAM_ATTR static void InterruptHandler(CaptureManager* self);
 };
 
 class CaptureChannel {

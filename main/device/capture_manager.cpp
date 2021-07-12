@@ -16,7 +16,7 @@ CaptureManager::CaptureManager(mcpwm_unit_t unit, mcpwm_dev_t* dev) : unit_(unit
       unit_,
       reinterpret_cast<intr_handler_t>(&InterruptHandler),
       this,
-      /*flag*/ 0,
+      ESP_INTR_FLAG_IRAM,
       &interrupt_handle_);
   vPortCPUInitializeMutex(&lock_);
 }

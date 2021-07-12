@@ -12,6 +12,7 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/semphr.h"
 
+#include "common/isr_yielder.hpp"
 #include "common/logging.hpp"
 #include "common/scope_guard.hpp"
 #include "common/utils.hpp"
@@ -134,8 +135,9 @@ esp_err_t Lsm6dsr::Start(RawImuDataSubscriber callback) {
           mcpwm_unit_t /*unit*/,
           mcpwm_capture_signal_t /*signal*/,
           uint32_t /*edge*/,
-          uint32_t value) {
-        xTaskNotifyFromISR(handle, value, eSetValueWithOverwrite, nullptr);
+          uint32_t value) IRAM_ATTR {
+        IsrYielder yielder;
+        xTaskNotifyFromISR(handle, value, eSetValueWithOverwrite, yielder);
         if constexpr (CONFIG_HW_VERSION == 1) {
           // DEBUG: measure interrupt handling latency and task handling latency
           gpio_set_level(GPIO_NUM_13, 1);
