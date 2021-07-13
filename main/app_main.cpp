@@ -331,9 +331,13 @@ extern "C" void app_main(void) {
   xTaskCreatePinnedToCore(
       MainTask, "main", 4096, /*arg*/ nullptr, configMAX_PRIORITIES - 1, &g_main_task, APP_CPU_NUM);
 
-  // DEBUG: use SCL pin as idle indicator
+  // DEBUG: use SCL and SDA pin as debug
   gpio_set_direction(GPIO_NUM_17, GPIO_MODE_OUTPUT);
   gpio_pad_select_gpio(GPIO_NUM_17);
+  gpio_set_direction(GPIO_NUM_16, GPIO_MODE_OUTPUT);
+  gpio_pad_select_gpio(GPIO_NUM_16);
+
+#if 0
   esp_register_freertos_idle_hook_for_cpu(
       []() {
         static bool level = false;
@@ -341,4 +345,5 @@ extern "C" void app_main(void) {
         return true;
       },
       PRO_CPU_NUM);
+#endif
 }

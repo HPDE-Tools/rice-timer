@@ -213,27 +213,49 @@ Logger::Error Logger::WriteIncomingLinesToFile(FILE* file) {
     size_t size = 0;
     size_t offset = 0;
     {
+      /////////////// DEBUG
+      gpio_set_level(GPIO_NUM_17, 0);
+      gpio_set_level(GPIO_NUM_16, 0);
+
       if ((size = ringbuf_consume(ringbuf_, &offset)) == 0) {
         // polling is cheap so let's keep doing it
         vTaskDelay(1);
         continue;
       }
+
+      /////////////// DEBUG
+      gpio_set_level(GPIO_NUM_17, 1);
+
       SCOPE_EXIT { ringbuf_release(ringbuf_, size); };
       if (fwrite(&buf_[offset], size, 1, file) != 1) {
         ESP_LOGE(TAG, "fail to write (%s):%.*s", strerror(errno), size, &buf_[offset]);
         return kWriteError;
       }
+
+      /////////////// DEBUG
+      gpio_set_level(GPIO_NUM_17, 0);
+
       bytes_written += size;
       lines_written += std::count(&buf_[offset], &buf_[offset + size], '\n');
-      // lines_written++;  // DEBUG
     }
 
     const TickType_t now = xTaskGetTickCount();
     if (SignedMinus(now, last_commit_time_) >= pdMS_TO_TICKS(option_.flush_interval_ms)) {
+      /////////////// DEBUG
+      gpio_set_level(GPIO_NUM_16, 1);
+
       if (const esp_err_t err = ReallyFlush(file); err != ESP_OK) {
         ESP_LOGE(TAG, "fail to flush (%s)", strerror(errno));
         return kFlushError;
       }
+
+      /////////////// DEBUG
+      gpio_set_level(GPIO_NUM_16, 0);
+
+      const int dbytes = bytes_written - bytes_committed_;
+      const int dt = now - last_commit_time_;
+      ESP_LOGE(TAG, "%d / %d = %.3f", dbytes, dt, float(dbytes) / dt * 1000);
+
       lines_committed_ = lines_written;
       bytes_committed_ = bytes_written;
       last_commit_time_ = now;
@@ -242,6 +264,10 @@ Logger::Error Logger::WriteIncomingLinesToFile(FILE* file) {
       }
     }
   }
+
+  /////////////// DEBUG
+  gpio_set_level(GPIO_NUM_17, 0);
+  gpio_set_level(GPIO_NUM_16, 0);
   return kNoError;
 }
 
