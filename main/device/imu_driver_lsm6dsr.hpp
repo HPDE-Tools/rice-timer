@@ -119,7 +119,7 @@ class Lsm6dsr : Task {
   }
 
  protected:
-  void Run() override;
+  IRAM_ATTR void Run() override;
 
  private:
   Option option_;

@@ -30,7 +30,13 @@ constexpr uint8_t kWrite = 0x00;
 constexpr uint8_t kSpiThreeWire = 0b00001100;  // CTRL3_C: SIM | IF_INC
 constexpr uint8_t kChipSelfId = 0x6B;
 
-std::optional<uint8_t> ReadOneReg(spi_device_handle_t spi, uint8_t reg) {
+#ifdef CONFIG_SPI_MASTER_ISR_IN_IRAM
+#define SPI_MASTER_ISR_ATTR IRAM_ATTR
+#else
+#define SPI_MASTER_ISR_ATTR
+#endif
+
+SPI_MASTER_ISR_ATTR std::optional<uint8_t> ReadOneReg(spi_device_handle_t spi, uint8_t reg) {
   spi_transaction_t txn{};
   txn.flags = SPI_TRANS_USE_RXDATA;
   txn.addr = kRead | reg;
@@ -40,7 +46,7 @@ std::optional<uint8_t> ReadOneReg(spi_device_handle_t spi, uint8_t reg) {
   return txn.rx_data[0];
 }
 
-esp_err_t WriteOneReg(spi_device_handle_t spi, uint8_t reg, uint8_t value) {
+SPI_MASTER_ISR_ATTR esp_err_t WriteOneReg(spi_device_handle_t spi, uint8_t reg, uint8_t value) {
   spi_transaction_t txn{};
   txn.flags = SPI_TRANS_USE_TXDATA;
   txn.addr = kWrite | reg;
@@ -51,7 +57,8 @@ esp_err_t WriteOneReg(spi_device_handle_t spi, uint8_t reg, uint8_t value) {
   return ESP_OK;
 }
 
-esp_err_t ReadRegs(spi_device_handle_t spi, uint8_t reg_start, uint8_t len, uint8_t* out_buf) {
+SPI_MASTER_ISR_ATTR esp_err_t
+ReadRegs(spi_device_handle_t spi, uint8_t reg_start, uint8_t len, uint8_t* out_buf) {
   spi_transaction_t txn{};
   txn.flags = 0;
   txn.addr = kRead | reg_start;
