@@ -37,28 +37,19 @@ constexpr char TAG[] = "logger";
 constexpr int kLoggerStackSize = 4096;
 }  // namespace
 
+#define LOGGER_TRY(expr)                                     \
+  do {                                                       \
+    if (const Logger::Error err = (expr); err != kNoError) { \
+      return err;                                            \
+    }                                                        \
+  } while (0)
+
 Logger::Logger(std::string_view root_path, int num_producers, Option option)
-    : root_(root_path), num_producers_(num_producers), option_(option) {
-  size_t ringbuf_t_size{};
-  ringbuf_get_sizes(num_producers, &ringbuf_t_size, nullptr);
-  ringbuf_ = (ringbuf_t*)malloc(ringbuf_t_size);
-  CHECK(ringbuf_ != nullptr);
-  ringbuf_setup(ringbuf_, num_producers, option.queue_size_bytes);
-
-  producers_ = std::make_unique<ringbuf_worker_t*[]>(num_producers);
-  CHECK(producers_);
-  for (int i = 0; i < num_producers; i++) {
-    producers_[i] = ringbuf_register(ringbuf_, i);
-  }
-
-  buf_ = std::make_unique<uint8_t[]>(option.queue_size_bytes);
-  CHECK(buf_);
+    : root_(root_path), option_(option), line_buf_(option.queue_size_bytes, num_producers) {
+  write_buf_.reserve(option.write_buffer_size_bytes);
 }
 
-Logger::~Logger() {
-  Stop();
-  free(ringbuf_);
-}
+Logger::~Logger() { Stop(); }
 
 esp_err_t Logger::Start(
     int64_t session_id,
@@ -69,7 +60,7 @@ esp_err_t Logger::Start(
   split_id_ = split_id % option_.split_overall_mod;
   commit_callback_ = commit_callback;
   stopped_callback_ = stopped_callback;
-  DrainQueue();
+  line_buf_.Clear();
   return Task::SpawnPinned(TAG, kLoggerStackSize, kPriorityLogger, PRO_CPU_NUM);
   // return Task::SpawnSame(TAG, kLoggerStackSize, kPriorityLogger);
 }
@@ -81,19 +72,11 @@ void Logger::Stop(Error error) {
   Task::Kill();
 }
 
-esp_err_t Logger::AppendLine(int producer_id, std::string_view line) {
-  CHECK(0 <= producer_id && producer_id < num_producers_);
+esp_err_t Logger::AppendLine(int producer_id, std::string_view line_without_sep) {
   if (!Task::handle()) {
     return ESP_ERR_INVALID_STATE;
   }
-  const int offset = ringbuf_acquire(ringbuf_, producers_[producer_id], line.size() + 1);
-  if (offset < 0) {
-    return ESP_FAIL;
-  }
-  std::copy(line.begin(), line.end(), &buf_[offset]);
-  buf_[offset + line.size()] = '\n';
-  ringbuf_produce(ringbuf_, producers_[producer_id]);
-  return ESP_OK;
+  return line_buf_.Push(producer_id, line_without_sep) ? ESP_OK : ESP_FAIL;
 }
 
 void Logger::Run() {
@@ -134,16 +117,6 @@ void Logger::Run() {
     if (++split_id_ == option_.split_overall_mod) {
       split_id_ = 0;
     }
-  }
-}
-
-void Logger::DrainQueue() {
-  // NOTE: this must be called BEFORE starting the task, so that there won't be new items pushed
-  // into the queue (see `AppendLine`)
-  size_t offset{};
-  size_t len{};
-  while ((len = ringbuf_consume(ringbuf_, &offset)) > 0) {
-    ringbuf_release(ringbuf_, len);
   }
 }
 
@@ -203,65 +176,74 @@ bool Logger::MaintainRollingLogHeadroom() {
 }
 
 Logger::Error Logger::WriteIncomingLinesToFile(FILE* file) {
+  /////////////// DEBUG
+  gpio_set_level(GPIO_NUM_17, 0);
+  gpio_set_level(GPIO_NUM_16, 0);
+
+  lines_written_ = 0;
+  bytes_written_ = 0;
   lines_committed_ = 0;
   bytes_committed_ = 0;
   last_commit_time_ = xTaskGetTickCount();
 
-  int64_t bytes_written = 0;
-  int lines_written = 0;
-  while (lines_written < option_.max_num_lines_per_split) {
-    size_t size = 0;
-    size_t offset = 0;
-    {
-      /////////////// DEBUG
-      gpio_set_level(GPIO_NUM_17, 0);
-      gpio_set_level(GPIO_NUM_16, 0);
-
-      if ((size = ringbuf_consume(ringbuf_, &offset)) == 0) {
-        // polling is cheap so let's keep doing it
+  std::string_view line;
+  for (int line_i = 0; line_i < option_.max_num_lines_per_split; line_i++) {
+    while (true) {
+      line = line_buf_.Peek();
+      if (line.empty()) {
         vTaskDelay(1);
         continue;
       }
-
-      /////////////// DEBUG
-      gpio_set_level(GPIO_NUM_17, 1);
-
-      SCOPE_EXIT { ringbuf_release(ringbuf_, size); };
-      if (fwrite(&buf_[offset], size, 1, file) != 1) {
-        ESP_LOGE(TAG, "fail to write (%s):%.*s", strerror(errno), size, &buf_[offset]);
-        return kWriteError;
-      }
-
-      bytes_written += size;
-      lines_written += std::count(&buf_[offset], &buf_[offset + size], '\n');
+      break;
     }
+    LOGGER_TRY(WriteIncomingLineToFile(line, file));
+    line_buf_.PopPeeked(line);
+  }
+  return FlushWriteBuf(file, /*sync*/ true);
+}
 
-    const TickType_t now = xTaskGetTickCount();
-    if (SignedMinus(now, last_commit_time_) >= pdMS_TO_TICKS(option_.flush_interval_ms)) {
-      /////////////// DEBUG
-      gpio_set_level(GPIO_NUM_16, 1);
+Logger::Error Logger::WriteIncomingLineToFile(std::string_view line, FILE* file) {
+  const TickType_t now = xTaskGetTickCount();
+  const bool buf_full = (write_buf_.size() + line.size() > write_buf_.capacity());
+  const bool should_sync =
+      (SignedMinus(now, last_commit_time_) >= pdMS_TO_TICKS(option_.flush_interval_ms));
+  if (buf_full || should_sync) {
+    LOGGER_TRY(FlushWriteBuf(file, should_sync));
+  }
+  CHECK(write_buf_.size() + line.size() <= write_buf_.capacity());
+  write_buf_.insert(write_buf_.end(), line.begin(), line.end());
+  lines_written_++;
+  bytes_written_ += line.size();
+  return kNoError;
+}
 
-      if (const esp_err_t err = ReallyFlush(file); err != ESP_OK) {
-        ESP_LOGE(TAG, "fail to flush (%s)", strerror(errno));
-        return kFlushError;
-      }
-
-      const int dbytes = bytes_written - bytes_committed_;
-      const int dt = now - last_commit_time_;
-      ESP_LOGE(TAG, "%d / %d = %.3f", dbytes, dt, float(dbytes) / dt * 1000);
-
-      lines_committed_ = lines_written;
-      bytes_committed_ = bytes_written;
-      last_commit_time_ = now;
-      if (commit_callback_) {
-        commit_callback_(*this, now);
-      }
+Logger::Error Logger::FlushWriteBuf(FILE* file, bool sync) {
+  if (!write_buf_.empty()) {
+    gpio_set_level(GPIO_NUM_17, 1);  // DEBUG
+    if (fwrite(write_buf_.data(), write_buf_.size(), 1, file) != 1) {
+      ESP_LOGE(
+          TAG, "fail to write (%s):%.*s", strerror(errno), write_buf_.size(), write_buf_.data());
+      return kWriteError;
     }
+    write_buf_.clear();
+    gpio_set_level(GPIO_NUM_17, 0);  // DEBUG
   }
 
-  /////////////// DEBUG
-  gpio_set_level(GPIO_NUM_17, 0);
-  gpio_set_level(GPIO_NUM_16, 0);
+  if (sync) {
+    gpio_set_level(GPIO_NUM_16, 1);  // DEBUG
+    if (const esp_err_t err = FlushAndSync(file); err != ESP_OK) {
+      ESP_LOGE(TAG, "fail to flush (%s)", strerror(errno));
+      return kFlushError;
+    }
+    lines_committed_ = lines_written_;
+    bytes_committed_ = bytes_written_;
+    last_commit_time_ = xTaskGetTickCount();
+    if (commit_callback_) {
+      commit_callback_(*this, last_commit_time_);
+    }
+    gpio_set_level(GPIO_NUM_16, 0);  // DEBUG
+  }
+
   return kNoError;
 }
 

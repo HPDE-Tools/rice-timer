@@ -19,7 +19,7 @@ namespace io {
 // We won't be dealing with
 constexpr mode_t kFsMode = 0777;
 
-esp_err_t ReallyFlush(FILE* f);
+esp_err_t FlushAndSync(FILE* f);
 
 esp_err_t Mkdir(const std::string& dir);
 

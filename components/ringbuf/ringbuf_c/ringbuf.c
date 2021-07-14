@@ -268,6 +268,11 @@ ssize_t ringbuf_acquire(ringbuf_t* rbuf, ringbuf_worker_t* w, size_t len) {
   return (ssize_t)next;
 }
 
+ssize_t ringbuf_acquire_i(ringbuf_t* rbuf, int i, size_t len) {
+  ringbuf_worker_t* w = &rbuf->workers[i];
+  return ringbuf_acquire(rbuf, w, len);
+}
+
 /*
  * ringbuf_produce: indicate the acquired range in the buffer is produced
  * and is ready to be consumed.
@@ -277,6 +282,11 @@ void ringbuf_produce(ringbuf_t* rbuf, ringbuf_worker_t* w) {
   ASSERT(w->registered);
   ASSERT(w->seen_off != RBUF_OFF_MAX);
   atomic_store_explicit(&w->seen_off, RBUF_OFF_MAX, memory_order_release);
+}
+
+void ringbuf_produce_i(ringbuf_t* rbuf, int i) {
+  ringbuf_worker_t* w = &rbuf->workers[i];
+  ringbuf_produce(rbuf, w);
 }
 
 /*

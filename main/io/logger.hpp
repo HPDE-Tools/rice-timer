@@ -7,12 +7,14 @@
 #include <memory>
 #include <string>
 #include <string_view>
+#include <vector>
 
 #include "esp_err.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/ringbuf.h"  // NOTE: specific to ESP32 port
 #include "freertos/task.h"
 
+#include "common/line_buffer_mpsc.hpp"
 #include "common/macros.hpp"
 #include "common/task.hpp"
 
@@ -26,6 +28,7 @@ namespace io {
 class Logger : public Task {
  public:
   static constexpr char kLogFileSuffix[] = ".log";
+  static constexpr int kWriteBufferSize = 512;
 
   struct Option {
     /// Split file ID will roll over to 0 once it reaches this number.
@@ -49,7 +52,10 @@ class Logger : public Task {
     int flush_interval_ms = 1'013;
 
     /// Max number of bytes the incoming queue of the logger can hold.
-    int queue_size_bytes = 1024;
+    int queue_size_bytes = 8192;
+
+    /// Number of bytes written to the file in one `fwrite` call.
+    int write_buffer_size_bytes = 512;
 
     /// If true, only keep the latest log on card when running out of space.
     /// If false, logging will stop without removing old log.
@@ -88,8 +94,8 @@ class Logger : public Task {
       StoppedCallback stopped_callback);
   void Stop(Error error = kForced);
 
-  /// \param line content of the line (without line ending char)
-  esp_err_t AppendLine(int producer_id, std::string_view line);
+  /// \param line content of the line (without line separator)
+  IRAM_ATTR esp_err_t AppendLine(int producer_id, std::string_view line_without_sep);
 
   // split file path parts
 
@@ -118,19 +124,21 @@ class Logger : public Task {
   std::string session_dir_;
   std::string split_path_;
 
+  int lines_written_ = 0;
+  int64_t bytes_written_ = 0;
   int lines_committed_ = 0;
   int64_t bytes_committed_ = 0;
   TickType_t last_commit_time_{};
 
-  ringbuf_t* ringbuf_;
-  std::unique_ptr<ringbuf_worker_t*[]> producers_;
-  std::unique_ptr<uint8_t[]> buf_;
+  LineBufferMpsc line_buf_;
+  std::vector<uint8_t> write_buf_;
 
-  void DrainQueue();
   bool EnsureSessionDir();
   bool EnsureSplitPath();
   bool MaintainRollingLogHeadroom();
-  Error WriteIncomingLinesToFile(FILE* file);
+  IRAM_ATTR Error WriteIncomingLinesToFile(FILE* file);
+  IRAM_ATTR Error WriteIncomingLineToFile(std::string_view line, FILE* file);
+  Error FlushWriteBuf(FILE* file, bool sync);
 
   NON_COPYABLE_NOR_MOVABLE(Logger)
 };

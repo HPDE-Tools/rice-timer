@@ -13,6 +13,7 @@ set(srcs
 "app/sd_card_instance.cpp"
 "app/shared_i2c_bus.cpp"
 "app/shared_spi_bus.cpp"
+"common/line_buffer_mpsc.cpp"
 "device/can.cpp"
 "device/capture_manager.cpp"
 "device/encoder.cpp"

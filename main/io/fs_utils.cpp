@@ -26,7 +26,7 @@ constexpr char TAG[] = "fs";
 
 }  // namespace
 
-esp_err_t ReallyFlush(FILE* f) {
+esp_err_t FlushAndSync(FILE* f) {
   if (f == nullptr) {
     return ESP_ERR_INVALID_ARG;
   }
