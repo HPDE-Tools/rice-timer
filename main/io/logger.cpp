@@ -232,9 +232,6 @@ Logger::Error Logger::WriteIncomingLinesToFile(FILE* file) {
         return kWriteError;
       }
 
-      /////////////// DEBUG
-      gpio_set_level(GPIO_NUM_17, 0);
-
       bytes_written += size;
       lines_written += std::count(&buf_[offset], &buf_[offset + size], '\n');
     }
@@ -248,9 +245,6 @@ Logger::Error Logger::WriteIncomingLinesToFile(FILE* file) {
         ESP_LOGE(TAG, "fail to flush (%s)", strerror(errno));
         return kFlushError;
       }
-
-      /////////////// DEBUG
-      gpio_set_level(GPIO_NUM_16, 0);
 
       const int dbytes = bytes_written - bytes_committed_;
       const int dt = now - last_commit_time_;
