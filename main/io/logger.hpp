@@ -28,7 +28,6 @@ namespace io {
 class Logger : public Task {
  public:
   static constexpr char kLogFileSuffix[] = ".log";
-  static constexpr int kWriteBufferSize = 512;
 
   struct Option {
     /// Split file ID will roll over to 0 once it reaches this number.
