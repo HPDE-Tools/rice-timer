@@ -22,7 +22,7 @@ esp_err_t SetupLogger() {
       kNumProducers,
       io::Logger::Option{
           .queue_size_bytes = 65534,
-          .write_buffer_size_bytes = 4096,
+          .write_buffer_size_bytes = 8192,
       });
   return g_logger ? ESP_OK : ESP_FAIL;
 }
