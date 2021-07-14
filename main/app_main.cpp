@@ -129,7 +129,7 @@ void HandleGpsLine(std::string_view line, bool is_valid_nmea) {
 }
 
 IRAM_ATTR void HandleImuRawData(const Lsm6dsr::RawImuData& data) {
-#if 0
+#if 1
   ui::g_model.imu = ui::Model::Imu{
       .ax_g = app::g_imu->AccelRawToG(data.ax),
       .ay_g = app::g_imu->AccelRawToG(data.ay),
