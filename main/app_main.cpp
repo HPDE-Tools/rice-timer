@@ -128,7 +128,7 @@ void HandleGpsLine(std::string_view line, bool is_valid_nmea) {
   }
 }
 
-void HandleImuRawData(const Lsm6dsr::RawImuData& data) {
+IRAM_ATTR void HandleImuRawData(const Lsm6dsr::RawImuData& data) {
 #if 0
   ui::g_model.imu = ui::Model::Imu{
       .ax_g = app::g_imu->AccelRawToG(data.ax),
@@ -174,14 +174,14 @@ void HandleImuRawData(const Lsm6dsr::RawImuData& data) {
   }
 }
 
-char* WriteHexUpper(char* s, uint32_t value, int len) {
+IRAM_ATTR char* WriteHexUpper(char* s, uint32_t value, int len) {
   for (char* p = s + len - 1; p >= s; --p, value >>= 4) {
     *p = HexDigitUpper(value & 0xf);
   }
   return s + len;
 }
 
-void HandleCanMessage(uint32_t current_capture, twai_message_t message) {
+IRAM_ATTR void HandleCanMessage(uint32_t current_capture, twai_message_t message) {
   static char buf[] = "c,2147483647,b0b1b2b3,8,d0d1d2d3d4d5d6d7";
   char* const buf_begin = buf + 2;
   char* const buf_end = buf + sizeof(buf);
@@ -201,24 +201,10 @@ void HandleCanMessage(uint32_t current_capture, twai_message_t message) {
   *p++ = '\0';
   CHECK(p < buf_end);
 
-  constexpr int kMinDelay = pdMS_TO_TICKS(5);
-  constexpr int kMaxDelay = kMinDelay * 16;
-  constexpr int kRetries = 3;
-  esp_err_t err{};
-  static int delay = kMinDelay;
-  for (int i = 0; i < kRetries; i++) {
-    err = SendToLogger(app::kCanProducer, std::string_view(buf, p - buf - 1));
-    if (err == ESP_OK) {
-      delay = kMinDelay;
-      break;
-    }
-    vTaskDelay(delay);
-    delay = std::min(delay * 2, kMaxDelay);
-  }
-  if (err != ESP_OK) {
+  const esp_err_t err = SendToLogger(app::kCanProducer, std::string_view(buf, p - buf - 1));
+  if (err == ESP_FAIL) {
     ++g_can_lost;
   }
-
   ++ui::g_model.counter.can;
 }
 
