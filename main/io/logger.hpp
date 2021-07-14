@@ -44,7 +44,7 @@ class Logger : public Task {
     /// "$session_dir/12/12345.txt"
     int split_prefix_div = 1'000;
 
-    /// Each split file will contain at most this many lines (not rigidly enforced due to batching).
+    /// Each split file will contain at most this many lines.
     int max_num_lines_per_split = CONFIG_MAX_LINES_PER_FILE;
 
     /// Force flushing log to the card every once in a while.
