@@ -21,7 +21,7 @@ esp_err_t SetupLogger() {
       g_device_dir,
       kNumProducers,
       io::Logger::Option{
-          .queue_size_bytes = 65534,
+          .queue_size_bytes = 90000,
           .write_buffer_size_bytes = 8192,
       });
   return g_logger ? ESP_OK : ESP_FAIL;

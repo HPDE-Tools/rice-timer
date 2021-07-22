@@ -68,14 +68,16 @@
 #include "ringbuf_c/ringbuf.h"
 #include "ringbuf_c/utils.h"
 
-#define RBUF_OFF_MASK (0x0000ffffu)
-#define WRAP_LOCK_BIT (0x80000000u)
-#define RBUF_OFF_MAX (UINT32_MAX & ~WRAP_LOCK_BIT)
-
-#define WRAP_COUNTER (0x7fff0000u)
-#define WRAP_INCR(x) (((x) + 0x10000u) & WRAP_COUNTER)
-
 typedef uint32_t ringbuf_off_t;
+const ringbuf_off_t LENGTH_BITS = 24;
+const ringbuf_off_t WRAP_BITS = 32 - 1 - LENGTH_BITS;
+const ringbuf_off_t RBUF_OFF_MASK = (1u << LENGTH_BITS) - 1;
+const ringbuf_off_t WRAP_LOCK_BIT = 1u << 31;
+const ringbuf_off_t RBUF_OFF_MAX = ~0 & ~WRAP_LOCK_BIT;
+const ringbuf_off_t WRAP_COUNTER = RBUF_OFF_MAX & ~RBUF_OFF_MASK;
+const ringbuf_off_t WRAP_STEP = 1u << LENGTH_BITS;
+
+#define WRAP_INCR(x) (((x) + WRAP_STEP) & WRAP_COUNTER)
 
 struct ringbuf_worker {
   volatile ringbuf_off_t seen_off;
