@@ -3,8 +3,9 @@
 
 #include "io/uart_line_reader.hpp"
 
+#include "scope_guard/scope_guard.hpp"
+
 #include "common/logging.hpp"
-#include "common/scope_guard.hpp"
 
 namespace io {
 

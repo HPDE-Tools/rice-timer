@@ -7,7 +7,8 @@
 #include <optional>
 #include <type_traits>
 
-#include "common/scope_guard.hpp"
+#include "scope_guard/scope_guard.hpp"
+
 #include "common/utils.hpp"
 
 template <typename TData, typename TTime>

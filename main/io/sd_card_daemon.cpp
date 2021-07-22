@@ -7,10 +7,10 @@
 
 #include "driver/gpio.h"
 #include "freertos/FreeRTOS.h"
+#include "scope_guard/scope_guard.hpp"
 
 #include "common/isr_yielder.hpp"
 #include "common/logging.hpp"
-#include "common/scope_guard.hpp"
 
 namespace io {
 

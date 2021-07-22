@@ -16,11 +16,11 @@
 #include "esp_system.h"
 #include "fmt/core.h"
 #include "ringbuf_c/ringbuf.h"
+#include "scope_guard/scope_guard.hpp"
 
 #include "app/device_id.hpp"
 #include "app/sd_card_instance.hpp"
 #include "common/logging.hpp"
-#include "common/scope_guard.hpp"
 #include "common/strings.hpp"
 #include "common/times.hpp"
 #include "io/fs_utils.hpp"

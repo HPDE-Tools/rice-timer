@@ -9,9 +9,9 @@
 #include "Eigen/Core"
 #include "GeographicLib/TransverseMercator.hpp"
 #include "freertos/queue.h"
+#include "scope_guard/scope_guard.hpp"
 
 #include "common/logging.hpp"
-#include "common/scope_guard.hpp"
 #include "common/task.hpp"
 #include "common/times.hpp"
 #include "math/polyfill.hpp"

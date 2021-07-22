@@ -6,9 +6,9 @@
 #include "esp_system.h"
 #include "nvs.h"
 #include "nvs_flash.h"
+#include "scope_guard/scope_guard.hpp"
 
 #include "common/logging.hpp"
-#include "common/scope_guard.hpp"
 
 namespace app {
 

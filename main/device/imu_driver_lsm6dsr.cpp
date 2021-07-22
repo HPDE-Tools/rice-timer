@@ -11,10 +11,10 @@
 #include "fmt/core.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/semphr.h"
+#include "scope_guard/scope_guard.hpp"
 
 #include "common/isr_yielder.hpp"
 #include "common/logging.hpp"
-#include "common/scope_guard.hpp"
 #include "common/utils.hpp"
 #include "device/capture_manager.hpp"
 

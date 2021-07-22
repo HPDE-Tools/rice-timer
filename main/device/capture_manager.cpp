@@ -7,9 +7,9 @@
 #include "esp_log.h"
 #include "esp_system.h"
 #include "freertos/FreeRTOS.h"
+#include "scope_guard/scope_guard.hpp"
 
 #include "common/logging.hpp"
-#include "common/scope_guard.hpp"
 
 CaptureManager::CaptureManager(mcpwm_unit_t unit, mcpwm_dev_t* dev) : unit_(unit), dev_(dev) {
   mcpwm_isr_register(
