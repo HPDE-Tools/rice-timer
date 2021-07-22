@@ -64,8 +64,8 @@ class OledSsd1309 {
       {0xD5, 0xA0},  // clock setup
       {0xA8, 0x3F},  // multiplex ratio: 63 + 1 = 64
       {0xDA, 0x12},  // interleave mode
-      {0x81, 0x7F},  // current control
-      {0xD9, 0x82},  // pre-charge period
+      {0x81, 0xA0},  // current control
+      {0xD9, 0x84},  // pre-charge period
       {0xDB, 0x34},  // VCOMH deselect level
       {0x20, 0x00},  // horizontal address mode
       {0xD3, 0x00},  // display offset = 0
@@ -78,7 +78,7 @@ class OledSsd1309 {
   // mirror image of VRAM (8R x 1C packed into 1 byte)
   std::array<uint8_t, kNativePixels / 8> buf_{};
 
-  lv_disp_buf_t lv_disp_buf_;
+  lv_disp_draw_buf_t lv_disp_draw_buf_;
   lv_disp_drv_t lv_disp_drv_;
 
   Option option_;

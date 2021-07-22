@@ -9,10 +9,10 @@
 
 #include "device/oled_ssd1309.hpp"
 
-namespace app {
+namespace ui {
 
 extern std::unique_ptr<OledSsd1309> g_oled;
 
 esp_err_t SetupOled();
 
-}  // namespace app
+}  // namespace ui

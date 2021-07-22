@@ -14,4 +14,13 @@ esp_err_t SetupStyle() {
   return g_style ? ESP_OK : ESP_FAIL;
 }
 
+esp_err_t SetupTheme() {
+  auto* theme = lv_theme_mono_init(lv_disp_get_default(), /*dark bg*/ true, &iosevka10l);
+  if (!theme) {
+    return ESP_FAIL;
+  }
+  lv_disp_set_theme(lv_disp_get_default(), theme);
+  return ESP_OK;
+}
+
 }  // namespace ui

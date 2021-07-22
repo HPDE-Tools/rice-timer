@@ -21,9 +21,6 @@ namespace view {
 
 constexpr char TAG[] = "ui/view";
 
-constexpr lv_color_t kOn = LV_COLOR_BLACK;
-constexpr lv_color_t kOff = LV_COLOR_WHITE;
-
 template <typename TFloat>
 constexpr char SignChar(TFloat t) {
   return t >= 0 ? '+' : '-';

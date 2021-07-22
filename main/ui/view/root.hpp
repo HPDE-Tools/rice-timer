@@ -21,12 +21,10 @@ struct Root {
   }
 
   Root(lv_obj_t* parent) {
-    container = lv_cont_create(parent, nullptr);
-    lv_obj_align(container, nullptr, LV_ALIGN_IN_TOP_LEFT, 0, 0);
-    lv_obj_set_auto_realign(container, true);
-    lv_obj_reset_style_list(container, 0);
-    lv_cont_set_fit2(container, LV_FIT_MAX, LV_FIT_MAX);
-    lv_cont_set_layout(container, LV_LAYOUT_PRETTY_MID);
+    container = lv_obj_create(parent);
+    lv_obj_remove_style_all(container);
+    lv_obj_set_size(container, LV_PCT(100), LV_PCT(100));
+    lv_obj_center(container);
 
     debug_view = std::make_unique<DebugView>(container);
   }

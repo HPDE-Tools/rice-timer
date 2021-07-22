@@ -24,7 +24,6 @@
 #include "app/imu_instance.hpp"
 #include "app/lap_timer.hpp"
 #include "app/logger_instance.hpp"
-#include "app/oled_instance.hpp"
 #include "app/sd_card_instance.hpp"
 #include "common/macros.hpp"
 #include "common/strings.hpp"

@@ -28,23 +28,21 @@ struct DebugView {
   ~DebugView() { lv_obj_del(table); }
 
   DebugView(lv_obj_t* parent) {
-    table = lv_table_create(parent, nullptr);
-    lv_obj_reset_style_list(table, 0);
-    lv_obj_reset_style_list(table, 1);
-    lv_obj_reset_style_list(table, 2);
-    lv_obj_reset_style_list(table, 3);
-    lv_obj_reset_style_list(table, 4);
+    table = lv_table_create(parent);
+    lv_obj_remove_style_all(table);
 
-    lv_obj_add_style(table, 1, &g_style->text_tiny);
-    lv_obj_add_style(table, 1, &g_style->container_hr_bottom);
-    lv_obj_set_style_local_pad_top(table, 1, LV_STATE_DEFAULT, 1);
+#if 0
+    lv_obj_add_style(table, &g_style->text_tiny, 0);
+    lv_obj_add_style(table, &g_style->container_hr_bottom, 0);
+    lv_obj_set_style_pad_top(table, 1, 0);
 
     lv_obj_add_style(table, 2, &g_style->text_tiny);
-    lv_obj_set_style_local_pad_top(table, 1, LV_STATE_DEFAULT, 1);
+    lv_obj_set_style_pad_top(table, 1, 0);
 
     lv_obj_add_style(table, 3, &g_style->text_medium);
     lv_obj_add_style(table, 3, &g_style->container_hr_bottom);
     lv_obj_set_style_local_pad_top(table, 3, LV_STATE_DEFAULT, 1);
+#endif
 
     lv_table_set_row_cnt(table, 3);
     lv_table_set_col_cnt(table, 5);
@@ -54,6 +52,7 @@ struct DebugView {
     lv_table_set_col_width(table, 3, 9);
     lv_table_set_col_width(table, 4, 33);
 
+#if 0
     lv_table_set_cell_merge_right(table, 0, 0, true);
     lv_table_set_cell_merge_right(table, 0, 1, true);
     lv_table_set_cell_merge_right(table, 0, 2, true);
@@ -75,6 +74,7 @@ struct DebugView {
     lv_table_set_cell_type(table, 2, 2, 2);
     lv_table_set_cell_type(table, 2, 3, 2);
     lv_table_set_cell_type(table, 2, 4, 2);
+#endif
   }
 
   void RenderGps(const std::optional<Model::Gps>& gps) {

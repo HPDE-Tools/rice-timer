@@ -4,12 +4,10 @@ set(srcs
 
 "app/can_instance.cpp"
 "app/device_id.cpp"
-"app/encoder_button_input.cpp"
 "app/gps_instance.cpp"
 "app/imu_instance.cpp"
 "app/lap_timer.cpp"
 "app/logger_instance.cpp"
-"app/oled_instance.cpp"
 "app/sd_card_instance.cpp"
 "app/shared_i2c_bus.cpp"
 "app/shared_spi_bus.cpp"
@@ -29,6 +27,8 @@ set(srcs
 "io/sd_card_daemon.cpp"
 "io/uart_line_reader.cpp"
 "ui/controller.cpp"
+"ui/display.cpp"
+"ui/encoder_button_input.cpp"
 "ui/model.cpp"
 "ui/style.cpp"
 )

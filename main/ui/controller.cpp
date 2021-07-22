@@ -9,11 +9,11 @@
 #include "freertos/task.h"
 #include "lvgl.h"
 
-#include "app/encoder_button_input.hpp"
-#include "app/oled_instance.hpp"
 #include "common/macros.hpp"
 #include "common/times.hpp"
 #include "priorities.hpp"
+#include "ui/display.hpp"
+#include "ui/encoder_button_input.hpp"
 #include "ui/model.hpp"
 #include "ui/style.hpp"
 #include "ui/view/root.hpp"
@@ -30,10 +30,10 @@ constexpr int kControllerStackSize = 8000;
 esp_err_t SetupDisplayDriver() {
   lv_init();
   if constexpr (CONFIG_HW_VERSION == 3) {
-    TRY(app::SetupOled());
-    TRY(app::g_oled->RegisterLvglDriver());
-    TRY(app::g_oled->SetDisplayEnabled(true));
-    TRY(app::RegisterLvglInputDrivers());
+    TRY(SetupOled());
+    TRY(g_oled->RegisterLvglDriver());
+    TRY(g_oled->SetDisplayEnabled(true));
+    TRY(RegisterLvglInputDrivers());
   } else {
     return ESP_ERR_NOT_SUPPORTED;
   }

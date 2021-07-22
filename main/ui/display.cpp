@@ -1,7 +1,7 @@
 // Copyright 2021 summivox. All rights reserved.
 // Authors: summivox@gmail.com
 
-#include "app/oled_instance.hpp"
+#include "ui/display.hpp"
 
 #include "driver/spi_common.h"
 #include "freertos/FreeRTOS.h"
@@ -11,12 +11,12 @@
 #include "common/macros.hpp"
 #include "common/times.hpp"
 
-namespace app {
+namespace ui {
 
 std::unique_ptr<OledSsd1309> g_oled;
 
 esp_err_t SetupOled() {
-  TRY(SetupSharedSpiBus());
+  TRY(app::SetupSharedSpiBus());
 
   gpio_num_t cs_pin = GPIO_NUM_NC;
   gpio_num_t dc_pin = GPIO_NUM_NC;
@@ -40,4 +40,4 @@ esp_err_t SetupOled() {
   return ESP_OK;
 }
 
-}  // namespace app
+}  // namespace ui

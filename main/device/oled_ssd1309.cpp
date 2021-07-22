@@ -162,7 +162,7 @@ esp_err_t OledSsd1309::Flush() {
 }
 
 esp_err_t OledSsd1309::RegisterLvglDriver() {
-  lv_disp_buf_init(&lv_disp_buf_, buf_.data(), /*buf2*/ nullptr, kNativePixels);
+  lv_disp_draw_buf_init(&lv_disp_draw_buf_, buf_.data(), /*buf2*/ nullptr, kNativePixels);
   lv_disp_drv_init(&lv_disp_drv_);
   lv_disp_drv_.hor_res = kNativeWidth;
   lv_disp_drv_.ver_res = kNativeHeight;
@@ -174,26 +174,18 @@ esp_err_t OledSsd1309::RegisterLvglDriver() {
     area->y2 = kNativeHeight - 1;
   };
   lv_disp_drv_.flush_cb = [](lv_disp_drv_t* drv, const lv_area_t* area, lv_color_t* color_map) {
-    auto self = reinterpret_cast<OledSsd1309*>(drv->buffer->buf1);
+    auto self = reinterpret_cast<OledSsd1309*>(drv->draw_buf->buf1);
     (void)self->Flush();  // NOTE: no way to report failure here
     lv_disp_flush_ready(drv);
   };
   lv_disp_drv_.set_px_cb = LvglSetPx;
-  lv_disp_drv_.buffer = &lv_disp_buf_;
+  lv_disp_drv_.draw_buf = &lv_disp_draw_buf_;
   if (lv_disp_drv_register(&lv_disp_drv_) == nullptr) {
     return ESP_FAIL;
   }
   return ESP_OK;
 }
 
-// NOTE: LVGL defaults to black-on-white for mono displays, so we use the following
-// pixel mapping to avoid having to double-invert everything.
-//
-//  | lv_color_t     | bit in buffer | OLED  |
-//  |----------------|---------------|-------|
-//  | LV_COLOR_WHITE | 0             | off   |
-//  | LV_COLOR_BLACK | 1             | on    |
-//
 void OledSsd1309::LvglSetPx(
     lv_disp_drv_t* disp_drv,
     uint8_t* buf,
@@ -203,5 +195,5 @@ void OledSsd1309::LvglSetPx(
     lv_color_t color,
     lv_opa_t opa) {
   auto self = reinterpret_cast<OledSsd1309*>(buf);
-  self->SetPixel(y, x, !color.full);
+  self->SetPixel(y, x, !!color.full);
 }
