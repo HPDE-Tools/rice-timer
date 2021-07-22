@@ -14,6 +14,8 @@ namespace app {
 
 namespace {
 
+constexpr char TAG[] = "id";
+
 esp_err_t NvsInit() {
   esp_err_t err = nvs_flash_init();
   if (err == ESP_ERR_NVS_NO_FREE_PAGES || err == ESP_ERR_NVS_NEW_VERSION_FOUND) {
@@ -33,6 +35,18 @@ const std::array<uint8_t, 6> g_device_mac{[]() {
   esp_efuse_mac_get_default(ret.data());
   return ret;
 }()};
+
+void LogDeviceMac() {
+  ESP_LOGI(
+      TAG,
+      "device mac: %02X:%02X:%02X:%02X:%02X:%02X",
+      g_device_mac[0],
+      g_device_mac[1],
+      g_device_mac[2],
+      g_device_mac[3],
+      g_device_mac[4],
+      g_device_mac[5]);
+}
 
 int64_t NewSessionId() {
   static constexpr char kNamespace[] = "storage";

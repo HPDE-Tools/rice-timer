@@ -46,88 +46,6 @@ int64_t g_can_lost = 0;
 
 using namespace app;  // TODO: move this file altogether
 
-void PrintDeviceMac() {
-  ESP_LOGI(
-      TAG,
-      "logger mac: %02X:%02X:%02X:%02X:%02X:%02X",
-      g_device_mac[0],
-      g_device_mac[1],
-      g_device_mac[2],
-      g_device_mac[3],
-      g_device_mac[4],
-      g_device_mac[5]);
-}
-
-void HandleGpsData(
-    GpsDaemon::State state, const ParsedNmea& nmea, const std::optional<GpsTimeFix>& time_fix) {
-  ESP_LOGV(
-      TAG,
-      "gps data: state=%d, nmea=#%d, has_time_fix=%d",
-      (int)state,
-      (int)nmea.index(),
-      (int)!!time_fix);
-  std::visit(
-      overloaded{
-          [](const minmea_sentence_rmc& rmc) {
-            ESP_LOGV(
-                TAG,
-                "parsed RMC: (%+10.6f, %+11.6f)",
-                (double)minmea_tocoord(&rmc.latitude),
-                (double)minmea_tocoord(&rmc.longitude));
-            if (rmc.valid) {
-              auto& g = ui::g_model.gps.emplace();
-              g.year = rmc.date.year + GpsDaemon::kBuildCentury;
-              g.month = rmc.date.month;
-              g.day = rmc.date.day;
-              g.hour = rmc.time.hours;
-              g.minute = rmc.time.minutes;
-              g.second = rmc.time.seconds;
-              g.millisecond = rmc.time.microseconds / 1000;
-              g.latitude = minmea_tocoord(&rmc.latitude);
-              g.longitude = minmea_tocoord(&rmc.longitude);
-              g.speed_knot = minmea_tofloat(&rmc.speed);
-              g.course_deg = minmea_tofloat(&rmc.course);
-              ++ui::g_model.counter.gps;
-              UpdateGps(rmc);
-            }
-          },
-          [](const minmea_sentence_gga& gga) {
-            ESP_LOGV(TAG, "parsed GGA: sat=%d", gga.satellites_tracked);
-          },
-          [](const minmea_sentence_gst& gst) {
-            ESP_LOGV(
-                TAG,
-                "parsed GST: lat=%f, long=%f",
-                (double)minmea_tofloat(&gst.latitude_error_deviation),
-                (double)minmea_tofloat(&gst.longitude_error_deviation));
-          },
-          [](const auto&) { /* default NOP */ }},
-      nmea);
-  if (time_fix) {
-    const esp_err_t err = SendToLogger(
-        app::kGpsProducer,
-        fmt::format("p,{},{}", time_fix->pps_capture, time_fix->parsed_time_unix));
-    if (err == ESP_FAIL) {
-      ++g_gps_lost;
-    }
-  }
-}
-
-void HandleGpsLine(std::string_view line, bool is_valid_nmea) {
-  static const CaptureChannel channel =
-      CaptureManager::GetInstance(MCPWM_UNIT_0)->GetChannel(MCPWM_SELECT_CAP2);
-
-  const std::string_view trimmed = TrimSuffix(line, "\r\n");
-  ESP_LOGV(TAG, "gps line (valid=%d):%.*s", (int)is_valid_nmea, trimmed.size(), trimmed.data());
-  if (is_valid_nmea) {
-    const uint32_t capture = channel.TriggerNow();
-    const esp_err_t err = SendToLogger(app::kGpsProducer, fmt::format("g,{},{}", capture, trimmed));
-    if (err == ESP_FAIL) {
-      ++g_gps_lost;
-    }
-  }
-}
-
 IRAM_ATTR void HandleImuRawData(const Lsm6dsr::RawImuData& data) {
 #if 1
   ui::g_model.imu = ui::Model::Imu{
@@ -238,7 +156,7 @@ void HandleSdCardStateChange(bool mounted) {
 
 void Main() {
   ESP_LOGI(TAG, "MainTask started");
-  PrintDeviceMac();
+  LogDeviceMac();
   heap_caps_print_heap_info(MALLOC_CAP_8BIT);
   vTaskDelay(pdMS_TO_TICKS(2000));
 
@@ -255,7 +173,7 @@ void Main() {
 
   CHECK_OK(g_sd_card->Start(HandleSdCardStateChange));
   // the logger is started by the SD card daemon
-  CHECK_OK(g_gpsd->Start(HandleGpsData, HandleGpsLine));
+  CHECK_OK(StartGpsInstance());
   CHECK_OK(g_can->Start(HandleCanMessage));
   CHECK_OK(g_imu->Start(HandleImuRawData));
   // CHECK_OK(StartLapTimerTask());

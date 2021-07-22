@@ -41,15 +41,11 @@ constexpr int kMaxAdjustableDeltaTimeSec = 2 * 60 * 60;
 using std::nullopt;
 
 GpsDaemon::GpsDaemon(
-    io::UartLineReader* line_reader,
-    CaptureManager* capture_manager,
-    GpsSetupHandler setup_handler,
-    Option option)
+    io::UartLineReader* line_reader, CaptureManager* capture_manager, Option option)
     : option_(option),
       line_reader_(CHECK_NOTNULL(line_reader)),
       capture_manager_(CHECK_NOTNULL(capture_manager)),
       sw_capture_(capture_manager->GetChannel(option.software_capture_signal)),
-      setup_(setup_handler),
       century_(option.century) {}
 
 esp_err_t GpsDaemon::Setup() {
@@ -71,8 +67,11 @@ GpsDaemon::~GpsDaemon() {
 }
 
 esp_err_t GpsDaemon::Start(
-    GpsDataSubscriber&& data_subscriber, GpsRawLineSubscriber&& line_subscriber) {
+    GpsSetupHandler setup_handler,
+    GpsDataSubscriber&& data_subscriber,
+    GpsRawLineSubscriber&& line_subscriber) {
   state_ = kLost;
+  setup_handler_ = setup_handler;
   data_subscriber_ = data_subscriber;
   line_subscriber_ = line_subscriber;
   latest_pps_.Reset();
@@ -82,9 +81,11 @@ esp_err_t GpsDaemon::Start(
 
 void GpsDaemon::Stop() {
   Task::Kill();
-  latest_gps_.Reset();
   latest_pps_.Reset();
+  latest_gps_.Reset();
+  setup_handler_ = nullptr;
   data_subscriber_ = nullptr;
+  line_subscriber_ = nullptr;
   state_ = kLost;
 }
 
@@ -110,7 +111,7 @@ void GpsDaemon::Run() {
   while (true) {
     DebugPrintState();
     if (state_ == kLost) {
-      if (setup_(line_reader_)) {
+      if (setup_handler_(line_reader_)) {
         ESP_LOGI(TAG, "device-specific setup successful");
         state_ = kAwaitingNmea;
         latest_pps_.Reset();

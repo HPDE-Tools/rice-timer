@@ -58,25 +58,15 @@ class GpsDaemon : public Task {
   using GpsDataSubscriber = std::function<void(
       State state, const ParsedNmea& nmea, const std::optional<GpsTimeFix>& time_fix)>;
 
-  static std::unique_ptr<GpsDaemon> Create(
-      io::UartLineReader* line_reader,
-      CaptureManager* capture_manager,
-      GpsSetupHandler setup_handler,
-      Option option) {
-    std::unique_ptr<GpsDaemon> self(
-        new GpsDaemon(line_reader, capture_manager, setup_handler, option));
-    if (self->Setup() != ESP_OK) {
-      self.reset();
-    }
-    return self;
-  }
-
   virtual ~GpsDaemon();
 
-  esp_err_t Start(GpsDataSubscriber&& data_subscriber, GpsRawLineSubscriber&& line_subscriber);
+  esp_err_t Start(
+      GpsSetupHandler setup_handler,
+      GpsDataSubscriber&& data_subscriber,
+      GpsRawLineSubscriber&& line_subscriber);
   void Stop();
 
-  void PpsCaptureIsr(uint32_t value);
+  IRAM_ATTR void PpsCaptureIsr(uint32_t value);
 
   State state() const { return state_; }
   auto latest_pps() const { return latest_pps_.Get(); }
@@ -87,6 +77,8 @@ class GpsDaemon : public Task {
 
   static void AdjustSystemTime(const GpsTimeFix& time_fix, const CaptureChannel& sw_capture);
 
+  DEFINE_CREATE(GpsDaemon);
+
  protected:
   void Run() override;
 
@@ -95,7 +87,7 @@ class GpsDaemon : public Task {
   io::UartLineReader* const line_reader_;  // not owned
   CaptureManager* const capture_manager_;  // not owned
   const CaptureChannel sw_capture_;        // derived from capture manager
-  GpsSetupHandler setup_;
+  GpsSetupHandler setup_handler_;
   GpsDataSubscriber data_subscriber_;
   GpsRawLineSubscriber line_subscriber_;
 
@@ -106,11 +98,7 @@ class GpsDaemon : public Task {
 
   int century_;
 
-  GpsDaemon(
-      io::UartLineReader* line_reader,
-      CaptureManager* capture_manager,
-      GpsSetupHandler setup_handler,
-      Option option);
+  GpsDaemon(io::UartLineReader* line_reader, CaptureManager* capture_manager, Option option);
 
   esp_err_t Setup();
   void DebugPrintState();

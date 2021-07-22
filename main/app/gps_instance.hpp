@@ -18,5 +18,6 @@ extern std::unique_ptr<io::UartLineReader> g_gps_line_reader;
 extern std::unique_ptr<GpsDaemon> g_gpsd;
 
 esp_err_t SetupGps();
+esp_err_t StartGpsInstance();
 
 }  // namespace app

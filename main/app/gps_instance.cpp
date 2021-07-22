@@ -8,8 +8,10 @@
 #include "driver/uart.h"
 #include "soc/uart_periph.h"
 
+#include "app/logger_instance.hpp"
 #include "app/shared_i2c_bus.hpp"
-#include "common/logging.hpp"
+#include "common/macros.hpp"
+#include "common/strings.hpp"
 #include "device/gps_driver_mtk.hpp"
 #include "device/gps_driver_ublox.hpp"
 #include "device/gps_utils.hpp"
@@ -27,7 +29,10 @@ constexpr int kGpsUartQueueSize = 128;
 
 constexpr int kGpsDesiredOutputPeriodMs = 100;
 
-esp_err_t SetupUartPins(uart_port_t uart_num, uart_dev_t* uart_dev) {
+const uart_port_t kGpsUartNum = UART_NUM_2;
+uart_dev_t* const g_gps_uart_dev = &UART2;
+
+esp_err_t SetupUartPins() {
   gpio_num_t tx_pin = GPIO_NUM_NC;
   gpio_num_t rx_pin = GPIO_NUM_NC;
   gpio_num_t pps_pin = GPIO_NUM_NC;
@@ -58,11 +63,111 @@ esp_err_t SetupUartPins(uart_port_t uart_num, uart_dev_t* uart_dev) {
   };
   const int flags = CONFIG_UART_ISR_IN_IRAM ? ESP_INTR_FLAG_IRAM : 0;
   TRY(uart_driver_install(
-      uart_num, kGpsUartRxBufSize, kGpsUartTxBufSize, kGpsUartQueueSize, &g_gps_uart_queue, flags));
-  TRY(uart_param_config(uart_num, &config));
-  TRY(uart_set_pin(uart_num, tx_pin, rx_pin, UART_PIN_NO_CHANGE, UART_PIN_NO_CHANGE));
+      kGpsUartNum,
+      kGpsUartRxBufSize,
+      kGpsUartTxBufSize,
+      kGpsUartQueueSize,
+      &g_gps_uart_queue,
+      flags));
+  TRY(uart_param_config(kGpsUartNum, &config));
+  TRY(uart_set_pin(kGpsUartNum, tx_pin, rx_pin, UART_PIN_NO_CHANGE, UART_PIN_NO_CHANGE));
   TRY(mcpwm_gpio_init(MCPWM_UNIT_0, MCPWM_CAP_0, pps_pin));
   return ESP_OK;
+}
+
+bool GpsDeviceSetup(io::UartLineReader* line_reader) {
+  if constexpr (CONFIG_HW_VERSION == 1) {
+    OK_OR_RETURN(
+        SetupMtkGps(
+            kGpsUartNum,
+            g_gps_uart_dev,
+            line_reader,
+            kGpsUartDesiredBaudRate,
+            kGpsDesiredOutputPeriodMs),
+        false);
+  } else if constexpr (2 <= CONFIG_HW_VERSION && CONFIG_HW_VERSION <= 3) {
+    // DEBUG: don't do I2C
+#if 0
+    OK_OR_RETURN(
+        SetupUbloxGpsI2c(
+            I2C_NUM_0,
+            /*7-bit address*/ 0x42,
+            kGpsUartDesiredBaudRate,
+            kGpsDesiredOutputPeriodMs),
+        false);
+#endif
+  }
+  return true;
+}
+
+void HandleGpsData(
+    GpsDaemon::State state, const ParsedNmea& nmea, const std::optional<GpsTimeFix>& time_fix) {
+  ESP_LOGV(
+      TAG,
+      "gps data: state=%d, nmea=#%d, has_time_fix=%d",
+      (int)state,
+      (int)nmea.index(),
+      (int)!!time_fix);
+  std::visit(
+      overloaded{
+          [](const minmea_sentence_rmc& rmc) {
+            ESP_LOGV(
+                TAG,
+                "parsed RMC: (%+10.6f, %+11.6f)",
+                (double)minmea_tocoord(&rmc.latitude),
+                (double)minmea_tocoord(&rmc.longitude));
+            if (rmc.valid) {
+              auto& g = ui::g_model.gps.emplace();
+              g.year = rmc.date.year + GpsDaemon::kBuildCentury;
+              g.month = rmc.date.month;
+              g.day = rmc.date.day;
+              g.hour = rmc.time.hours;
+              g.minute = rmc.time.minutes;
+              g.second = rmc.time.seconds;
+              g.millisecond = rmc.time.microseconds / 1000;
+              g.latitude = minmea_tocoord(&rmc.latitude);
+              g.longitude = minmea_tocoord(&rmc.longitude);
+              g.speed_knot = minmea_tofloat(&rmc.speed);
+              g.course_deg = minmea_tofloat(&rmc.course);
+              ++ui::g_model.counter.gps;
+              UpdateGps(rmc);
+            }
+          },
+          [](const minmea_sentence_gga& gga) {
+            ESP_LOGV(TAG, "parsed GGA: sat=%d", gga.satellites_tracked);
+          },
+          [](const minmea_sentence_gst& gst) {
+            ESP_LOGV(
+                TAG,
+                "parsed GST: lat=%f, long=%f",
+                (double)minmea_tofloat(&gst.latitude_error_deviation),
+                (double)minmea_tofloat(&gst.longitude_error_deviation));
+          },
+          [](const auto&) { /* default NOP */ }},
+      nmea);
+  if (time_fix) {
+    const esp_err_t err = SendToLogger(
+        app::kGpsProducer,
+        fmt::format("p,{},{}", time_fix->pps_capture, time_fix->parsed_time_unix));
+    if (err == ESP_FAIL) {
+      ++g_gps_lost;
+    }
+  }
+}
+
+void HandleGpsLine(std::string_view line, bool is_valid_nmea) {
+  static const CaptureChannel channel =
+      CaptureManager::GetInstance(MCPWM_UNIT_0)->GetChannel(MCPWM_SELECT_CAP2);
+
+  const std::string_view trimmed = TrimSuffix(line, "\r\n");
+  ESP_LOGV(TAG, "gps line (valid=%d):%.*s", (int)is_valid_nmea, trimmed.size(), trimmed.data());
+  if (is_valid_nmea) {
+    const uint32_t capture = channel.TriggerNow();
+    const esp_err_t err = SendToLogger(app::kGpsProducer, fmt::format("g,{},{}", capture, trimmed));
+    if (err == ESP_FAIL) {
+      ++g_gps_lost;
+    }
+  }
 }
 
 }  // namespace
@@ -73,13 +178,10 @@ std::unique_ptr<GpsDaemon> g_gpsd;
 
 esp_err_t SetupGps() {
   TRY(SetupSharedI2cBus());
-
-  const uart_port_t uart_num = UART_NUM_2;
-  uart_dev_t* const uart_dev = &UART2;
-  TRY(SetupUartPins(uart_num, uart_dev));
+  TRY(SetupUartPins());
 
   g_gps_line_reader = io::UartLineReader::Create(
-      uart_num,
+      kGpsUartNum,
       g_gps_uart_queue,
       {
           .delimiter = '\n',
@@ -95,31 +197,6 @@ esp_err_t SetupGps() {
   g_gpsd = GpsDaemon::Create(
       g_gps_line_reader.get(),
       CaptureManager::GetInstance(MCPWM_UNIT_0),
-      // vendor-specific GPS setup handler
-      [uart_num, uart_dev](io::UartLineReader* line_reader) -> bool {
-        if constexpr (CONFIG_HW_VERSION == 1) {
-          OK_OR_RETURN(
-              SetupMtkGps(
-                  uart_num,
-                  uart_dev,
-                  line_reader,
-                  kGpsUartDesiredBaudRate,
-                  kGpsDesiredOutputPeriodMs),
-              false);
-        } else if constexpr (2 <= CONFIG_HW_VERSION && CONFIG_HW_VERSION <= 3) {
-      // DEBUG: don't do I2C
-#if 0
-          OK_OR_RETURN(
-              SetupUbloxGpsI2c(
-                  I2C_NUM_0,
-                  /*7-bit address*/ 0x42,
-                  kGpsUartDesiredBaudRate,
-                  kGpsDesiredOutputPeriodMs),
-              false);
-#endif
-        }
-        return true;
-      },
       GpsDaemon::Option{
           .pps_capture_signal = MCPWM_SELECT_CAP0,
           .software_capture_signal = MCPWM_SELECT_CAP2,
@@ -130,5 +207,7 @@ esp_err_t SetupGps() {
   }
   return ESP_OK;
 }
+
+esp_err_t StartGpsInstance() { return g_gpsd->Start(HandleGpsData, HandleGpsLine); }
 
 }  // namespace app
