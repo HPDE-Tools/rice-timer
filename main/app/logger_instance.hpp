@@ -14,17 +14,19 @@
 
 namespace app {
 
-extern std::string g_device_dir;
-extern std::unique_ptr<io::Logger> g_logger;
-
-esp_err_t SetupLogger();
-
 enum ProducerId {
   kGpsProducer,
   kImuProducer,
   kCanProducer,
   kNumProducers,
 };
+
+extern std::string g_device_dir;
+extern std::unique_ptr<io::Logger> g_logger;
+
+esp_err_t SetupLogger();
+esp_err_t StartLogger();
+inline void StopLogger() { g_logger->Stop(); }
 
 inline esp_err_t SendToLogger(ProducerId producer_id, std::string_view line) {
   if (!g_logger) {

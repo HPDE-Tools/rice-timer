@@ -175,9 +175,9 @@ void HandleGpsLine(std::string_view line, bool is_valid_nmea) {
 
 }  // namespace
 
-QueueHandle_t g_gps_uart_queue;
-std::unique_ptr<io::UartLineReader> g_gps_line_reader;
-std::unique_ptr<GpsDaemon> g_gpsd;
+QueueHandle_t g_gps_uart_queue{};
+std::unique_ptr<io::UartLineReader> g_gps_line_reader{};
+std::unique_ptr<GpsDaemon> g_gpsd{};
 
 esp_err_t SetupGps() {
   TRY(SetupSharedI2cBus());
@@ -211,6 +211,11 @@ esp_err_t SetupGps() {
   return ESP_OK;
 }
 
-esp_err_t StartGpsInstance() { return g_gpsd->Start(GpsDeviceSetup, HandleGpsData, HandleGpsLine); }
+esp_err_t StartGpsInstance() {
+  if (!g_gpsd) {
+    return ESP_ERR_INVALID_STATE;
+  }
+  return g_gpsd->Start(GpsDeviceSetup, HandleGpsData, HandleGpsLine);
+}
 
 }  // namespace app

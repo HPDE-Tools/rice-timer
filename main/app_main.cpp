@@ -29,8 +29,8 @@
 #include "common/macros.hpp"
 #include "common/strings.hpp"
 #include "common/utils.hpp"
+#include "ui/controller.hpp"
 #include "ui/model.hpp"
-#include "ui/view.hpp"
 
 namespace {
 constexpr char TAG[] = "main";
@@ -38,121 +38,9 @@ constexpr char TAG[] = "main";
 constexpr int kCanaryPeriodMs = 991;
 // constexpr int kCanaryPeriodMs = 9973;
 
-int64_t g_gps_lost = 0;
-int64_t g_imu_lost = 0;
-int64_t g_can_lost = 0;
-
 }  // namespace
 
 using namespace app;  // TODO: move this file altogether
-
-IRAM_ATTR void HandleImuRawData(const Lsm6dsr::RawImuData& data) {
-#if 1
-  ui::g_model.imu = ui::Model::Imu{
-      .ax_g = app::g_imu->AccelRawToG(data.ax),
-      .ay_g = app::g_imu->AccelRawToG(data.ay),
-      .az_g = app::g_imu->AccelRawToG(data.az),
-      .wx_dps = app::g_imu->GyroRawToDps(data.wx),
-      .wy_dps = app::g_imu->GyroRawToDps(data.wy),
-      .wz_dps = app::g_imu->GyroRawToDps(data.wz),
-  };
-#else
-  ui::g_model.imu_raw = ui::Model::ImuRaw{
-      .ax_raw = data.ax,
-      .ay_raw = data.ay,
-      .az_raw = data.az,
-      .wx_raw = data.wx,
-      .wy_raw = data.wy,
-      .wz_raw = data.wz,
-  };
-#endif
-  ++ui::g_model.counter.imu;
-  static char buf[] = "i,2147483647,-32768,-32768,-32768,-32768,-32768,-32768";
-  char* const buf_begin = buf + 2;
-  char* const buf_end = buf + sizeof(buf);
-  char* p = buf_begin;
-  p = std::to_chars(p, buf_end, data.capture, /*base*/ 10).ptr;
-  *p++ = ',';
-  p = std::to_chars(p, buf_end, data.ax, /*base*/ 10).ptr;
-  *p++ = ',';
-  p = std::to_chars(p, buf_end, data.ay, /*base*/ 10).ptr;
-  *p++ = ',';
-  p = std::to_chars(p, buf_end, data.az, /*base*/ 10).ptr;
-  *p++ = ',';
-  p = std::to_chars(p, buf_end, data.wx, /*base*/ 10).ptr;
-  *p++ = ',';
-  p = std::to_chars(p, buf_end, data.wy, /*base*/ 10).ptr;
-  *p++ = ',';
-  p = std::to_chars(p, buf_end, data.wz, /*base*/ 10).ptr;
-  *p++ = '\0';
-  CHECK(p < buf_end);
-  const esp_err_t err = SendToLogger(app::kImuProducer, std::string_view(buf, p - buf - 1));
-  if (err == ESP_FAIL) {
-    ++g_imu_lost;
-  }
-}
-
-IRAM_ATTR char* WriteHexUpper(char* s, uint32_t value, int len) {
-  for (char* p = s + len - 1; p >= s; --p, value >>= 4) {
-    *p = HexDigitUpper(value & 0xf);
-  }
-  return s + len;
-}
-
-IRAM_ATTR void HandleCanMessage(uint32_t current_capture, twai_message_t message) {
-  static char buf[] = "c,2147483647,b0b1b2b3,8,d0d1d2d3d4d5d6d7";
-  char* const buf_begin = buf + 2;
-  char* const buf_end = buf + sizeof(buf);
-
-  const uint8_t dlc = std::min(message.data_length_code, uint8_t{8});
-
-  char* p = buf_begin;
-  p = std::to_chars(p, buf_end, current_capture, /*base*/ 10).ptr;
-  *p++ = ',';
-  p = WriteHexUpper(p, message.identifier, message.extd ? 8 : 3);
-  *p++ = ',';
-  *p++ = '0' + dlc;
-  *p++ = ',';
-  for (int i = 0; i < dlc; i++) {
-    p = WriteHexUpper(p, message.data[i], 2);
-  }
-  *p++ = '\0';
-  CHECK(p < buf_end);
-
-  const esp_err_t err = SendToLogger(app::kCanProducer, std::string_view(buf, p - buf - 1));
-  if (err == ESP_FAIL) {
-    ++g_can_lost;
-  }
-  ++ui::g_model.counter.can;
-}
-
-void HandleLoggerCommit(const io::Logger& logger, TickType_t now) {
-  ui::g_model.logger = ui::Model::Logger{
-      .session_id = logger.session_id(),
-      .split_id = logger.split_id(),
-      .lines = logger.lines_committed(),
-  };
-}
-
-void HandleLoggerExit(const io::Logger::Error error) {
-  ESP_LOGE(TAG, "logger exit: %d", (int)error);
-  ui::g_model.logger.reset();
-}
-
-void HandleSdCardStateChange(bool mounted) {
-  if (mounted) {
-    sdmmc_card_print_info(stdout, g_sd_card->sd_card());
-    ESP_LOGI(TAG, "card mounted; starting logger");
-    const esp_err_t err =
-        g_logger->Start(NewSessionId(), /*init split id*/ 0, HandleLoggerCommit, HandleLoggerExit);
-    if (err != ESP_OK) {
-      ESP_LOGE(TAG, "logger cannot be started: %s", esp_err_to_name(err));
-    }
-  } else {
-    g_logger->Stop();
-    ESP_LOGW(TAG, "card unmounted; logger stopped");
-  }
-}
 
 void Main() {
   ESP_LOGI(TAG, "MainTask started");
@@ -166,18 +54,17 @@ void Main() {
   CHECK_OK(SetupCan());
   CHECK_OK(SetupImu());
   // CHECK_OK(SetupLapTimer());
-  CHECK_OK(ui::SetupView());
+  CHECK_OK(ui::SetupUi());
 
   ESP_LOGI(TAG, "MainTask setup complete");
   heap_caps_print_heap_info(MALLOC_CAP_8BIT);
 
-  CHECK_OK(g_sd_card->Start(HandleSdCardStateChange));
-  // the logger is started by the SD card daemon
+  CHECK_OK(StartSdCardInstance());
   CHECK_OK(StartGpsInstance());
-  CHECK_OK(g_can->Start(HandleCanMessage));
-  CHECK_OK(g_imu->Start(HandleImuRawData));
+  CHECK_OK(StartCanInstance());
+  CHECK_OK(StartImuInstance());
   // CHECK_OK(StartLapTimerTask());
-  CHECK_OK(ui::g_view->Start());
+  CHECK_OK(ui::StartUi());
 }
 
 TaskHandle_t g_main_task{};
@@ -195,10 +82,10 @@ void CanaryTask(void* /*unused*/) {
   while (true) {
     ESP_LOGW(
         "canary",
-        "loss: g=%" PRId64 " i=%" PRId64 " c=%" PRId64,
-        g_gps_lost,
-        g_imu_lost,
-        g_can_lost);
+        "loss: g=%d i=%d c=%d",
+        ui::g_model.lost.gps.load(),
+        ui::g_model.lost.imu.load(),
+        ui::g_model.lost.can.load());
 #if 0
     LOG_WATER_MARK("canary", g_canary_task);
     if (g_logger) {
@@ -214,8 +101,8 @@ void CanaryTask(void* /*unused*/) {
       LOG_WATER_MARK("sd", g_sd_card->handle());
     }
     LOG_WATER_MARK("lap", GetLapTimerTask());
-    if (ui::g_view) {
-      LOG_WATER_MARK("ui/view", ui::g_view->handle());
+    if (ui::g_controller) {
+      LOG_WATER_MARK("ui/view", ui::g_controller->handle());
     }
 #endif
     vTaskDelayUntil(&last_wake_tick, pdMS_TO_TICKS(kCanaryPeriodMs));

@@ -15,5 +15,6 @@ namespace app {
 extern std::unique_ptr<CanManager> g_can;
 
 esp_err_t SetupCan();
+esp_err_t StartCanInstance();
 
 }  // namespace app

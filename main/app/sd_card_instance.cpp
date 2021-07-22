@@ -3,9 +3,32 @@
 
 #include "app/sd_card_instance.hpp"
 
+#include "sdmmc_cmd.h"
+
+#include "app/logger_instance.hpp"
 #include "priorities.hpp"
 
 namespace app {
+
+namespace {
+
+constexpr char TAG[] = "app/sd";
+
+void HandleSdCardStateChange(bool mounted) {
+  if (mounted) {
+    sdmmc_card_print_info(stdout, g_sd_card->sd_card());
+    ESP_LOGI(TAG, "card mounted; starting logger");
+    const esp_err_t err = StartLogger();
+    if (err != ESP_OK) {
+      ESP_LOGE(TAG, "logger cannot be started: %s", esp_err_to_name(err));
+    }
+  } else {
+    StopLogger();
+    ESP_LOGW(TAG, "card unmounted; logger stopped");
+  }
+}
+
+}  // namespace
 
 std::unique_ptr<io::SdCardDaemon> g_sd_card;
 
@@ -19,7 +42,7 @@ esp_err_t SetupSdCard() {
     return ESP_ERR_NOT_SUPPORTED;
   }
 
-  g_sd_card = io::SdCardDaemon::Create({
+  g_sd_card = io::SdCardDaemon::Create(io::SdCardDaemon::Option{
       .mount_config =
           {
               .format_if_mount_failed = false,
@@ -30,6 +53,13 @@ esp_err_t SetupSdCard() {
       .priority = kPrioritySdCard,
   });
   return g_sd_card ? ESP_OK : ESP_FAIL;
+}
+
+esp_err_t StartSdCardInstance() {
+  if (!g_sd_card) {
+    return ESP_ERR_INVALID_STATE;
+  }
+  return g_sd_card->Start(HandleSdCardStateChange);
 }
 
 }  // namespace app

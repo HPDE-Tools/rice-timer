@@ -14,5 +14,6 @@ namespace app {
 extern std::unique_ptr<io::SdCardDaemon> g_sd_card;
 
 esp_err_t SetupSdCard();
+esp_err_t StartSdCardInstance();
 
 }  // namespace app

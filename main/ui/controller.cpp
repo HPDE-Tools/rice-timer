@@ -1,7 +1,7 @@
 // Copyright 2021 summivox. All rights reserved.
 // Authors: summivox@gmail.com
 
-#include "ui/view.hpp"
+#include "ui/controller.hpp"
 
 #include <optional>
 
@@ -22,10 +22,10 @@ namespace ui {
 
 namespace {
 
-constexpr char TAG[] = "ui/view";
+constexpr char TAG[] = "ui/controller";
 constexpr int kRefreshPeriodMs = 50;
 
-constexpr int kViewStackSize = 8000;
+constexpr int kControllerStackSize = 8000;
 
 esp_err_t SetupDisplayDriver() {
   lv_init();
@@ -42,31 +42,35 @@ esp_err_t SetupDisplayDriver() {
 
 }  // namespace
 
-std::unique_ptr<View> g_view{};
+std::unique_ptr<Controller> g_controller{};
 
-esp_err_t SetupView() {
-  g_view = View::Create();
-  return g_view ? ESP_OK : ESP_FAIL;
+esp_err_t SetupUi() {
+  g_controller = Controller::Create();
+  return g_controller ? ESP_OK : ESP_FAIL;
 }
 
-View::View() = default;
-View::~View() = default;
+esp_err_t StartUi() {
+  if (!g_controller) {
+    return ESP_ERR_INVALID_STATE;
+  }
+  return g_controller->Start();
+}
 
-esp_err_t View::Setup() {
+Controller::Controller() = default;
+Controller::~Controller() = default;
+
+esp_err_t Controller::Setup() {
   TRY(SetupDisplayDriver());
   TRY(SetupStyle());
   root_ = std::make_unique<view::Root>(lv_scr_act());
   return root_ ? ESP_OK : ESP_FAIL;
 }
 
-esp_err_t View::Start() {
-  TRY(Task::SpawnSame(TAG, kViewStackSize, kPriorityUi));
-  return ESP_OK;
-}
+esp_err_t Controller::Start() { return Task::SpawnSame(TAG, kControllerStackSize, kPriorityUi); }
 
-void View::Stop() { Task::Kill(); }
+void Controller::Stop() { Task::Kill(); }
 
-void View::Run() {
+void Controller::Run() {
   static TickType_t last_wake_time = xTaskGetTickCount();
 
   while (true) {

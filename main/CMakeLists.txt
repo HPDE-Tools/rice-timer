@@ -28,8 +28,8 @@ set(srcs
 "io/logger.cpp"
 "io/sd_card_daemon.cpp"
 "io/uart_line_reader.cpp"
+"ui/controller.cpp"
 "ui/model.cpp"
-"ui/view.cpp"
 "ui/style.cpp"
 )
 file(GLOB fonts "ui/fonts/*.c")

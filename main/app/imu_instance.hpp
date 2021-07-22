@@ -14,5 +14,6 @@ namespace app {
 extern std::unique_ptr<Lsm6dsr> g_imu;
 
 esp_err_t SetupImu();
+esp_err_t StartImuInstance();
 
 }  // namespace app
