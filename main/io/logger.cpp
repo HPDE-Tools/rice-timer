@@ -20,7 +20,7 @@
 
 #include "app/device_id.hpp"
 #include "app/sd_card_instance.hpp"
-#include "common/logging.hpp"
+#include "common/macros.hpp"
 #include "common/strings.hpp"
 #include "common/times.hpp"
 #include "io/fs_utils.hpp"

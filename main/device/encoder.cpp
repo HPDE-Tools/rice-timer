@@ -3,7 +3,7 @@
 
 #include "device/encoder.hpp"
 
-#include "common/logging.hpp"
+#include "common/macros.hpp"
 
 Encoder::Encoder(Option option) : option_(option) {}
 

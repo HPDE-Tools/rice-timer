@@ -9,7 +9,7 @@
 #include "driver/spi_common.h"
 #include "driver/spi_master.h"
 
-#include "common/logging.hpp"
+#include "common/macros.hpp"
 #include "common/utils.hpp"
 
 namespace {

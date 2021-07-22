@@ -11,7 +11,7 @@
 #include "lvgl.h"
 
 #include "app/device_id.hpp"
-#include "common/logging.hpp"
+#include "common/macros.hpp"
 #include "math/polyfill.hpp"
 #include "ui/model.hpp"
 #include "ui/style.hpp"

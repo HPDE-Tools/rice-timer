@@ -8,7 +8,7 @@
 #include "driver/spi_master.h"
 #include "sdkconfig.h"
 
-#include "common/logging.hpp"
+#include "common/macros.hpp"
 
 namespace app {
 

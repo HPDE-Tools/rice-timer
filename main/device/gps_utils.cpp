@@ -8,7 +8,7 @@
 
 #include "esp_err.h"
 
-#include "common/logging.hpp"
+#include "common/macros.hpp"
 #include "common/utils.hpp"
 
 ParsedNmea ParseNmea(const std::string& line) {

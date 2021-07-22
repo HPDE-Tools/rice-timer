@@ -7,7 +7,7 @@
 #include "driver/i2c.h"
 #include "sdkconfig.h"
 
-#include "common/logging.hpp"
+#include "common/macros.hpp"
 
 namespace app {
 

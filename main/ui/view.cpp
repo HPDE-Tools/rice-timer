@@ -11,7 +11,7 @@
 
 #include "app/encoder_button_input.hpp"
 #include "app/oled_instance.hpp"
-#include "common/logging.hpp"
+#include "common/macros.hpp"
 #include "common/times.hpp"
 #include "priorities.hpp"
 #include "ui/model.hpp"

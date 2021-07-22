@@ -11,7 +11,7 @@
 #include "freertos/queue.h"
 #include "scope_guard/scope_guard.hpp"
 
-#include "common/logging.hpp"
+#include "common/macros.hpp"
 #include "common/task.hpp"
 #include "common/times.hpp"
 #include "math/polyfill.hpp"

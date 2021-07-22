@@ -12,7 +12,7 @@
 #include "freertos/task.h"
 #include "lvgl.h"
 
-#include "common/logging.hpp"
+#include "common/macros.hpp"
 #include "common/utils.hpp"
 #include "device/encoder.hpp"
 #include "math/polyfill.hpp"

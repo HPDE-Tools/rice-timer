@@ -9,7 +9,7 @@
 #include "esp32/clk.h"
 #include "freertos/task.h"
 
-#include "common/logging.hpp"
+#include "common/macros.hpp"
 
 namespace io {
 

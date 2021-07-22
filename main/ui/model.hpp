@@ -60,6 +60,7 @@ struct Model {
     std::atomic<int> can{};
   };
   Counter counter{};
+  Counter lost{};
 
   std::optional<uint32_t> pps_capture{};
 

@@ -4,7 +4,7 @@
 #include "app/imu_instance.hpp"
 
 #include "app/shared_spi_bus.hpp"
-#include "common/logging.hpp"
+#include "common/macros.hpp"
 #include "priorities.hpp"
 
 namespace app {

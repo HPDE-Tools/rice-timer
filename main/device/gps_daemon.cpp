@@ -14,7 +14,7 @@
 #include "fmt/core.h"
 #include "minmea.h"
 
-#include "common/logging.hpp"
+#include "common/macros.hpp"
 #include "common/perishable.hpp"
 #include "common/strings.hpp"
 #include "common/times.hpp"

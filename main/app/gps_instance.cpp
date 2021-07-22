@@ -17,10 +17,13 @@
 #include "device/gps_utils.hpp"
 #include "io/uart_line_reader.hpp"
 #include "priorities.hpp"
+#include "ui/model.hpp"
 
 namespace app {
 
 namespace {
+
+constexpr char TAG[] = "app/gps";
 
 constexpr int kGpsUartDesiredBaudRate = 921600;
 constexpr int kGpsUartRxBufSize = 4096;
@@ -130,7 +133,7 @@ void HandleGpsData(
               g.speed_knot = minmea_tofloat(&rmc.speed);
               g.course_deg = minmea_tofloat(&rmc.course);
               ++ui::g_model.counter.gps;
-              UpdateGps(rmc);
+              // UpdateGps(rmc);
             }
           },
           [](const minmea_sentence_gga& gga) {
@@ -150,7 +153,7 @@ void HandleGpsData(
         app::kGpsProducer,
         fmt::format("p,{},{}", time_fix->pps_capture, time_fix->parsed_time_unix));
     if (err == ESP_FAIL) {
-      ++g_gps_lost;
+      ++ui::g_model.lost.gps;
     }
   }
 }
@@ -165,7 +168,7 @@ void HandleGpsLine(std::string_view line, bool is_valid_nmea) {
     const uint32_t capture = channel.TriggerNow();
     const esp_err_t err = SendToLogger(app::kGpsProducer, fmt::format("g,{},{}", capture, trimmed));
     if (err == ESP_FAIL) {
-      ++g_gps_lost;
+      ++ui::g_model.lost.gps;
     }
   }
 }
@@ -208,6 +211,6 @@ esp_err_t SetupGps() {
   return ESP_OK;
 }
 
-esp_err_t StartGpsInstance() { return g_gpsd->Start(HandleGpsData, HandleGpsLine); }
+esp_err_t StartGpsInstance() { return g_gpsd->Start(GpsDeviceSetup, HandleGpsData, HandleGpsLine); }
 
 }  // namespace app

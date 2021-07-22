@@ -12,7 +12,7 @@
 #include "fmt/format.h"
 
 #include "app/logger_instance.hpp"
-#include "common/logging.hpp"
+#include "common/macros.hpp"
 #include "common/utils.hpp"
 #include "device/capture_manager.hpp"
 

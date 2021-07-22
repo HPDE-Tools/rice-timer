@@ -8,7 +8,7 @@
 #include "esp_log.h"
 #include "ringbuf_c/ringbuf.h"
 
-#include "common/logging.hpp"
+#include "common/macros.hpp"
 
 LineBufferMpsc::LineBufferMpsc(int size_bytes, int num_producers, char line_sep)
     : size_bytes_(size_bytes), num_producers_(num_producers), line_sep_(line_sep) {

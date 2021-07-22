@@ -8,7 +8,7 @@
 #include "freertos/task.h"
 
 #include "app/shared_spi_bus.hpp"
-#include "common/logging.hpp"
+#include "common/macros.hpp"
 #include "common/times.hpp"
 
 namespace app {

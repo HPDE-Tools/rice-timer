@@ -8,7 +8,7 @@
 #include "nvs_flash.h"
 #include "scope_guard/scope_guard.hpp"
 
-#include "common/logging.hpp"
+#include "common/macros.hpp"
 
 namespace app {
 

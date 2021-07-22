@@ -6,7 +6,7 @@
 #include <algorithm>
 
 #include "common/i2c_helpers.hpp"
-#include "common/logging.hpp"
+#include "common/macros.hpp"
 #include "device/gps_utils.hpp"
 
 namespace {

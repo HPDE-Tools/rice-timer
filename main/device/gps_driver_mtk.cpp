@@ -10,7 +10,7 @@
 #include "fmt/core.h"
 #include "scope_guard/scope_guard.hpp"
 
-#include "common/logging.hpp"
+#include "common/macros.hpp"
 #include "device/gps_utils.hpp"
 #include "io/autobaud.hpp"
 

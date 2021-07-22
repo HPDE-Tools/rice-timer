@@ -15,7 +15,7 @@
 #include "esp_vfs.h"
 #include "esp_vfs_fat.h"
 
-#include "common/logging.hpp"
+#include "common/macros.hpp"
 #include "common/times.hpp"
 
 namespace io {
