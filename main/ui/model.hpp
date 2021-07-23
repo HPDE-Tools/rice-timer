@@ -62,8 +62,6 @@ struct Model {
   Counter counter{};
   Counter lost{};
 
-  std::optional<uint32_t> pps_capture{};
-
   std::optional<int64_t> lap_start_time_ms = {};
   int32_t num_laps = 0;
   float ltm_x;
