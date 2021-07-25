@@ -68,10 +68,12 @@ GpsDaemon::~GpsDaemon() {
 
 esp_err_t GpsDaemon::Start(
     GpsSetupHandler setup_handler,
+    GpsStateChangeSubscriber&& state_change_subscriber,
     GpsDataSubscriber&& data_subscriber,
     GpsRawLineSubscriber&& line_subscriber) {
   state_ = kLost;
   setup_handler_ = setup_handler;
+  state_change_subscriber_ = state_change_subscriber;
   data_subscriber_ = data_subscriber;
   line_subscriber_ = line_subscriber;
   latest_pps_.Reset();
@@ -107,13 +109,13 @@ void GpsDaemon::Run() {
 
   static ParsedNmea nmea;
 
-  state_ = kLost;
+  ChangeState(kLost);
   while (true) {
     DebugPrintState();
     if (state_ == kLost) {
       if (setup_handler_(line_reader_)) {
         ESP_LOGI(TAG, "device-specific setup successful");
-        state_ = kAwaitingNmea;
+        ChangeState(kAwaitingNmea);
         latest_pps_.Reset();
         latest_gps_.Set(ESP_ERR_NOT_FOUND, xTaskGetTickCount());
         line_reader_->DiscardInputBuffer();
@@ -142,7 +144,7 @@ void GpsDaemon::Run() {
       latest_gps_.Set(nmea, now_ostime);
     } else if (!latest_gps_.Check(now_ostime, gps_timeout)) {
       ESP_LOGE(TAG, "GPS timeout");
-      state_ = kLost;
+      ChangeState(kLost);
       continue;
     }
 
@@ -158,19 +160,19 @@ void GpsDaemon::Run() {
     switch (state_) {
       case kAwaitingNmea: {
         if (time_fix) {
-          state_ = kActive;
+          ChangeState(kActive);
         } else if (nmea_is_valid) {
-          state_ = kAwaitingTimeFix;
+          ChangeState(kAwaitingTimeFix);
         }
       } break;
       case kAwaitingTimeFix: {
         if (time_fix) {
-          state_ = kActive;
+          ChangeState(kActive);
         }
       } break;
       case kActive: {
         if (!latest_pps) {
-          state_ = kAwaitingTimeFix;
+          ChangeState(kAwaitingTimeFix);
         }
       } break;
       default:
@@ -185,6 +187,13 @@ void GpsDaemon::Run() {
       data_subscriber_(state_, nmea, time_fix);
     }
   }  // while (true)
+}
+
+void GpsDaemon::ChangeState(GpsDaemon::State state) {
+  state_ = state;
+  if (state_change_subscriber_) {
+    state_change_subscriber_(state);
+  }
 }
 
 std::optional<GpsTimeFix> GpsDaemon::TryMatchPpsGps(

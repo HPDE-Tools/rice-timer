@@ -103,6 +103,13 @@ bool GpsDeviceSetup(io::UartLineReader* line_reader) {
   return true;
 }
 
+void HandleGpsStateChange(GpsDaemon::State state) {
+  ESP_LOGI(TAG, "gps state change -> %d", state);
+  if (state != GpsDaemon::kActive) {
+    ui::g_model.gps.reset();
+  }
+}
+
 void HandleGpsData(
     GpsDaemon::State state, const ParsedNmea& nmea, const std::optional<GpsTimeFix>& time_fix) {
   ESP_LOGV(
@@ -120,7 +127,10 @@ void HandleGpsData(
                 (double)minmea_tocoord(&rmc.latitude),
                 (double)minmea_tocoord(&rmc.longitude));
             if (rmc.valid) {
-              auto& g = ui::g_model.gps.emplace();
+              if (!ui::g_model.gps) {
+                ui::g_model.gps.emplace();
+              }
+              auto& g = *ui::g_model.gps;
               g.year = rmc.date.year + GpsDaemon::kBuildCentury;
               g.month = rmc.date.month;
               g.day = rmc.date.day;
@@ -133,7 +143,7 @@ void HandleGpsData(
               g.speed_knot = minmea_tofloat(&rmc.speed);
               g.course_deg = minmea_tofloat(&rmc.course);
               ++ui::g_model.counter.gps;
-              // UpdateGps(rmc);
+              // UpdateGps(rmc);  // TODO: track timer
             }
           },
           [](const minmea_sentence_gga& gga) {
@@ -218,7 +228,7 @@ esp_err_t StartGpsInstance() {
   if (!g_gpsd) {
     return ESP_ERR_INVALID_STATE;
   }
-  return g_gpsd->Start(GpsDeviceSetup, HandleGpsData, HandleGpsLine);
+  return g_gpsd->Start(GpsDeviceSetup, HandleGpsStateChange, HandleGpsData, HandleGpsLine);
 }
 
 }  // namespace app

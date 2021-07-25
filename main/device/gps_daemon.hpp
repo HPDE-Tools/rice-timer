@@ -54,6 +54,7 @@ class GpsDaemon : public Task {
   };
 
   using GpsSetupHandler = std::function<bool(io::UartLineReader* line_reader)>;
+  using GpsStateChangeSubscriber = std::function<void(State state)>;
   using GpsRawLineSubscriber = std::function<void(std::string_view line, bool is_valid_nmea)>;
   using GpsDataSubscriber = std::function<void(
       State state, const ParsedNmea& nmea, const std::optional<GpsTimeFix>& time_fix)>;
@@ -62,6 +63,7 @@ class GpsDaemon : public Task {
 
   esp_err_t Start(
       GpsSetupHandler setup_handler,
+      GpsStateChangeSubscriber&& state_change_subscriber,
       GpsDataSubscriber&& data_subscriber,
       GpsRawLineSubscriber&& line_subscriber);
   void Stop();
@@ -75,8 +77,6 @@ class GpsDaemon : public Task {
   /// \returns whether a time fix had been received (and therefore the system time had been updated)
   bool had_first_fix() const { return had_first_fix_; }
 
-  static void AdjustSystemTime(const GpsTimeFix& time_fix, const CaptureChannel& sw_capture);
-
   DEFINE_CREATE(GpsDaemon);
 
  protected:
@@ -88,6 +88,7 @@ class GpsDaemon : public Task {
   CaptureManager* const capture_manager_;  // not owned
   const CaptureChannel sw_capture_;        // derived from capture manager
   GpsSetupHandler setup_handler_;
+  GpsStateChangeSubscriber state_change_subscriber_;
   GpsDataSubscriber data_subscriber_;
   GpsRawLineSubscriber line_subscriber_;
 
@@ -101,8 +102,11 @@ class GpsDaemon : public Task {
   GpsDaemon(io::UartLineReader* line_reader, CaptureManager* capture_manager, Option option);
 
   esp_err_t Setup();
+  void ChangeState(State state);
   void DebugPrintState();
 
   std::optional<GpsTimeFix> TryMatchPpsGps(
       uint32_t pps_capture, TickType_t pps_ostime, TickType_t gps_ostime, const ParsedNmea& nmea);
+
+  static void AdjustSystemTime(const GpsTimeFix& time_fix, const CaptureChannel& sw_capture);
 };
