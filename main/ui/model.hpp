@@ -21,6 +21,7 @@ struct Model {
     uint8_t minute;
     uint8_t second;
     uint16_t millisecond;
+    uint8_t num_sats;
     float latitude;
     float longitude;
     float speed_knot;

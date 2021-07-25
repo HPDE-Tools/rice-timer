@@ -138,6 +138,9 @@ void HandleGpsData(
           },
           [](const minmea_sentence_gga& gga) {
             ESP_LOGV(TAG, "parsed GGA: sat=%d", gga.satellites_tracked);
+            if (ui::g_model.gps) {
+              ui::g_model.gps->num_sats = gga.satellites_tracked;
+            }
           },
           [](const minmea_sentence_gst& gst) {
             ESP_LOGV(
