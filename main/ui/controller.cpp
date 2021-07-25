@@ -117,8 +117,8 @@ void Controller::Run() {
         TryStartLogger();
         break;
       }
-      case ButtonHelper::kLongClick: {
-        ESP_LOGI(TAG, "btn1 long click");
+      case ButtonHelper::kLongHoldBegin: {
+        ESP_LOGI(TAG, "btn1 long hold begin");
         StopLogger();
         break;
       }
