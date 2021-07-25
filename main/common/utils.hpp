@@ -145,3 +145,8 @@ template <typename P, typename M>
 constexpr P* ContainerOf(M* ptr, const M P::*member) {
   return (P*)((char*)ptr - OffsetOf(member));
 }
+
+// polyfill char8_t
+#ifndef __cpp_char8_t
+using char8_t = char;
+#endif  // __cpp_char8_t
