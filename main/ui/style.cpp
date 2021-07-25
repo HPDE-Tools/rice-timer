@@ -15,7 +15,7 @@ esp_err_t SetupStyle() {
 }
 
 esp_err_t SetupTheme() {
-  auto* theme = lv_theme_mono_init(lv_disp_get_default(), /*dark bg*/ true, &iosevka10l);
+  lv_theme_t* theme = lv_theme_mono_init(lv_disp_get_default(), /*dark bg*/ true, &cozette13);
   if (!theme) {
     return ESP_FAIL;
   }
