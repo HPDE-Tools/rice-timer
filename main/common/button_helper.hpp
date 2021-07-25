@@ -11,12 +11,13 @@
 class ButtonHelper {
  public:
   enum Result {
-    kReleased,
-    kPressed,
-    kShortHold,
-    kLongHold,
-    kShortClick,
-    kLongClick,
+    kReleased,       // is not pressed
+    kPressed,        // first got pressed
+    kShortHold,      // has been held for less than long_duration
+    kLongHold,       // has been held for at least long_duration
+    kLongHoldBegin,  // first time entering long-hold state
+    kShortClick,     // released after held for less than long_duration
+    kLongClick,      // released after held for at least long_duration
   };
 
   ButtonHelper(int long_duration) : long_duration_(long_duration) { Reset(); }
@@ -32,10 +33,12 @@ class ButtonHelper {
     const auto dt = SignedMinus(now, last_press_time_);
     Result result = kReleased;
     if (last_state_) {
-      is_long_ = is_long_ || dt >= long_duration_;
+      const bool curr_is_long = is_long_ || dt >= long_duration_;
+      const bool first_long = !is_long_ && curr_is_long;
+      is_long_ = curr_is_long;
       if (curr_state) {
         // H -> H
-        result = is_long_ ? kLongHold : kShortHold;
+        result = first_long ? kLongHoldBegin : is_long_ ? kLongHold : kShortHold;
       } else {
         // H -> L (falling edge)
         result = is_long_ ? kLongClick : kShortClick;
