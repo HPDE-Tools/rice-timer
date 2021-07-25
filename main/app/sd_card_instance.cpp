@@ -7,6 +7,7 @@
 
 #include "app/logger_instance.hpp"
 #include "priorities.hpp"
+#include "ui/model.hpp"
 
 namespace app {
 
@@ -17,12 +18,17 @@ constexpr char TAG[] = "app/sd";
 void HandleSdCardStateChange(bool mounted) {
   if (mounted) {
     sdmmc_card_print_info(stdout, g_sd_card->sd_card());
+    ui::g_model.sd_card = ui::Model::SdCard{
+        .capacity_bytes = g_sd_card->GetCapacityBytes(),
+        .free_bytes = g_sd_card->GetFreeSpaceBytes(),
+    };
     ESP_LOGI(TAG, "card mounted; starting logger");
     const esp_err_t err = StartLogger();
     if (err != ESP_OK) {
       ESP_LOGE(TAG, "logger cannot be started: %s", esp_err_to_name(err));
     }
   } else {
+    ui::g_model.sd_card.reset();
     StopLogger();
     ESP_LOGW(TAG, "card unmounted; logger stopped");
   }

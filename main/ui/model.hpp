@@ -62,6 +62,12 @@ struct Model {
   Counter counter{};
   Counter lost{};
 
+  struct SdCard {
+    int64_t capacity_bytes;
+    int64_t free_bytes;
+  };
+  std::optional<SdCard> sd_card{};
+
   std::optional<int64_t> lap_start_time_ms = {};
   int32_t num_laps = 0;
   float ltm_x;
