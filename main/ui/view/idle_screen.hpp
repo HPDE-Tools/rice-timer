@@ -30,9 +30,10 @@ struct IdleScreen : public Screen {
 
     // low-density dump of info (for now)
     label_info = lv_label_create(screen);
-    lv_obj_set_size(label_info, LV_PCT(100), 32);
-    lv_obj_add_style(label_info, &g_style->framed, 0);
+    lv_obj_set_width(label_info, LV_PCT(100));
+    // lv_obj_add_style(label_info, &g_style->framed, 0);
     lv_obj_set_style_pad_left(label_info, 3, 0);
+    lv_obj_set_style_text_align(label_info, LV_TEXT_ALIGN_CENTER, 0);
     lv_obj_set_flex_grow(label_info, 1);
 
     nav = lv_obj_create(screen);
