@@ -127,6 +127,7 @@ extern "C" void app_main(void) {
       PRO_CPU_NUM);
 #endif
 
+#if 0
   xTaskCreatePinnedToCore(
       CanaryTask,
       "canary",
@@ -136,6 +137,8 @@ extern "C" void app_main(void) {
       0,
       &g_canary_task,
       PRO_CPU_NUM);
+#endif
+
   xTaskCreatePinnedToCore(
       MainTask, "main", 4096, /*arg*/ nullptr, configMAX_PRIORITIES - 1, &g_main_task, APP_CPU_NUM);
 }
