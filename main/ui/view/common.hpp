@@ -75,8 +75,14 @@ constexpr char8_t const* kSpinner6[] = {
     u8"\u2808",
 };
 
+#define UTF8 (const char*)u8""
+
 #define EMSP13 u8"\u2004"
 #define THINSP u8"\u2009"
+
+#define SYM_YES u8"\u2713"
+#define SYM_NO u8"\u2717"
+#define SYM_PIPE u8"\u2502"
 
 ////////////////////////////////////////////////////
 

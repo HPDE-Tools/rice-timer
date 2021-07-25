@@ -10,10 +10,10 @@ namespace ui {
 namespace view {
 
 struct TrackReqScreen : public Screen {
-  static constexpr char8_t kGpsFixYes[] = u8"GPS Fix: \u2713";
-  static constexpr char8_t kGpsFixNo[] = u8"GPS Fix: \u2715";
-  static constexpr char8_t kSdYes[] = u8"SD Card: \u2713";
-  static constexpr char8_t kSdNo[] = u8"SD Card: \u2715";
+  static constexpr char8_t kGpsFixYes[] = u8"GPS Fix: " SYM_YES;
+  static constexpr char8_t kGpsFixNo[] = u8"GPS Fix: " SYM_NO;
+  static constexpr char8_t kSdYes[] = u8"SD Card: " SYM_YES;
+  static constexpr char8_t kSdNo[] = u8"SD Card: " SYM_NO;
 
   lv_obj_t* label_req_gps;
   lv_obj_t* label_req_sd;

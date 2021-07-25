@@ -33,6 +33,7 @@ struct IdleScreen : public Screen {
     lv_obj_set_size(label_info, LV_PCT(100), 32);
     lv_obj_add_style(label_info, &g_style->framed, 0);
     lv_obj_set_style_pad_left(label_info, 3, 0);
+    lv_obj_set_flex_grow(label_info, 1);
 
     nav = lv_obj_create(screen);
     lv_obj_set_size(nav, LV_PCT(100), LV_SIZE_CONTENT);
@@ -53,7 +54,7 @@ struct IdleScreen : public Screen {
     lv_obj_set_width(btn_track, 19);
     {
       lv_obj_t* const label = lv_label_create(btn_track);
-      lv_label_set_text_static(label, (const char*)u8"\uf49b");
+      lv_label_set_text_static(label, UTF8 "\uf49b");
       lv_obj_set_width(label, LV_PCT(100));
       lv_obj_set_style_text_align(label, LV_TEXT_ALIGN_CENTER, 0);
     }
@@ -73,7 +74,7 @@ struct IdleScreen : public Screen {
     lv_obj_set_width(btn_review, 19);
     {
       lv_obj_t* const label = lv_label_create(btn_review);
-      lv_label_set_text_static(label, (const char*)u8"\uf00b");
+      lv_label_set_text_static(label, UTF8 "\uf00b");
       lv_obj_set_width(label, LV_PCT(100));
       lv_obj_set_style_text_align(label, LV_TEXT_ALIGN_CENTER, 0);
     }
@@ -86,7 +87,7 @@ struct IdleScreen : public Screen {
     lv_obj_set_width(btn_settings, 19);
     {
       lv_obj_t* const label = lv_label_create(btn_settings);
-      lv_label_set_text_static(label, (const char*)u8"\u2388");
+      lv_label_set_text_static(label, UTF8 "\u2388");
       lv_obj_set_width(label, LV_PCT(100));
       lv_obj_set_style_text_align(label, LV_TEXT_ALIGN_CENTER, 0);
     }
@@ -105,17 +106,28 @@ struct IdleScreen : public Screen {
 
     const TimeZulu t = NowZulu();
 
-    lv_label_set_text_fmt(label_info,
-      (const char*)u8""
-      "\uf970" EMSP13 "%02d\u2502"
-      "\uf017" EMSP13 "%02d:%02d\u2502"
-      "\ue706" EMSP13 "%s\u2502",
-      model.gps ? (int)model.gps->num_sats : 0,
-      t.tm_hour, t.tm_min,
-      model.sd_card ?
-        fmt::format("{:02}G", model.sd_card->free_bytes / 1'000'000'000).c_str() :
-        ""
+    std::string sd_logger_status{};
+    if (model.sd_card) {
+      sd_logger_status =
+          fmt::format(
+              UTF8 "{:02}G" EMSP13 "{}" EMSP13,
+              model.sd_card->free_bytes / 1'000'000'000,
+              model.is_logger_running ? ((now % 2000 < 1000) ? u8"\uf111" : u8" ") : u8"\uf04c")
+              .c_str();
+    }
+    // clang-format off
+    lv_label_set_text_fmt(
+        label_info,
+        UTF8 
+        "\uf970" EMSP13 "%02d "
+        "\uf017" EMSP13 "%02d:%02d "
+        "\ue706" EMSP13 "%s"
+        ,
+        model.gps ? (int)model.gps->num_sats : -1,
+        t.tm_hour, t.tm_min,
+        sd_logger_status.c_str()
     );
+    // clang-format on
   }
 };
 

@@ -206,7 +206,7 @@ struct DebugScreen : Screen {
           table,
           2,
           0,
-          (const char*)u8"\uf03d" EMSP13 "%02X%02X/%" PRId64 "/%d:%d",
+          UTF8 "\uf03d %02X%02X/%" PRId64 "/%d:%d",
           app::g_device_mac[4],
           app::g_device_mac[5],
           logger->session_id,
@@ -217,11 +217,11 @@ struct DebugScreen : Screen {
           table,
           2,
           0,
-          (const char*)u8"\uf03c" EMSP13 "Ready %dG free / %dG",
-          sd_card->free_bytes / 1000000000,
-          sd_card->capacity_bytes / 1000000000);
+          UTF8 "\uf03b Ready %" PRId64 "G free / %" PRId64 "G",
+          sd_card->free_bytes / 1'000'000'000,
+          sd_card->capacity_bytes / 1'000'000'000);
     } else {
-      lv_table_set_cell_value(table, 2, 0, "\u2715" EMSP13 "--- no card ---");
+      lv_table_set_cell_value(table, 2, 0, UTF8 SYM_NO " --- no card ---");
     }
   }
 
