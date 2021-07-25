@@ -31,41 +31,53 @@ struct IdleScreen : public Screen {
 
     btn_track = lv_btn_create(nav);
     FixButton(btn_track);
+#if 0
     {
       lv_obj_t* const label = lv_label_create(btn_track);
       lv_label_set_text_static(label, "Track");
       lv_obj_center(label);
     }
+#else
+    lv_obj_set_width(btn_track, 19);
+    {
+      lv_obj_t* const label = lv_label_create(btn_track);
+      lv_label_set_text_static(label, (const char*)u8"\uf49b");
+      lv_obj_set_width(label, LV_PCT(100));
+      lv_obj_set_style_text_align(label, LV_TEXT_ALIGN_CENTER, 0);
+    }
+#endif
     lv_group_add_obj(group, btn_track);
     LvListen(btn_track, LV_EVENT_CLICKED, btn_track_click);
 
     btn_review = lv_btn_create(nav);
     FixButton(btn_review);
+#if 0
     {
       lv_obj_t* const label = lv_label_create(btn_review);
       lv_label_set_text_static(label, "Review");
       lv_obj_center(label);
     }
+#else
+    lv_obj_set_width(btn_review, 19);
+    {
+      lv_obj_t* const label = lv_label_create(btn_review);
+      lv_label_set_text_static(label, (const char*)u8"\uf00b");
+      lv_obj_set_width(label, LV_PCT(100));
+      lv_obj_set_style_text_align(label, LV_TEXT_ALIGN_CENTER, 0);
+    }
+#endif
     lv_group_add_obj(group, btn_review);
     LvListen(btn_review, LV_EVENT_CLICKED, btn_review_click);
 
     btn_settings = lv_btn_create(nav);
     FixButton(btn_settings);
-    lv_obj_set_width(btn_settings, 18);
-#if 1
+    lv_obj_set_width(btn_settings, 19);
     {
       lv_obj_t* const label = lv_label_create(btn_settings);
       lv_label_set_text_static(label, (const char*)u8"\u2388");
       lv_obj_set_width(label, LV_PCT(100));
       lv_obj_set_style_text_align(label, LV_TEXT_ALIGN_CENTER, 0);
     }
-#else
-    {
-      lv_obj_t* const img = lv_img_create(btn_settings);
-      lv_img_set_src(img, u8"\u2388");
-      lv_obj_center(img);
-    }
-#endif
     lv_group_add_obj(group, btn_settings);
     LvListen(btn_settings, LV_EVENT_CLICKED, btn_settings_click);
   }
