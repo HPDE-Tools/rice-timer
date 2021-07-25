@@ -16,17 +16,6 @@ namespace {
 
 constexpr char TAG[] = "id";
 
-esp_err_t NvsInit() {
-  esp_err_t err = nvs_flash_init();
-  if (err == ESP_ERR_NVS_NO_FREE_PAGES || err == ESP_ERR_NVS_NEW_VERSION_FOUND) {
-    // NVS partition was truncated and needs to be erased
-    // Retry nvs_flash_init
-    TRY(nvs_flash_erase());
-    err = nvs_flash_init();
-  }
-  return err;
-}
-
 }  // namespace
 
 // statically initialize using IIFE
@@ -46,6 +35,24 @@ void LogDeviceMac() {
       g_device_mac[3],
       g_device_mac[4],
       g_device_mac[5]);
+}
+
+esp_err_t NvsInit() {
+  static bool done = false;
+  if (done) {
+    return ESP_OK;
+  }
+  esp_err_t err = nvs_flash_init();
+  if (err == ESP_ERR_NVS_NO_FREE_PAGES || err == ESP_ERR_NVS_NEW_VERSION_FOUND) {
+    // NVS partition was truncated and needs to be erased
+    // Retry nvs_flash_init
+    TRY(nvs_flash_erase());
+    err = nvs_flash_init();
+  }
+  if (err == ESP_OK) {
+    done = true;
+  }
+  return err;
 }
 
 int64_t NewSessionId() {

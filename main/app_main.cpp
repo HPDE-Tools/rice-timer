@@ -45,7 +45,7 @@ void Main() {
   ESP_LOGI(TAG, "MainTask started");
   LogDeviceMac();
   heap_caps_print_heap_info(MALLOC_CAP_8BIT);
-  vTaskDelay(pdMS_TO_TICKS(2000));
+  // vTaskDelay(pdMS_TO_TICKS(2000));
 
   CHECK_OK(SetupSdCard());
   CHECK_OK(SetupLogger());
@@ -109,6 +109,8 @@ void CanaryTask(void* /*unused*/) {
 }
 
 extern "C" void app_main(void) {
+  CHECK_OK(NvsInit());
+
   xTaskCreatePinnedToCore(
       CanaryTask,
       "canary",
