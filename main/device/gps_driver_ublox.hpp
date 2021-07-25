@@ -9,11 +9,7 @@
 #include <utility>
 
 #include "driver/i2c.h"
-#include "driver/uart.h"
 #include "esp_err.h"
-#include "soc/uart_struct.h"
-
-#include "io/uart_line_reader.hpp"
 
 constexpr uint8_t kUbxSync1 = 0xB5;
 constexpr uint8_t kUbxSync2 = 0x62;
