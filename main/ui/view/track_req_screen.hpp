@@ -18,7 +18,7 @@ struct TrackReqScreen : public Screen {
   lv_obj_t* label_req_sd;
   lv_obj_t* label_countdown;
 
-  LvEventHandler handle_success{};
+  LvEventHandler on_success{};
 
   virtual ~TrackReqScreen() = default;
   TrackReqScreen() {
@@ -47,8 +47,8 @@ struct TrackReqScreen : public Screen {
     lv_label_set_text_static(label_req_gps, (const char*)(model.gps ? kGpsFixYes : kGpsFixNo));
     lv_label_set_text_static(label_req_sd, (const char*)(model.sd_card ? kSdYes : kSdNo));
     if (model.gps && model.sd_card) {
-      if (handle_success) {
-        handle_success(nullptr);
+      if (on_success) {
+        on_success(nullptr);
       }
     }
   }

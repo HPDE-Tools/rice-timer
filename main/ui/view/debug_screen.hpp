@@ -199,24 +199,29 @@ struct DebugScreen : Screen {
         (int)std::round(average_can));
   }
 
-  void RenderLoggerPath(const std::optional<Model::Logger>& logger) {
+  void RenderLoggerPath(
+      const std::optional<Model::Logger>& logger, const std::optional<Model::SdCard>& sd_card) {
     if (logger) {
-#if 1
       lv_table_set_cell_value_fmt(
           table,
           2,
           0,
-          ":%02X%02X/%" PRId64 "/%d:%d",
+          (const char*)u8"\uf03d" EMSP13 "%02X%02X/%" PRId64 "/%d:%d",
           app::g_device_mac[4],
           app::g_device_mac[5],
           logger->session_id,
           logger->split_id,
           logger->lines);
-#else
-      lv_table_set_cell_value_fmt(table, 2, 0, ":A7C0/223/10:15631");
-#endif
+    } else if (sd_card) {
+      lv_table_set_cell_value_fmt(
+          table,
+          2,
+          0,
+          (const char*)u8"\uf03c" EMSP13 "Ready %dG free / %dG",
+          sd_card->free_bytes / 1000000000,
+          sd_card->capacity_bytes / 1000000000);
     } else {
-      lv_table_set_cell_value(table, 2, 0, " --- no card ---");
+      lv_table_set_cell_value(table, 2, 0, "\u2715" EMSP13 "--- no card ---");
     }
   }
 
@@ -228,7 +233,7 @@ struct DebugScreen : Screen {
 
   void RenderSlow(int dt, const Model& model) {
     RenderThroughput(dt, model.counter);
-    RenderLoggerPath(model.logger);
+    RenderLoggerPath(model.logger, model.sd_card);
   }
 
   void Render(const Model& model) override {
@@ -236,7 +241,7 @@ struct DebugScreen : Screen {
     const int dt = SignedMinus(now, last_time);
 
     RenderFast(model);
-    if (dt >= 1000) {
+    if (dt >= 250) {
       RenderSlow(dt, model);
       last_time = now;
     }

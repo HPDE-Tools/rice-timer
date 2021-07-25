@@ -22,6 +22,7 @@ struct IdleScreen;
 struct DebugScreen;
 struct TrackReqScreen;
 struct TrackSelScreen;
+struct TrackTimerScreen;
 
 }  // namespace view
 
@@ -42,11 +43,16 @@ class Controller : public Task {
   std::unique_ptr<view::DebugScreen> debug_screen_;
   std::unique_ptr<view::TrackReqScreen> track_req_screen_;
   std::unique_ptr<view::TrackSelScreen> track_sel_screen_;
+  std::unique_ptr<view::TrackTimerScreen> track_timer_screen_;
 
   view::Screen* loaded_screen_;  // not owned
 
   Controller();
   esp_err_t Setup();
+
+  bool IsOnTrack() const;
+  void TryStartLogger();
+  void StopLogger();
 };
 
 extern std::unique_ptr<Controller> g_controller;

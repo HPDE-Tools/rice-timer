@@ -106,11 +106,14 @@ struct IdleScreen : public Screen {
 
     lv_label_set_text_fmt(label_info,
       (const char*)u8""
-      "\uf970%02d" "\u2502"
-      "%02d:%02d" "\u2502"
-      "",
+      "\uf970" EMSP13 "%02d\u2502"
+      "\uf017" EMSP13 "%02d:%02d\u2502"
+      "\ue706" EMSP13 "%s\u2502",
       model.gps ? (int)model.gps->num_sats : 0,
-      t.tm_hour, t.tm_min
+      t.tm_hour, t.tm_min,
+      model.sd_card ?
+        fmt::format("{:02}G", model.sd_card->free_bytes / 1'000'000'000).c_str() :
+        ""
     );
   }
 };

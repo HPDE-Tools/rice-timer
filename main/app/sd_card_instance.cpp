@@ -22,15 +22,18 @@ void HandleSdCardStateChange(bool mounted) {
         .capacity_bytes = g_sd_card->GetCapacityBytes(),
         .free_bytes = g_sd_card->GetFreeSpaceBytes(),
     };
-    ESP_LOGI(TAG, "card mounted; starting logger");
+    ESP_LOGI(TAG, "card mounted");
+    // TODO: option for auto-start upon card mounted
+#if 0
     const esp_err_t err = StartLogger();
     if (err != ESP_OK) {
       ESP_LOGE(TAG, "logger cannot be started: %s", esp_err_to_name(err));
     }
+#endif
   } else {
     ui::g_model.sd_card.reset();
     StopLogger();
-    ESP_LOGW(TAG, "card unmounted; logger stopped");
+    ESP_LOGW(TAG, "card unmounted");
   }
 }
 

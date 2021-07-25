@@ -9,6 +9,7 @@
 #include "freertos/task.h"
 #include "lvgl.h"
 
+#include "app/logger_instance.hpp"
 #include "common/button_helper.hpp"
 #include "common/macros.hpp"
 #include "common/times.hpp"
@@ -21,6 +22,7 @@
 #include "ui/view/idle_screen.hpp"
 #include "ui/view/track_req_screen.hpp"
 #include "ui/view/track_sel_screen.hpp"
+#include "ui/view/track_timer_screen.hpp"
 
 namespace ui {
 
@@ -28,6 +30,7 @@ namespace {
 
 constexpr char TAG[] = "ui/controller";
 constexpr int kRefreshPeriodMs = 50;
+constexpr int kLongPressDurationMs = 1500;
 
 constexpr int kControllerStackSize = 8000;
 
@@ -71,6 +74,7 @@ esp_err_t Controller::Setup() {
   debug_screen_ = std::make_unique<view::DebugScreen>();
   track_req_screen_ = std::make_unique<view::TrackReqScreen>();
   track_sel_screen_ = std::make_unique<view::TrackSelScreen>();
+  track_timer_screen_ = std::make_unique<view::TrackTimerScreen>();
   return ESP_OK;
 }
 
@@ -81,7 +85,8 @@ void Controller::Stop() { Task::Kill(); }
 void Controller::Run() {
   TickType_t last_wake_time = xTaskGetTickCount();
 
-  ButtonHelper button3_helper(pdMS_TO_TICKS(1500));
+  ButtonHelper button1_helper(pdMS_TO_TICKS(kLongPressDurationMs));
+  ButtonHelper button3_helper(pdMS_TO_TICKS(kLongPressDurationMs));
 
   idle_screen_->Render(g_model);
   loaded_screen_ = idle_screen_->Load();
@@ -94,7 +99,7 @@ void Controller::Run() {
     ESP_LOGI(TAG, "loading track req");
     loaded_screen_ = track_req_screen_->Load();
   };
-  track_req_screen_->handle_success = [this](lv_event_t* e) {
+  track_req_screen_->on_success = [this](lv_event_t* e) {
     ESP_LOGI(TAG, "loading track sel");
     loaded_screen_ = track_sel_screen_->LoadAnim(
         LV_SCR_LOAD_ANIM_OVER_TOP, /*anim time*/ 500, /*delay*/ 1000, false);
@@ -102,15 +107,28 @@ void Controller::Run() {
 
   while (true) {
     const TimeUnixWithUs render_begin_time = NowUnixWithUs();
-
     gpio_set_level(GPIO_NUM_17, 1);  // DEBUG
 
+    const ButtonHelper::Result button1 = button1_helper.Update(GetButtonState(1));
     const ButtonHelper::Result button3 = button3_helper.Update(GetButtonState(3));
+    switch (button1) {
+      case ButtonHelper::kShortClick: {
+        ESP_LOGI(TAG, "btn1 short click");
+        TryStartLogger();
+        break;
+      }
+      case ButtonHelper::kLongClick: {
+        ESP_LOGI(TAG, "btn1 long click");
+        StopLogger();
+        break;
+      }
+      default:
+        break;
+    }
     switch (button3) {
       case ButtonHelper::kShortClick: {
         ESP_LOGI(TAG, "btn3 short click");
-        // TODO: compare with "on-track screen"
-        if (loaded_screen_ == nullptr) {
+        if (IsOnTrack()) {
           break;
         }
         [[fallthrough]];
@@ -131,12 +149,14 @@ void Controller::Run() {
     loaded_screen_->Render(g_model);
 
     gpio_set_level(GPIO_NUM_17, 0);  // DEBUG
-
     const TimeUnixWithUs lv_begin_time = NowUnixWithUs();
     gpio_set_level(GPIO_NUM_16, 1);  // DEBUG
+
     lv_task_handler();
+
     gpio_set_level(GPIO_NUM_16, 0);  // DEBUG
     const TimeUnixWithUs end_time = NowUnixWithUs();
+
     ESP_LOGD(
         TAG,
         "%lld (render) + %lld (lv) = %lld (total)",
@@ -146,5 +166,26 @@ void Controller::Run() {
     vTaskDelayUntil(&last_wake_time, pdMS_TO_TICKS(kRefreshPeriodMs));
   }
 }
+
+bool Controller::IsOnTrack() const {
+  return loaded_screen_ && loaded_screen_ == track_timer_screen_.get();
+}
+
+void Controller::TryStartLogger() {
+  if (!g_model.sd_card) {
+    ESP_LOGW(TAG, "cannot start logger: no sd card");
+    // TODO: report no SD card to UI
+    return;
+  }
+  if (const esp_err_t err = app::StartLogger(); err != ESP_OK) {
+    ESP_LOGE(TAG, "cannot start logger: %s", esp_err_to_name(err));
+    // TODO: report error to UI
+    return;
+  }
+  ESP_LOGI(TAG, "logger started");
+  // TODO: report success to UI
+}
+
+void Controller::StopLogger() { app::StopLogger(); }
 
 }  // namespace ui
