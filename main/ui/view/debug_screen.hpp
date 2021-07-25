@@ -3,9 +3,9 @@
 
 #pragma once
 
-#include "ui/view/common.hpp"
-
 #include "device/gps_utils.hpp"
+#include "ui/view/common.hpp"
+#include "ui/view/screen.hpp"
 
 namespace ui {
 namespace view {

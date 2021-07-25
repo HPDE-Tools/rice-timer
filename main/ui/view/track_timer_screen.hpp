@@ -4,6 +4,7 @@
 #pragma once
 
 #include "ui/view/common.hpp"
+#include "ui/view/screen.hpp"
 
 namespace ui {
 namespace view {
