@@ -111,18 +111,6 @@ void CanaryTask(void* /*unused*/) {
 extern "C" void app_main(void) {
   CHECK_OK(NvsInit());
 
-  xTaskCreatePinnedToCore(
-      CanaryTask,
-      "canary",
-      2500,
-      /*arg*/ nullptr,
-      // configMAX_PRIORITIES - 2,
-      0,
-      &g_canary_task,
-      PRO_CPU_NUM);
-  xTaskCreatePinnedToCore(
-      MainTask, "main", 4096, /*arg*/ nullptr, configMAX_PRIORITIES - 1, &g_main_task, APP_CPU_NUM);
-
   // DEBUG: use SCL and SDA pin as debug
   gpio_set_direction(GPIO_NUM_17, GPIO_MODE_OUTPUT);
   gpio_pad_select_gpio(GPIO_NUM_17);
@@ -138,4 +126,16 @@ extern "C" void app_main(void) {
       },
       PRO_CPU_NUM);
 #endif
+
+  xTaskCreatePinnedToCore(
+      CanaryTask,
+      "canary",
+      2500,
+      /*arg*/ nullptr,
+      // configMAX_PRIORITIES - 2,
+      0,
+      &g_canary_task,
+      PRO_CPU_NUM);
+  xTaskCreatePinnedToCore(
+      MainTask, "main", 4096, /*arg*/ nullptr, configMAX_PRIORITIES - 1, &g_main_task, APP_CPU_NUM);
 }
