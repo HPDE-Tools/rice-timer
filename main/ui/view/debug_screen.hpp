@@ -241,7 +241,7 @@ struct DebugScreen : Screen {
     const int dt = SignedMinus(now, last_time);
 
     RenderFast(model);
-    if (dt >= 250) {
+    if (dt >= 1000) {
       RenderSlow(dt, model);
       last_time = now;
     }
