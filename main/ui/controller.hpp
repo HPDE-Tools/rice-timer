@@ -15,10 +15,14 @@
 namespace ui {
 
 namespace view {
+
 struct Screen;
+
 struct IdleScreen;
 struct DebugScreen;
-struct TrackLobbyScreen;
+struct TrackReqScreen;
+struct TrackSelScreen;
+
 }  // namespace view
 
 class Controller : public Task {
@@ -36,6 +40,8 @@ class Controller : public Task {
  private:
   std::unique_ptr<view::IdleScreen> idle_screen_;
   std::unique_ptr<view::DebugScreen> debug_screen_;
+  std::unique_ptr<view::TrackReqScreen> track_req_screen_;
+  std::unique_ptr<view::TrackSelScreen> track_sel_screen_;
 
   view::Screen* loaded_screen_;  // not owned
 
