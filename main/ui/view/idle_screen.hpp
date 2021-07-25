@@ -126,7 +126,7 @@ struct IdleScreen : public Screen {
         ,
         model.gps ? (int)model.gps->num_sats : -1,
         t.tm_hour, t.tm_min,
-        sd_logger_status.c_str()
+        model.sd_card ? sd_logger_status.c_str() : UTF8 "= " SYM_NO
     );
     // clang-format on
   }
