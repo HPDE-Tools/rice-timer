@@ -15,8 +15,11 @@
 namespace ui {
 
 namespace view {
-struct Root;
-}
+struct Screen;
+struct IdleScreen;
+struct DebugScreen;
+struct TrackLobbyScreen;
+}  // namespace view
 
 class Controller : public Task {
  public:
@@ -31,7 +34,10 @@ class Controller : public Task {
   void Run() override;
 
  private:
-  std::unique_ptr<view::Root> root_;
+  std::unique_ptr<view::IdleScreen> idle_screen_;
+  std::unique_ptr<view::DebugScreen> debug_screen_;
+
+  view::Screen* loaded_screen_;  // not owned
 
   Controller();
   esp_err_t Setup();

@@ -156,8 +156,18 @@ esp_err_t RegisterLvglInputDrivers() {
   TRY(SetupAdc());
 
   TRY(RegisterEncoderDriver());
-  TRY(RegisterButtonDriver());
+  // TRY(RegisterButtonDriver());
   return ESP_OK;
+}
+
+void SetInputGroup(lv_group_t* group) {
+  CHECK(group != nullptr);
+  if (g_encoder_indev) {
+    lv_indev_set_group(g_encoder_indev, group);
+  }
+  if (g_buttons_indev) {
+    lv_indev_set_group(g_buttons_indev, group);
+  }
 }
 
 bool GetButtonState(int i) {

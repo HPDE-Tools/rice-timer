@@ -16,7 +16,8 @@
 #include "ui/encoder_button_input.hpp"
 #include "ui/model.hpp"
 #include "ui/style.hpp"
-#include "ui/view/root.hpp"
+#include "ui/view/debug_screen.hpp"
+#include "ui/view/idle_screen.hpp"
 
 namespace ui {
 
@@ -62,8 +63,10 @@ Controller::~Controller() = default;
 esp_err_t Controller::Setup() {
   TRY(SetupDisplayDriver());
   TRY(SetupStyle());
-  root_ = std::make_unique<view::Root>(lv_scr_act());
-  return root_ ? ESP_OK : ESP_FAIL;
+  TRY(SetupTheme());
+  idle_screen_ = std::make_unique<view::IdleScreen>();
+  debug_screen_ = std::make_unique<view::DebugScreen>();
+  return ESP_OK;
 }
 
 esp_err_t Controller::Start() { return Task::SpawnSame(TAG, kControllerStackSize, kPriorityUi); }
@@ -71,13 +74,36 @@ esp_err_t Controller::Start() { return Task::SpawnSame(TAG, kControllerStackSize
 void Controller::Stop() { Task::Kill(); }
 
 void Controller::Run() {
-  static TickType_t last_wake_time = xTaskGetTickCount();
+  TickType_t last_wake_time = xTaskGetTickCount();
+  bool last_btn3 = false;
+
+  idle_screen_->Render(g_model);
+  loaded_screen_ = idle_screen_->Load();
+
+  idle_screen_->btn_settings_click = [this](lv_event_t* e) {
+    ESP_LOGI(TAG, "loading debug");
+    loaded_screen_ = debug_screen_->Load();
+  };
 
   while (true) {
     const TimeUnixWithUs render_begin_time = NowUnixWithUs();
-    root_->Render(g_model);
+
+    gpio_set_level(GPIO_NUM_17, 1);  // DEBUG
+
+    const bool curr_btn3 = GetButtonState(3);
+    if (last_btn3 && !curr_btn3) {
+      loaded_screen_ = idle_screen_->Load();
+    }
+    last_btn3 = curr_btn3;
+
+    loaded_screen_->Render(g_model);
+
+    gpio_set_level(GPIO_NUM_17, 0);  // DEBUG
+
     const TimeUnixWithUs lv_begin_time = NowUnixWithUs();
+    gpio_set_level(GPIO_NUM_16, 1);
     lv_task_handler();
+    gpio_set_level(GPIO_NUM_16, 0);
     const TimeUnixWithUs end_time = NowUnixWithUs();
     ESP_LOGD(
         TAG,

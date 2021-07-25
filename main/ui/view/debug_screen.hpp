@@ -10,7 +10,7 @@
 namespace ui {
 namespace view {
 
-struct DebugView {
+struct DebugScreen : Screen {
   static constexpr float kDecay = 0.9;  // smoothing weight for latest data
 
   lv_obj_t* table;
@@ -25,11 +25,17 @@ struct DebugView {
   float average_imu = 0;
   float average_can = 0;
 
-  ~DebugView() { lv_obj_del(table); }
+  virtual ~DebugScreen() = default;
 
-  DebugView(lv_obj_t* parent) {
-    table = lv_table_create(parent);
-    lv_obj_remove_style_all(table);
+  DebugScreen() {
+    lv_group_add_obj(group, screen);
+
+    table = lv_table_create(screen);
+    lv_obj_set_size(table, LV_PCT(100), LV_SIZE_CONTENT);
+
+    lv_obj_add_style(table, &g_style->text_tiny, LV_PART_MAIN);
+    lv_obj_set_style_border_width(table, 0, LV_PART_MAIN);
+    lv_obj_add_style(table, &g_style->table_cell_hr, LV_PART_ITEMS);
 
 #if 0
     lv_obj_add_style(table, &g_style->text_tiny, 0);
@@ -46,29 +52,27 @@ struct DebugView {
 
     lv_table_set_row_cnt(table, 3);
     lv_table_set_col_cnt(table, 5);
-    lv_table_set_col_width(table, 0, 34);
-    lv_table_set_col_width(table, 1, 24);
+    lv_table_set_col_width(table, 0, 30);
+    lv_table_set_col_width(table, 1, 25);
     lv_table_set_col_width(table, 2, 28);
     lv_table_set_col_width(table, 3, 9);
     lv_table_set_col_width(table, 4, 33);
 
-#if 0
-    lv_table_set_cell_merge_right(table, 0, 0, true);
-    lv_table_set_cell_merge_right(table, 0, 1, true);
-    lv_table_set_cell_merge_right(table, 0, 2, true);
-    lv_table_set_cell_merge_right(table, 0, 3, true);
-    lv_table_set_cell_merge_right(table, 0, 4, true);
+    MergeCell(table, 0, 0);
+    MergeCell(table, 0, 1);
+    MergeCell(table, 0, 2);
+    MergeCell(table, 0, 3);
 
-    lv_table_set_cell_merge_right(table, 2, 0, true);
-    lv_table_set_cell_merge_right(table, 2, 1, true);
-    lv_table_set_cell_merge_right(table, 2, 2, true);
-    lv_table_set_cell_merge_right(table, 2, 3, true);
-    lv_table_set_cell_merge_right(table, 2, 4, true);
+    MergeCell(table, 2, 0);
+    MergeCell(table, 2, 1);
+    MergeCell(table, 2, 2);
+    MergeCell(table, 2, 3);
 
-    lv_table_set_cell_type(table, 1, 2, 3);
-    lv_table_set_cell_align(table, 1, 2, LV_LABEL_ALIGN_CENTER);
+    // lv_table_set_cell_align(table, 1, 2, LV_LABEL_ALIGN_CENTER);
     lv_table_set_cell_value(table, 1, 3, "G\nI\nC");
+    lv_table_set_cell_value(table, 2, 0, " --- no card ---");
 
+#if 0
     lv_table_set_cell_type(table, 2, 0, 2);
     lv_table_set_cell_type(table, 2, 1, 2);
     lv_table_set_cell_type(table, 2, 2, 2);
@@ -79,11 +83,12 @@ struct DebugView {
 
   void RenderGps(const std::optional<Model::Gps>& gps) {
     if (gps) {
+#if 1
       lv_table_set_cell_value_fmt(
           table,
           0,
           0,
-          "%c% 08.5f %04d-%02d-%02d\n"
+          "%c %08.5f %04d-%02d-%02d\n"
           "%c%09.5f %02d:%02d:%02d.%1d",
           // r1c1
           SignChar(gps->latitude),
@@ -100,6 +105,7 @@ struct DebugView {
           gps->minute,
           gps->second,
           gps->millisecond / 100);
+#endif
     } else {
       lv_table_set_cell_value(
           table,
@@ -195,6 +201,7 @@ struct DebugView {
 
   void RenderLoggerPath(const std::optional<Model::Logger>& logger) {
     if (logger) {
+#if 1
       lv_table_set_cell_value_fmt(
           table,
           2,
@@ -205,6 +212,9 @@ struct DebugView {
           logger->session_id,
           logger->split_id,
           logger->lines);
+#else
+      lv_table_set_cell_value_fmt(table, 2, 0, ":A7C0/223/10:15631");
+#endif
     } else {
       lv_table_set_cell_value(table, 2, 0, " --- no card ---");
     }
@@ -221,7 +231,7 @@ struct DebugView {
     RenderLoggerPath(model.logger);
   }
 
-  void Render(const Model& model) {
+  void Render(const Model& model) override {
     const TickType_t now = xTaskGetTickCount();
     const int dt = SignedMinus(now, last_time);
 
