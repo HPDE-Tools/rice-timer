@@ -18,11 +18,13 @@ void HandleLoggerCommit(const io::Logger& logger, TickType_t now) {
       .split_id = logger.split_id(),
       .lines = logger.lines_committed(),
   };
+  ui::g_model.is_logger_running = true;
 }
 
 void HandleLoggerExit(const io::Logger::Error error) {
   ESP_LOGE(TAG, "logger exit: %d", (int)error);
   ui::g_model.logger.reset();
+  ui::g_model.is_logger_running = false;
 }
 
 }  // namespace
@@ -51,6 +53,7 @@ esp_err_t StartLogger() {
   if (!g_logger) {
     return ESP_ERR_INVALID_STATE;
   }
+  ui::g_model.is_logger_running = true;
   return g_logger->Start(NewSessionId(), /*init split id*/ 0, HandleLoggerCommit, HandleLoggerExit);
 }
 

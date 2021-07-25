@@ -53,6 +53,7 @@ struct Model {
     int32_t lines = 0;
   };
   std::optional<Logger> logger{};
+  bool is_logger_running = false;
 
   struct Counter {
     std::atomic<int> gps{};
