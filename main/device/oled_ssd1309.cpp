@@ -156,8 +156,10 @@ esp_err_t OledSsd1309::Flush() {
   if (++rolling_command_index_ >= kNumCommands) {
     rolling_command_index_ = 0;
   }
+  gpio_set_level(GPIO_NUM_17, 1);  // DEBUG
   TRY(SendCommand(command, sizeof(command)));
   TRY(SendData(buf_.data(), buf_.size()));
+  gpio_set_level(GPIO_NUM_17, 0);  // DEBUG
   return ESP_OK;
 }
 

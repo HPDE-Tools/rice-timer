@@ -177,8 +177,8 @@ bool Logger::MaintainRollingLogHeadroom() {
 
 Logger::Error Logger::WriteIncomingLinesToFile(FILE* file) {
   /////////////// DEBUG
-  gpio_set_level(GPIO_NUM_17, 0);
-  gpio_set_level(GPIO_NUM_16, 0);
+  // gpio_set_level(GPIO_NUM_17, 0);
+  // gpio_set_level(GPIO_NUM_16, 0);
 
   lines_written_ = 0;
   bytes_written_ = 0;
@@ -219,18 +219,18 @@ Logger::Error Logger::WriteIncomingLineToFile(std::string_view line, FILE* file)
 
 Logger::Error Logger::FlushWriteBuf(FILE* file, bool sync) {
   if (!write_buf_.empty()) {
-    gpio_set_level(GPIO_NUM_17, 1);  // DEBUG
+    // gpio_set_level(GPIO_NUM_17, 1);  // DEBUG
     if (fwrite(write_buf_.data(), write_buf_.size(), 1, file) != 1) {
       ESP_LOGE(
           TAG, "fail to write (%s):%.*s", strerror(errno), write_buf_.size(), write_buf_.data());
       return kWriteError;
     }
     write_buf_.clear();
-    gpio_set_level(GPIO_NUM_17, 0);  // DEBUG
+    // gpio_set_level(GPIO_NUM_17, 0);  // DEBUG
   }
 
   if (sync) {
-    gpio_set_level(GPIO_NUM_16, 1);  // DEBUG
+    // gpio_set_level(GPIO_NUM_16, 1);  // DEBUG
     if (const esp_err_t err = FlushAndSync(file); err != ESP_OK) {
       ESP_LOGE(TAG, "fail to flush (%s)", strerror(errno));
       return kFlushError;
@@ -241,7 +241,7 @@ Logger::Error Logger::FlushWriteBuf(FILE* file, bool sync) {
     if (commit_callback_) {
       commit_callback_(*this, last_commit_time_);
     }
-    gpio_set_level(GPIO_NUM_16, 0);  // DEBUG
+    // gpio_set_level(GPIO_NUM_16, 0);  // DEBUG
   }
 
   return kNoError;
