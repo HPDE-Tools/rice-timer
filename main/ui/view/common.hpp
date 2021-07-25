@@ -13,6 +13,7 @@
 
 #include "app/device_id.hpp"
 #include "common/macros.hpp"
+#include "common/times.hpp"
 #include "common/utils.hpp"
 #include "math/polyfill.hpp"
 #include "ui/model.hpp"
@@ -33,14 +34,49 @@ constexpr char SignChar(TFloat t) {
 }
 
 constexpr char const* kCourseStrings[] = {"N", "NE", "E", "SE", "S", "SW", "W", "NW", "N"};
+constexpr char8_t const* kCourseArrows[] = {
+    u8"\u2191",
+    u8"\u2197",
+    u8"\u2192",
+    u8"\u2198",
+    u8"\u2193",
+    u8"\u2199",
+    u8"\u2190",
+    u8"\u2196",
+    u8"\u2191",
+};
+
+template <typename TFloat>
+int CourseToBin(TFloat course_deg) {
+  if (0 <= course_deg && course_deg <= 360) {
+    return (int)std::round(course_deg * TFloat{8.0 / 360.0});
+  }
+  return -1;
+}
 
 template <typename TFloat>
 const char* CourseToString(TFloat course_deg) {
-  if (0 <= course_deg && course_deg <= 360) {
-    return kCourseStrings[(int)std::round(course_deg * TFloat{8.0 / 360.0})];
-  }
-  return "?";
+  const int i = CourseToBin(course_deg);
+  return (0 <= i && i <= 8) ? kCourseStrings[i] : "?";
 }
+
+template <typename TFloat>
+const char* CourseToArrow(TFloat course_deg) {
+  const int i = CourseToBin(course_deg);
+  return (0 <= i && i <= 8) ? kCourseArrows[i] : u8"\u2218";
+}
+
+constexpr char8_t const* kSpinner6[] = {
+    u8"\u2801",
+    u8"\u2802",
+    u8"\u2804",
+    u8"\u2820",
+    u8"\u2810",
+    u8"\u2808",
+};
+
+#define EMSP13 u8"\u2004"
+#define THINSP u8"\u2009"
 
 ////////////////////////////////////////////////////
 
