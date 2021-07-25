@@ -20,6 +20,7 @@
 #include "ui/style.hpp"
 #include "ui/view/debug_screen.hpp"
 #include "ui/view/idle_screen.hpp"
+#include "ui/view/softkey_prompt.hpp"
 #include "ui/view/track_req_screen.hpp"
 #include "ui/view/track_sel_screen.hpp"
 #include "ui/view/track_timer_screen.hpp"
@@ -70,11 +71,16 @@ esp_err_t Controller::Setup() {
   TRY(SetupDisplayDriver());
   TRY(SetupStyle());
   TRY(SetupTheme());
+
   idle_screen_ = std::make_unique<view::IdleScreen>();
   debug_screen_ = std::make_unique<view::DebugScreen>();
   track_req_screen_ = std::make_unique<view::TrackReqScreen>();
   track_sel_screen_ = std::make_unique<view::TrackSelScreen>();
   track_timer_screen_ = std::make_unique<view::TrackTimerScreen>();
+
+  softkey_prompt_1_ = std::make_unique<view::SoftkeyPrompt>();
+  softkey_prompt_3_ = std::make_unique<view::SoftkeyPrompt>();
+
   return ESP_OK;
 }
 
@@ -139,7 +145,7 @@ void Controller::Run() {
         break;
       }
       case ButtonHelper::kShortHold: {
-        ESP_LOGI(TAG, "btn3 hold=%d", button3_helper.GetHoldTime());
+        // ESP_LOGI(TAG, "btn3 hold=%d", button3_helper.GetHoldTime());
         break;
       }
       default:

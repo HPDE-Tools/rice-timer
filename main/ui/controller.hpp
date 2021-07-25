@@ -24,6 +24,8 @@ struct TrackReqScreen;
 struct TrackSelScreen;
 struct TrackTimerScreen;
 
+struct SoftkeyPrompt;
+
 }  // namespace view
 
 class Controller : public Task {
@@ -46,6 +48,9 @@ class Controller : public Task {
   std::unique_ptr<view::TrackTimerScreen> track_timer_screen_;
 
   view::Screen* loaded_screen_;  // not owned
+
+  std::unique_ptr<view::SoftkeyPrompt> softkey_prompt_1_;
+  std::unique_ptr<view::SoftkeyPrompt> softkey_prompt_3_;
 
   Controller();
   esp_err_t Setup();
