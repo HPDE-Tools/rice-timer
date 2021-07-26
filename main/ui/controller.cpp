@@ -183,15 +183,18 @@ void Controller::TryStartLogger() {
     // TODO: report no SD card to UI
     return;
   }
-  if (const esp_err_t err = app::StartLogger(); err != ESP_OK) {
+  if (const esp_err_t err = app::StartNewLoggingSession(); err != ESP_OK) {
     ESP_LOGE(TAG, "cannot start logger: %s", esp_err_to_name(err));
     // TODO: report error to UI
     return;
   }
-  ESP_LOGI(TAG, "logger started");
+  ESP_LOGI(TAG, "sent logger start request");
   // TODO: report success to UI
 }
 
-void Controller::StopLogger() { app::StopLogger(); }
+void Controller::StopLogger() {
+  app::StopLogging();
+  ESP_LOGI(TAG, "sent logger stop request");
+}
 
 }  // namespace ui

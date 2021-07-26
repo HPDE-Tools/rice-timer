@@ -24,9 +24,9 @@ enum ProducerId {
 extern std::string g_device_dir;
 extern std::unique_ptr<io::Logger> g_logger;
 
-esp_err_t SetupLogger();
-esp_err_t StartLogger();
-inline void StopLogger() { g_logger->Stop(); }
+esp_err_t SetupAndStartLoggerTask();
+esp_err_t StartNewLoggingSession();
+esp_err_t StopLogging();
 
 inline esp_err_t SendToLogger(ProducerId producer_id, std::string_view line) {
   if (!g_logger) {

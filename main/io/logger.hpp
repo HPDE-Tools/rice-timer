@@ -3,6 +3,7 @@
 
 #pragma once
 
+#include <cstdio>
 #include <functional>
 #include <memory>
 #include <string>
@@ -11,17 +12,12 @@
 
 #include "esp_err.h"
 #include "freertos/FreeRTOS.h"
-#include "freertos/ringbuf.h"  // NOTE: specific to ESP32 port
 #include "freertos/task.h"
+#include "ringbuf_c/ringbuf.h"
 
 #include "common/line_buffer_mpsc.hpp"
 #include "common/macros.hpp"
 #include "common/task.hpp"
-
-struct ringbuf;
-typedef struct ringbuf ringbuf_t;
-struct ringbuf_worker;
-typedef struct ringbuf_worker ringbuf_worker_t;
 
 namespace io {
 
@@ -53,7 +49,7 @@ class Logger : public Task {
     /// Max number of bytes the incoming queue of the logger can hold.
     int queue_size_bytes = 8192;
 
-    /// Number of bytes written to the file in one `fwrite` call.
+    /// Target number of bytes written to the file in one `fwrite` call.
     int write_buffer_size_bytes = 512;
 
     /// If true, only keep the latest log on card when running out of space.
@@ -65,9 +61,14 @@ class Logger : public Task {
     int64_t rolling_headroom_bytes = 1 * 1024 * 1024;
   };
 
+  enum State {
+    kStopped,
+    kRunning,
+  };
+
   enum Error {
     kNoError,
-    kForced,
+    kInterrupted,
     kPathError,
     kHeadroomError,
     kOpenError,
@@ -76,18 +77,20 @@ class Logger : public Task {
   };
 
   using CommitCallback = std::function<void(const Logger& logger, TickType_t now)>;
-  using StoppedCallback = std::function<void(Error error)>;
+  using StateChangeCallback = std::function<void(State state, Error last_error)>;
 
-  // NOTE: Surprisingly, `Logger` does not need `Setup`, and therefore does not require a factory
-  // to ensure integrity.
-
-  /// \param root_path parent of all session dirs
-  /// \param option options
-  Logger(std::string_view root_path, int num_producers, Option option);
+  Logger(
+      std::string_view root_path,
+      int num_producers,
+      CommitCallback&& commit_callback,
+      StateChangeCallback&& state_change_callback,
+      Option option);
   virtual ~Logger();
 
-  esp_err_t Start(CommitCallback commit_callback, StoppedCallback stopped_callback);
-  void Stop(Error error = kForced);
+  esp_err_t StartTask();
+
+  esp_err_t StartNewSession();
+  esp_err_t StopLogging();
 
   /// \param line content of the line (without line separator)
   IRAM_ATTR esp_err_t AppendLine(int producer_id, std::string_view line_without_sep);
@@ -96,6 +99,7 @@ class Logger : public Task {
 
   int64_t session_id() const { return session_id_; }
   int split_id() const { return split_id_; }
+  const std::string& session_path() const { return session_path_; }
   const std::string& split_path() const { return split_path_; }
 
   // statistics
@@ -108,16 +112,32 @@ class Logger : public Task {
   void Run() override;
 
  private:
+  enum Request : uint32_t {
+    kRequestStop = 1,
+    kRequestStart,
+  };
+
   std::string root_;
   int num_producers_;
-  const Option option_;
   CommitCallback commit_callback_ = nullptr;
-  StoppedCallback stopped_callback_ = nullptr;
+  StateChangeCallback state_change_callback_ = nullptr;
+  const Option option_;
+
+  LineBufferMpsc line_buf_;
+  std::vector<uint8_t> write_buf_;
+  std::unique_ptr<FILE, decltype(&fclose)> file_;
+
+  State state_ = kStopped;
+  Error last_error_ = kNoError;
+
+  // session-split info
 
   int64_t session_id_ = 0;
   int split_id_ = 0;
-  std::string session_dir_;
-  std::string split_path_;
+  std::string session_path_{};
+  std::string split_path_{};
+
+  // split file info
 
   int lines_written_ = 0;
   int64_t bytes_written_ = 0;
@@ -125,15 +145,21 @@ class Logger : public Task {
   int64_t bytes_committed_ = 0;
   TickType_t last_commit_time_{};
 
-  LineBufferMpsc line_buf_;
-  std::vector<uint8_t> write_buf_;
+  void ChangeState(State state);
 
-  bool EnsureSessionDir();
-  bool EnsureSplitPath();
-  bool MaintainRollingLogHeadroom();
-  IRAM_ATTR Error WriteIncomingLinesToFile(FILE* file);
-  IRAM_ATTR Error WriteIncomingLineToFile(std::string_view line, FILE* file);
-  Error FlushWriteBuf(FILE* file, bool sync);
+  Error RunInternal();
+
+  Error CheckInterruption();
+
+  Error PrepareNewSession();
+  Error PrepareNewSplit();
+  Error EnsureSessionPath();
+  Error EnsureSplitPath();
+  Error MaintainRollingLogHeadroom();
+
+  IRAM_ATTR Error WriteIncomingLines();
+  IRAM_ATTR Error WriteIncomingLine(std::string_view line);
+  Error FlushWriteBuf(bool sync);
 
   NON_COPYABLE_NOR_MOVABLE(Logger)
 };

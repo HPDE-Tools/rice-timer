@@ -19,16 +19,12 @@
 #include "scope_guard/scope_guard.hpp"
 
 #include "app/device_id.hpp"
-#include "app/sd_card_instance.hpp"
 #include "common/macros.hpp"
 #include "common/strings.hpp"
 #include "common/times.hpp"
 #include "io/fs_utils.hpp"
 #include "priorities.hpp"
 #include "ui/model.hpp"
-
-// TODO(summivox): Decouple from SD card instance
-using app::g_sd_card;
 
 namespace io {
 
@@ -37,98 +33,153 @@ constexpr char TAG[] = "logger";
 constexpr int kLoggerStackSize = 4096;
 }  // namespace
 
-#define LOGGER_TRY(expr)                                     \
-  do {                                                       \
-    if (const Logger::Error err = (expr); err != kNoError) { \
-      return err;                                            \
-    }                                                        \
+/// `TRY` macro for control flow within Logger
+#define LOGGER_TRY(expr)                                                         \
+  do {                                                                           \
+    if (const Logger::Error err = (expr); err != kNoError) {                     \
+      ESP_LOGW(TAG, "%s:%d TRY(%s) fail => %d", __FILE__, __LINE__, #expr, err); \
+      return err;                                                                \
+    }                                                                            \
   } while (0)
 
-Logger::Logger(std::string_view root_path, int num_producers, Option option)
-    : root_(root_path), option_(option), line_buf_(option.queue_size_bytes, num_producers) {
+/// shorthand for marking "interruptable" points in the logger workflow
+#define LOGGER_YIELD LOGGER_TRY(CheckInterruption())
+
+Logger::Logger(
+    std::string_view root_path,
+    int num_producers,
+    Logger::CommitCallback&& commit_callback,
+    Logger::StateChangeCallback&& state_change_callback,
+    Option option)
+    : root_(root_path),
+      commit_callback_(commit_callback),
+      state_change_callback_(state_change_callback),
+      option_(option),
+      line_buf_(option.queue_size_bytes, num_producers),
+      file_(nullptr, fclose) {
   write_buf_.reserve(option.write_buffer_size_bytes);
 }
 
-Logger::~Logger() { Stop(); }
+Logger::~Logger() { Task::Kill(); }
 
-esp_err_t Logger::Start(
-    Logger::CommitCallback commit_callback, Logger::StoppedCallback stopped_callback) {
-  session_id_ = app::NewSessionId();
-  split_id_ = 0;
-  commit_callback_ = commit_callback;
-  stopped_callback_ = stopped_callback;
-  line_buf_.Clear();
+esp_err_t Logger::StartTask() {
   return Task::SpawnPinned(TAG, kLoggerStackSize, kPriorityLogger, PRO_CPU_NUM);
 }
 
-void Logger::Stop(Error error) {
-  if (stopped_callback_) {
-    stopped_callback_(error);
+esp_err_t Logger::StartNewSession() {
+  if (!Task::handle()) {
+    return ESP_ERR_INVALID_STATE;
   }
-  Task::Kill();
+  xTaskNotify(Task::handle(), kRequestStart, eSetValueWithOverwrite);
+  return ESP_OK;
+}
+
+esp_err_t Logger::StopLogging() {
+  if (!Task::handle()) {
+    return ESP_ERR_INVALID_STATE;
+  }
+  xTaskNotify(Task::handle(), kRequestStop, eSetValueWithOverwrite);
+  return ESP_OK;
 }
 
 esp_err_t Logger::AppendLine(int producer_id, std::string_view line_without_sep) {
-  if (!Task::handle()) {
+  if (!(Task::handle() && state_ == kRunning)) {
     return ESP_ERR_INVALID_STATE;
   }
   return line_buf_.Push(producer_id, line_without_sep) ? ESP_OK : ESP_FAIL;
 }
 
 void Logger::Run() {
-  // NOTE: SCOPE_EXIT will take care of clean up in case of early termination (`return` below)
-  Error error = kNoError;
-  SCOPE_EXIT {
-    // if we bailed, probably it's because the card got unplugged, so check that first
-    g_sd_card->Ping();
-    Stop(error);
-  };
-
-  if (!EnsureSessionDir()) {
-    error = kPathError;
-    return;
-  }
   while (true) {
-    if (!EnsureSplitPath()) {
-      error = kPathError;
-      return;
+    ESP_LOGI(TAG, "awaiting request...");
+    uint32_t request{};
+    xTaskNotifyWait(/*clear entry*/ 0, /*clear exit*/ ~0u, &request, portMAX_DELAY);
+    ESP_LOGI(TAG, "got request: %d", (int)request);
+    switch (request) {
+      case kRequestStart: {
+        last_error_ = kNoError;
+        ChangeState(kRunning);
+      } break;
+      case kRequestStop:
+        if (state_ == kRunning) {
+          file_.reset();
+          ChangeState(kStopped);
+          line_buf_.Clear();  // NOTE: must be done after changing state
+        }
+        break;
+      default:
+        break;
     }
-    if (option_.rolling_log) {
-      if (!MaintainRollingLogHeadroom()) {
-        error = kHeadroomError;
-        return;
+    if (state_ == kRunning) {
+      last_error_ = RunInternal();
+      if (!(last_error_ == kNoError || last_error_ == kInterrupted)) {
+        ChangeState(kStopped);
       }
     }
-    ESP_LOGI(TAG, "will open file: %s", split_path_.c_str());
-    FILE* file = fopen(split_path_.c_str(), "w");
-    if (file == nullptr) {
-      error = kOpenError;
-      return;
-    }
-    SCOPE_EXIT {
-      ESP_LOGW(TAG, "will close file: %s", split_path_.c_str());
-      fclose(file);
-    };
-    error = WriteIncomingLinesToFile(file);
-    if (error != kNoError) {
-      return;
-    }
-    if (++split_id_ == option_.split_overall_mod) {
-      split_id_ = 0;
-    }
   }
 }
 
-bool Logger::EnsureSessionDir() {
-  if (const esp_err_t err = MkdirParts({root_, std::to_string(session_id_)}, &session_dir_);
+void Logger::ChangeState(State state) {
+  state_ = state;
+  if (state_change_callback_) {
+    state_change_callback_(state, last_error_);
+  }
+}
+
+Logger::Error Logger::RunInternal() {
+  LOGGER_TRY(PrepareNewSession());
+  while (true) {
+    if (option_.rolling_log) {
+      LOGGER_TRY(MaintainRollingLogHeadroom());
+    }
+    LOGGER_TRY(PrepareNewSplit());
+    LOGGER_TRY(WriteIncomingLines());
+  }
+}
+
+Logger::Error Logger::CheckInterruption() {
+  uint32_t request{};
+  if (xTaskNotifyWait(/*clear entry*/ 0, /*clear exit*/ 0, &request, /*timeout*/ 0) == pdTRUE &&
+      request) {
+    // hack: re-send the value so that the main loop can process it later
+    xTaskNotify(Task::handle(), request, eSetValueWithOverwrite);
+    return kInterrupted;
+  }
+  return kNoError;
+}
+
+Logger::Error Logger::PrepareNewSession() {
+  LOGGER_YIELD;
+  session_id_ = app::NewSessionId();
+  if (session_id_ < 0) {
+    return kPathError;
+  }
+  split_id_ = -1;
+  LOGGER_TRY(EnsureSessionPath());
+  return kNoError;
+}
+
+Logger::Error Logger::PrepareNewSplit() {
+  LOGGER_YIELD;
+  if (++split_id_ == option_.split_overall_mod) {
+    split_id_ = 0;
+  }
+  LOGGER_TRY(EnsureSplitPath());
+  ESP_LOGI(TAG, "will open file: %s", split_path_.c_str());
+  file_.reset(fopen(split_path_.c_str(), "w"));
+  return file_ ? kNoError : kOpenError;
+}
+
+Logger::Error Logger::EnsureSessionPath() {
+  if (const esp_err_t err = MkdirParts({root_, std::to_string(session_id_)}, &session_path_);
       err != ESP_OK) {
-    ESP_LOGE(TAG, "error making session dir:%s (%s)", session_dir_.c_str(), strerror(errno));
-    return false;
+    ESP_LOGE(TAG, "error making session dir:%s (%s)", session_path_.c_str(), strerror(errno));
+    return kPathError;
   }
-  return true;
+  return kNoError;
 }
 
-bool Logger::EnsureSplitPath() {
+Logger::Error Logger::EnsureSplitPath() {
   const int split_prefix = split_id_ / option_.split_prefix_div;
   const std::string split_prefix_str = std::to_string(split_prefix);
   const std::string split_id_str = std::to_string(split_id_);
@@ -137,44 +188,44 @@ bool Logger::EnsureSplitPath() {
   // By now "$session" have already been created, so we only need to work on the rest.
   split_path_.clear();
   split_path_.reserve(
-      session_dir_.size() + 1 + split_prefix_str.size() + 1 + split_id_str.size() +
+      session_path_.size() + 1 + split_prefix_str.size() + 1 + split_id_str.size() +
       sizeof(kLogFileSuffix));
-  split_path_ += session_dir_;
+  split_path_ += session_path_;
   split_path_ += '/';
   split_path_ += split_prefix_str;
 
   if (const esp_err_t err = Mkdir(split_path_); err != ESP_OK) {
     ESP_LOGE(TAG, "error making split dir:%s (%s)", split_path_.c_str(), strerror(errno));
     split_path_.clear();
-    return false;
+    return kPathError;
   }
 
   split_path_ += '/';
   split_path_ += split_id_str;
   split_path_ += kLogFileSuffix;
-  return true;
+  return kNoError;
 }
 
-bool Logger::MaintainRollingLogHeadroom() {
+Logger::Error Logger::MaintainRollingLogHeadroom() {
   const int64_t headroom_bytes = option_.rolling_headroom_bytes;
   while (true) {
-    const int64_t free_space_bytes = g_sd_card->GetFreeSpaceBytes();
+    const int64_t free_space_bytes = io::GetFreeSpaceBytes();
     if (free_space_bytes < 0) {
       ESP_LOGE(TAG, "cannot get free space");
-      return false;
+      return kHeadroomError;
     }
     if (free_space_bytes >= headroom_bytes) {
-      return true;
+      return kNoError;
     }
     // TODO(summivox):
     // - list and sort index of existing log files under `root_`
     // - delete until satisfactory
     CHECK(false && "rolling log is unimplemented");
   }
-  return true;
+  return kNoError;
 }
 
-Logger::Error Logger::WriteIncomingLinesToFile(FILE* file) {
+Logger::Error Logger::WriteIncomingLines() {
   /////////////// DEBUG
   // gpio_set_level(GPIO_NUM_17, 0);
   // gpio_set_level(GPIO_NUM_16, 0);
@@ -188,6 +239,7 @@ Logger::Error Logger::WriteIncomingLinesToFile(FILE* file) {
   std::string_view line;
   for (int line_i = 0; line_i < option_.max_num_lines_per_split; line_i++) {
     while (true) {
+      LOGGER_YIELD;
       line = line_buf_.Peek();
       if (line.empty()) {
         vTaskDelay(1);
@@ -195,19 +247,19 @@ Logger::Error Logger::WriteIncomingLinesToFile(FILE* file) {
       }
       break;
     }
-    LOGGER_TRY(WriteIncomingLineToFile(line, file));
+    LOGGER_TRY(WriteIncomingLine(line));
     line_buf_.PopPeeked(line);
   }
-  return FlushWriteBuf(file, /*sync*/ true);
+  return FlushWriteBuf(/*sync*/ true);
 }
 
-Logger::Error Logger::WriteIncomingLineToFile(std::string_view line, FILE* file) {
+Logger::Error Logger::WriteIncomingLine(std::string_view line) {
   const TickType_t now = xTaskGetTickCount();
   const bool buf_full = (write_buf_.size() + line.size() > write_buf_.capacity());
   const bool should_sync =
       (SignedMinus(now, last_commit_time_) >= pdMS_TO_TICKS(option_.flush_interval_ms));
   if (buf_full || should_sync) {
-    LOGGER_TRY(FlushWriteBuf(file, should_sync));
+    LOGGER_TRY(FlushWriteBuf(should_sync));
   }
   CHECK(write_buf_.size() + line.size() <= write_buf_.capacity());
   write_buf_.insert(write_buf_.end(), line.begin(), line.end());
@@ -216,10 +268,10 @@ Logger::Error Logger::WriteIncomingLineToFile(std::string_view line, FILE* file)
   return kNoError;
 }
 
-Logger::Error Logger::FlushWriteBuf(FILE* file, bool sync) {
+Logger::Error Logger::FlushWriteBuf(bool sync) {
   if (!write_buf_.empty()) {
     // gpio_set_level(GPIO_NUM_17, 1);  // DEBUG
-    if (fwrite(write_buf_.data(), write_buf_.size(), 1, file) != 1) {
+    if (fwrite(write_buf_.data(), write_buf_.size(), 1, file_.get()) != 1) {
       ESP_LOGE(
           TAG, "fail to write (%s):%.*s", strerror(errno), write_buf_.size(), write_buf_.data());
       return kWriteError;
@@ -230,7 +282,7 @@ Logger::Error Logger::FlushWriteBuf(FILE* file, bool sync) {
 
   if (sync) {
     // gpio_set_level(GPIO_NUM_16, 1);  // DEBUG
-    if (const esp_err_t err = FlushAndSync(file); err != ESP_OK) {
+    if (const esp_err_t err = FlushAndSync(file_.get()); err != ESP_OK) {
       ESP_LOGE(TAG, "fail to flush (%s)", strerror(errno));
       return kFlushError;
     }

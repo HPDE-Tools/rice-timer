@@ -25,14 +25,14 @@ void HandleSdCardStateChange(bool mounted) {
     ESP_LOGI(TAG, "card mounted");
     // TODO: option for auto-start upon card mounted
 #if 0
-    const esp_err_t err = StartLogger();
+    const esp_err_t err = StartNewLoggingSession();
     if (err != ESP_OK) {
       ESP_LOGE(TAG, "logger cannot be started: %s", esp_err_to_name(err));
     }
 #endif
   } else {
     ui::g_model.sd_card.reset();
-    StopLogger();
+    StopLogging();
     ESP_LOGW(TAG, "card unmounted");
   }
 }

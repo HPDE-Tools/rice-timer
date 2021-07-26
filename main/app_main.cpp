@@ -48,7 +48,7 @@ void Main() {
   // vTaskDelay(pdMS_TO_TICKS(2000));
 
   CHECK_OK(SetupSdCard());
-  CHECK_OK(SetupLogger());
+  CHECK_OK(SetupAndStartLoggerTask());
   CHECK_OK(SetupGps());
   CHECK_OK(SetupCan());
   CHECK_OK(SetupImu());
