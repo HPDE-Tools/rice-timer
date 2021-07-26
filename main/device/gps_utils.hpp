@@ -34,7 +34,7 @@ constexpr float kKnotInKph = 1.852f;
 /// \returns one of the minmea_sentence_xxx variants, if the line successfully parsed;
 ///          ESP_ERR_NOT_SUPPORTED, if the line contains valid NMEA that we cannot parse;
 ///          ESP_ERR_INVALID_RESPONSE, if the line does not contain valid NMEA.
-ParsedNmea ParseNmea(const std::string& line);
+IRAM_ATTR ParsedNmea ParseNmea(const std::string& line);
 
 /// Sends an NMEA sentence, automatically prepending and appending framing and checksum.
 ///
