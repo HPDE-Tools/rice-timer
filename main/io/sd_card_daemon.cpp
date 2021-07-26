@@ -11,6 +11,7 @@
 
 #include "common/isr_yielder.hpp"
 #include "common/macros.hpp"
+#include "fs_utils.hpp"
 
 namespace io {
 
@@ -173,15 +174,7 @@ int32_t SdCardDaemon::GetFreeSpaceSectors() {
   if (!sd_card_) {
     return -1;
   }
-  DWORD clust;
-  FATFS* fatfs;
-  FRESULT result = f_getfree(kFatFsRoot, &clust, &fatfs);
-  if (result != FR_OK) {
-    ESP_LOGE(TAG, "f_getfree => %d", result);
-    return -1;
-  }
-  // free space sectors <= card capacity sectors, which is stored as int32_t
-  return static_cast<int32_t>(clust) * fatfs->csize;
+  return io::GetFreeSpaceBytes(kFatFsRoot);
 }
 
 int64_t SdCardDaemon::GetFreeSpaceBytes() {
@@ -189,14 +182,7 @@ int64_t SdCardDaemon::GetFreeSpaceBytes() {
   if (!sd_card_) {
     return -1;
   }
-  DWORD clust;
-  FATFS* fatfs;
-  FRESULT result = f_getfree(kFatFsRoot, &clust, &fatfs);
-  if (result != FR_OK) {
-    ESP_LOGE(TAG, "f_getfree => %d", result);
-    return -1;
-  }
-  return int64_t{clust} * fatfs->csize * kSdSectorSize;
+  return io::GetFreeSpaceBytes(kFatFsRoot);
 }
 
 int32_t SdCardDaemon::GetCapacitySectors() {

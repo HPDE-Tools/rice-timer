@@ -75,4 +75,28 @@ esp_err_t UpdateFileTime(const std::string& path, TimeUnix t_unix) {
   return ESP_OK;
 }
 
+int32_t GetFreeSpaceSectors(const char* fatfs_root) {
+  DWORD clust;
+  FATFS* fatfs;
+  FRESULT result = f_getfree(fatfs_root, &clust, &fatfs);
+  if (result != FR_OK) {
+    ESP_LOGE(TAG, "f_getfree => %d", result);
+    return -1;
+  }
+  // free space sectors <= card capacity sectors, which is stored as int32_t
+  return static_cast<int32_t>(clust) * fatfs->csize;
+}
+
+int64_t GetFreeSpaceBytes(const char* fatfs_root) {
+  // NOTE(summivox): reason this is not implemented thru GetFreeSpaceSectors: we need `fatfs` too.
+  DWORD clust;
+  FATFS* fatfs;
+  FRESULT result = f_getfree(fatfs_root, &clust, &fatfs);
+  if (result != FR_OK) {
+    ESP_LOGE(TAG, "f_getfree => %d", result);
+    return -1;
+  }
+  return int64_t{clust} * fatfs->csize * kSdSectorSize;
+}
+
 }  // namespace io
