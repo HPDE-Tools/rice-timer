@@ -54,7 +54,7 @@ esp_err_t StartLogger() {
     return ESP_ERR_INVALID_STATE;
   }
   ui::g_model.is_logger_running = true;
-  return g_logger->Start(NewSessionId(), /*init split id*/ 0, HandleLoggerCommit, HandleLoggerExit);
+  return g_logger->Start(HandleLoggerCommit, HandleLoggerExit);
 }
 
 }  // namespace app

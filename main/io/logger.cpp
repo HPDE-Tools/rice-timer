@@ -52,17 +52,13 @@ Logger::Logger(std::string_view root_path, int num_producers, Option option)
 Logger::~Logger() { Stop(); }
 
 esp_err_t Logger::Start(
-    int64_t session_id,
-    int split_id,
-    Logger::CommitCallback commit_callback,
-    Logger::StoppedCallback stopped_callback) {
-  session_id_ = session_id;
-  split_id_ = split_id % option_.split_overall_mod;
+    Logger::CommitCallback commit_callback, Logger::StoppedCallback stopped_callback) {
+  session_id_ = app::NewSessionId();
+  split_id_ = 0;
   commit_callback_ = commit_callback;
   stopped_callback_ = stopped_callback;
   line_buf_.Clear();
   return Task::SpawnPinned(TAG, kLoggerStackSize, kPriorityLogger, PRO_CPU_NUM);
-  // return Task::SpawnSame(TAG, kLoggerStackSize, kPriorityLogger);
 }
 
 void Logger::Stop(Error error) {
@@ -109,7 +105,10 @@ void Logger::Run() {
       error = kOpenError;
       return;
     }
-    SCOPE_EXIT { fclose(file); };
+    SCOPE_EXIT {
+      ESP_LOGW(TAG, "will close file: %s", split_path_.c_str());
+      fclose(file);
+    };
     error = WriteIncomingLinesToFile(file);
     if (error != kNoError) {
       return;

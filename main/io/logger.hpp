@@ -86,11 +86,7 @@ class Logger : public Task {
   Logger(std::string_view root_path, int num_producers, Option option);
   virtual ~Logger();
 
-  esp_err_t Start(
-      int64_t session_id,
-      int split_id,
-      CommitCallback commit_callback,
-      StoppedCallback stopped_callback);
+  esp_err_t Start(CommitCallback commit_callback, StoppedCallback stopped_callback);
   void Stop(Error error = kForced);
 
   /// \param line content of the line (without line separator)
