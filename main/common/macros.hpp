@@ -79,3 +79,9 @@
     }                                                                \
     return self;                                                     \
   }
+
+#define CHECKED_UNREACHABLE        \
+  do {                             \
+    CHECK(false && "unreachable"); \
+    __builtin_unreachable();       \
+  } while (0)

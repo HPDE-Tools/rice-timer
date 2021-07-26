@@ -176,8 +176,7 @@ void GpsDaemon::Run() {
         }
       } break;
       default:
-        CHECK(false && "unreachable");
-        break;
+        CHECKED_UNREACHABLE;
     }
 
     if (line_subscriber_ && !line.empty()) {
