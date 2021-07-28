@@ -86,12 +86,19 @@ struct Style {
     lv_style_set_border_width(&s, 2);
     return s;
   }();
+  lv_style_t btn_focused = []() {
+    lv_style_t s{};
+    lv_style_init(&s);
+    lv_style_set_outline_color(&s, lv_color_white());
+    return s;
+  }();
 
   lv_style_t framed = []() {
     lv_style_t s{};
     lv_style_init(&s);
     lv_style_set_border_width(&s, 1);
     lv_style_set_border_color(&s, lv_color_white());
+    lv_style_set_border_post(&s, true);
     lv_style_set_pad_ver(&s, 1);
     lv_style_set_radius(&s, 4);
     return s;

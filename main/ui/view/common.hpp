@@ -104,6 +104,7 @@ inline void LvListen(lv_obj_t* obj, lv_event_code_t filter, LvEventHandler& hand
 void FixButton(lv_obj_t* obj) {
   lv_obj_add_style(obj, &g_style->btn_normal, LV_STATE_DEFAULT);
   lv_obj_add_style(obj, &g_style->btn_pressed, LV_STATE_PRESSED);
+  lv_obj_add_style(obj, &g_style->btn_focused, LV_STATE_FOCUSED);
 }
 
 void MergeCell(lv_obj_t* table, uint16_t row, uint16_t col) {
