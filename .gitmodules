@@ -1,24 +1,3 @@
-[submodule "components/arduino"]
-	path = components/arduino
-	url = https://github.com/summivox/arduino-esp32
-[submodule "components/adafruit-led-backpack/Adafruit_BusIO"]
-	path = components/adafruit-busio/Adafruit_BusIO
-	url = https://github.com/adafruit/Adafruit_BusIO
-[submodule "components/adafruit-gfx-library/Adafruit-GFX-Library"]
-	path = components/adafruit-gfx-library/Adafruit-GFX-Library
-	url = https://github.com/adafruit/Adafruit-GFX-Library
-[submodule "components/adafruit-led-backpack/Adafruit_LED_Backpack"]
-	path = components/adafruit-led-backpack/Adafruit_LED_Backpack
-	url = https://github.com/adafruit/Adafruit_LED_Backpack
-[submodule "components/adafruit-bno055/Adafruit_BNO055"]
-	path = components/adafruit-bno055/Adafruit_BNO055
-	url = https://github.com/adafruit/Adafruit_BNO055
-[submodule "components/adafruit-sensor/Adafruit_Sensor"]
-	path = components/adafruit-sensor/Adafruit_Sensor
-	url = https://github.com/adafruit/Adafruit_Sensor
-[submodule "components/adafruit-sh110x/Adafruit_SH110X"]
-	path = components/adafruit-sh110x/Adafruit_SH110X
-	url = https://github.com/adafruit/Adafruit_SH110X
 [submodule "components/fmtlib/fmt"]
 	path = components/fmtlib/fmt
 	url = https://github.com/fmtlib/fmt
