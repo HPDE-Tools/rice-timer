@@ -1,0 +1,15 @@
+[can]
+db = 'fk8.dbc'
+
+[can.signals]
+'CAR_SPEED.CAR_SPEED' = { name = 'speed_can_kph', interp = 'linear' }
+'POWERTRAIN_DATA.ENGINE_RPM' = { name = 'engine_rpm', interp = 'linear' }
+'FK8_GEARBOX.GEAR_NUM' = { name = 'gear', interp = 'previous' }
+'KINEMATICS.LAT_ACCEL' = { name = 'lat_acc_can', interp = 'linear' }
+'KINEMATICS.LONG_ACCEL' = { name = 'lon_acc_can', interp = 'linear' }
+'STEERING_SENSORS.STEER_ANGLE' = { name = 'steer_angle', interp = 'linear' }
+'FK8_CLUTCH_PEDAL.PEDAL_CLUTCH' = { name = 'pedal_clutch', interp = 'linear' }
+'GAS_PEDAL_2.CAR_GAS' = { name = 'pedal_gas', interp = 'linear' }
+'VSA_STATUS.USER_BRAKE' = { name = 'brake_pressure_mpa', interp = 'linear' }
+'GAS_PEDAL_2.ENGINE_TORQUE_REQUEST' = { name = 'torque_request', interp = 'linear' }
+'GAS_PEDAL_2.ENGINE_TORQUE_ESTIMATE' = { name = 'torque_estimate', interp = 'linear' }

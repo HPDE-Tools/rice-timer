@@ -1,0 +1,26 @@
+include "common.fbs";
+
+namespace ricetimer.proto;
+
+enum MapType : byte {
+  Circuit,
+  Touge,
+}
+
+table Map {
+  name:string;
+  type:MapType;
+
+  origin:LatLonD;
+  timezone:string;  // example: 'America/Los_Angeles'
+
+  tracks:[Track];
+}
+
+table Track {
+  ref_line:[Vec2F];
+  left_boundary:[float];
+  right_boundary:[float];
+}
+
+root_type Map;

@@ -1,0 +1,52 @@
+namespace ricetimer.proto;
+
+struct Vec2F {
+  x:float;
+  y:float;
+}
+
+struct Vec2D {
+  x:double;
+  y:double;
+}
+
+struct Vec3F {
+  x:float;
+  y:float;
+  z:float;
+}
+
+struct Vec3D {
+  x:double;
+  y:double;
+  z:double;
+}
+
+struct LatLonF {
+  lat:float;
+  lon:float;
+}
+struct LatLonD {
+  lat:double;
+  lon:double;
+}
+
+struct LLHF {
+  lat:float;
+  lon:float;
+  height:float;
+}
+
+struct LLHD {
+  lat:double;
+  lon:double;
+  height:double;
+}
+
+table Polygon2F {
+  points:[Vec2F];
+}
+
+table Polygon2D {
+  points:[Vec2D];
+}
