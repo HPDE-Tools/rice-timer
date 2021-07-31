@@ -33,6 +33,7 @@ set(srcs
 "ui/style.cpp"
 )
 file(GLOB fonts "ui/fonts/*.c")
+file(GLOB my_fbs_src "${COMPONENT_DIR}/../../flatbuffers/*.fbs")
 
 idf_component_register(
     SRCS ${srcs} ${fonts}
@@ -42,3 +43,32 @@ idf_component_register(
 target_compile_options(${COMPONENT_LIB} PRIVATE -std=gnu++2a -Wno-deprecated-declarations -Wno-multichar)
 target_compile_options(${COMPONENT_LIB} PUBLIC -DLV_LVGL_H_INCLUDE_SIMPLE)
 # target_link_libraries(${COMPONENT_LIB} PUBLIC stdc++fs)
+
+
+#######################
+# flatbuffers codegen
+#######################
+find_program(FLATBUFFERS_FLATC_EXECUTABLE NAMES flatc)
+function(FLATBUFFERS_GENERATE_C_HEADERS Name Dir)
+set(FLATC_OUTPUTS)
+foreach(FILE ${ARGN})
+  get_filename_component(FLATC_OUTPUT ${FILE} NAME_WE)
+  set(FLATC_OUTPUT
+    "${Dir}/${FLATC_OUTPUT}_generated.h")
+  list(APPEND FLATC_OUTPUTS ${FLATC_OUTPUT})
+
+  add_custom_command(OUTPUT ${FLATC_OUTPUT}
+    COMMAND ${FLATBUFFERS_FLATC_EXECUTABLE}
+    ARGS --cpp --cpp-std c++17 --scoped-enums -o "${Dir}/" ${FILE}
+    DEPENDS ${FILE}
+    COMMENT "Building C++ header for ${FILE}"
+    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
+endforeach()
+set(${Name}_OUTPUTS ${FLATC_OUTPUTS} PARENT_SCOPE)
+endfunction()
+
+FLATBUFFERS_GENERATE_C_HEADERS(my_fbs "proto" ${my_fbs_src})
+message(WARNING "flatbuffers source: ${my_fbs_src}")
+message(WARNING "generated flatbuffers headers: ${my_fbs_OUTPUTS}")
+add_custom_target(my_fbs_target DEPENDS ${my_fbs_OUTPUTS})
+add_dependencies(${COMPONENT_LIB} my_fbs_target)

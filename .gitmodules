@@ -10,3 +10,6 @@
 [submodule "firmware/components/geographiclib/geographiclib"]
 	path = firmware/components/geographiclib/geographiclib
 	url = https://git.code.sf.net/p/geographiclib/code
+[submodule "firmware/components/flatbuffers/flatbuffers"]
+	path = firmware/components/flatbuffers/flatbuffers
+	url = git@github.com:google/flatbuffers.git
