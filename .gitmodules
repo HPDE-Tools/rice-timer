@@ -1,12 +1,12 @@
-[submodule "components/fmtlib/fmt"]
-	path = components/fmtlib/fmt
+[submodule "firmware/components/fmtlib/fmt"]
+	path = firmware/components/fmtlib/fmt
 	url = https://github.com/fmtlib/fmt
-[submodule "components/lvgl"]
-	path = components/lvgl
+[submodule "firmware/components/lvgl"]
+	path = firmware/components/lvgl
 	url = https://github.com/lvgl/lvgl.git
-[submodule "components/eigen/eigen"]
-	path = components/eigen/eigen
+[submodule "firmware/components/eigen/eigen"]
+	path = firmware/components/eigen/eigen
 	url = https://gitlab.com/libeigen/eigen.git
-[submodule "components/geographiclib/geographiclib"]
-	path = components/geographiclib/geographiclib
+[submodule "firmware/components/geographiclib/geographiclib"]
+	path = firmware/components/geographiclib/geographiclib
 	url = https://git.code.sf.net/p/geographiclib/code
