@@ -1,46 +1,69 @@
 # RiceTimer
 
-RiceTimer (previously known as "ShiftWatch") is a portable standalone data logger intended for collecting automotive performance data. Its core function is to pipe synchronized raw [GNSS][] + [IMU][] + [CAN][] data streams to a MicroSD card.
+RiceTimer (previously known as "ShiftWatch") is a portable standalone data logger intended for collecting and analyzing automotive performance data in real time. Its core function is to stream synchronized raw [GNSS][] + [IMU][] + [CAN][] data to a MicroSD card.
 
-Photo of current prototype hardware:
+Photo of the current prototype hardware:
 
-![pcb-photo](doc/image/pcb-v2.0-photo-1.jpg "photo of RiceTimer v2.0 PCB")
+![pcb-photo](doc/image/pcb-v3.0-photo-2.jpg "Photo of RiceTimer v3.0 PCB assembly")
 
 
 ## Features
 
-- Human-readable log format
-    - One line per message.
-    - Each valid NMEA sentence from the GPS module is written verbatim to the log.
-- *Every* message is timestamped w.r.t. the GPS UTC clock:
+Hardware:
+- Based on the ESP32 (classic) WROOM module with Wi-Fi/BLE connectivity.
+- Flexible power input: USB or 5 ~ 14 V direct input.
+- High-contrast monochrome OLED display (128x64).
+- Onboard push buttons and a clickable rotary encoder for user interaction.
+
+Logging:
+- Human-readable text-based raw log format
+    - One line per data point.
+    - Each valid NMEA sentence from the GNSS module is written verbatim to the log.
+- *Every* message is timestamped w.r.t. the GNSS UTC clock:
     - Each IMU reading is timestamped by hardware, at the time of *data available*.
-    - Each incoming CAN message is likewise timestamped by firmware, at the time of message delivery.
-- Real-time visualization through an attached I<sup>2</sup>C OLED display
+    - Each incoming CAN message is timestamped by firmware, at the time of message delivery.
 
 
 ## Data Sources
 
-- [uBlox NEO series][ublox] GPS receiver module + external active antenna (SMA connector)
+- [uBlox NEO series][ublox] GNSS receiver module + external active antenna (thru the onboard SMA connector)
 - [ST LSM6 series][lsm6] (LGA14) 6-axis IMU (accelerometer + gyroscope)
-- One 5V non-isolated CAN transceiver channel (11/29 bit frames; FD not supported)
+- One 3.3V non-isolated CAN transceiver channel:
+    - Compatible with 5V networks
+    - 11/29 bit frames (FD not supported)
 
 
-## Usage
+## Hardware Ports
 
-The device requires the following to be connected:
+Short side:
 
-- **Power**: The entire device is powered through the USB Micro-B jack closest to the DB9. This also serves as the serial debug/programming console of the ESP32.
-- **SD card**: A normal Micro-SDHC/XC card inserted into the onboard card slot.
-- **GPS**: The GPS module requires an active antenna connected to the threaded female-socket SMA jack. Links: [SparkFun][GPS-ant-1], [Adafruit][GPS-ant-2].
-- **CAN**: Default to interfacing with the OBD2 DLC connector (with [standard-compliant termination][OBD2-term]), using a common OBD2-to-DB9 cable (1-2 = GND, 3 = CAN-H, 5 = CAN-L, 9 = 12V battery always-on). Links: [SparkFun][OBD2-cable-1]. **NOTE: This is different from the more common PeakCAN / Kvaser pinout, so do double check!**
+- **USB Micro-B Jack**: Supplies power to the device, and serves as the serial debugging/programming console of the ESP32 (CP210x-based).
+
+- **JST SH 5-pin Jack**: Combined CAN + Power Input port, intended for a direct automotive connection.
+    - Pin 1: GND
+    - Pin 2: VIN (5 ~ 14 V nominal)
+    - Pin 3: Reserved
+    - Pin 4: CAN L
+    - Pin 5: CAN H
+    
+- **SMA Jack**: External active antenna connection for the GNSS module (**required** because there is no built-in GNSS antenna). Examples: [SparkFun][GPS-ant-1], [Adafruit][GPS-ant-2].
+
+Long side:
+
+- **JST SH 4-pin Jack**: I2C port in the [QWIIC][] / [StemmaQT][] standard.
+    - Pin 1: GND
+    - Pin 2: VCC (3.3 V nominal)
+    - Pin 3: SDA
+    - Pin 4: SCL
+
+- **Micro SD Card Slot**: While any Micro-SDHC card can work as long as there's not much incoming CAN data, a low-latency one is recommended to avoid any potential data loss under heavy traffic. Usually these cards are branded as "Industrial", "Endurance", "for Dashcam", etc.
 
 
 ## Example
 
 ### Visualization
 
-![oled-photo-1](doc/image/oled-v2.0-photo-1.jpg "photo of 128x64 OLED display")
-![oled-photo-2](doc/image/oled-v2.0-photo-2.jpg "photo of 128x64 OLED display")
+(TBD)
 
 ### Offline Analysis
 
@@ -60,7 +83,7 @@ The firmware is built through [ESP-IDF][], preferrably using the [official VSCod
 
 ## Hardware
 
-More details on the current prototype PCB platform:
+More details on the (previous) prototype PCB platform:
 
 ![pcb-sch](doc/image/pcb-v2.0-sch-1.png "schematic of RiceTimer v2.0 PCB")
 
