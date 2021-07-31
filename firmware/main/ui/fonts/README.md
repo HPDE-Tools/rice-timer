@@ -2,10 +2,13 @@
 
 ## Generation
 
-Some fonts are converted by the LVGL font converter:
+TTF fonts are converted by the official LVGL font converter:
 
 - Online: https://lvgl.io/tools/fontconverter
 - Offline: https://github.com/lvgl/lv_font_conv
+
+BDF fonts are converted by BDF2LVGL: https://github.com/summivox/bdf2lvgl
+
 
 ## Font Sources
 
