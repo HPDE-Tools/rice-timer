@@ -26,6 +26,7 @@ set(srcs
 "io/logger.cpp"
 "io/sd_card_daemon.cpp"
 "io/uart_line_reader.cpp"
+"map/map_index.cpp"
 "ui/controller.cpp"
 "ui/display.cpp"
 "ui/encoder_button_input.cpp"

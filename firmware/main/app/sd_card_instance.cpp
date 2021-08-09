@@ -7,6 +7,7 @@
 
 #include "app/logger_instance.hpp"
 #include "io/fs_utils.hpp"
+#include "map/map_index.hpp"
 #include "priorities.hpp"
 #include "ui/model.hpp"
 
@@ -31,11 +32,7 @@ void HandleSdCardStateChange(bool mounted) {
       ESP_LOGE(TAG, "logger cannot be started: %s", esp_err_to_name(err));
     }
 #endif
-    // DEBUG: test DirIter
-    ESP_LOGE(TAG, "=== DirIter ===");
-    for (auto x : io::DirIter(SD_FATFS_ROOT "/BD2AA7C0")) {
-      ESP_LOGW(TAG, "%02x %s", x->fattrib, x->fname);
-    }
+    map::MapIndex::GetInstance()->Load(SD_FATFS_ROOT "/map");
   } else {
     ui::g_model.sd_card.reset();
     StopLogging();
