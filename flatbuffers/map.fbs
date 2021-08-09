@@ -7,14 +7,33 @@ enum MapType : byte {
   Touge,
 }
 
+enum CheckpointType : byte {
+  StartFinish,
+  Start,
+  Finish,
+  Split,
+  Node,
+}
+
 table Map {
+  header:MapHeader;
+  checkpoints:[Checkpoint];
+  tracks:[Track];
+}
+
+table MapHeader {
   name:string;
   type:MapType;
-
   origin:LatLonD;
   timezone:string;  // example: 'America/Los_Angeles'
+}
 
-  tracks:[Track];
+table Checkpoint {
+  type:CheckpointType;
+  position:Vec2F;
+  heading_deg:float;
+  heading_tolerance_deg:float;
+  width:float;
 }
 
 table Track {
@@ -24,3 +43,4 @@ table Track {
 }
 
 root_type Map;
+file_identifier "RctM";

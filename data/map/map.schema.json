@@ -1,0 +1,209 @@
+{
+  "$schema": "https://json-schema.org/draft/2019-09/schema",
+  "definitions": {
+    "ricetimer_proto_MapType" : {
+      "type" : "string",
+      "enum": ["Circuit", "Touge"]
+    },
+    "ricetimer_proto_CheckpointType" : {
+      "type" : "string",
+      "enum": ["StartFinish", "Start", "Finish", "Split", "Node"]
+    },
+    "ricetimer_proto_Vec2F" : {
+      "type" : "object",
+      "properties" : {
+        "x" : {
+                "type" : "number"
+              },
+        "y" : {
+                "type" : "number"
+              }
+      },
+      "additionalProperties" : false
+    },
+    "ricetimer_proto_Vec2D" : {
+      "type" : "object",
+      "properties" : {
+        "x" : {
+                "type" : "number"
+              },
+        "y" : {
+                "type" : "number"
+              }
+      },
+      "additionalProperties" : false
+    },
+    "ricetimer_proto_Vec3F" : {
+      "type" : "object",
+      "properties" : {
+        "x" : {
+                "type" : "number"
+              },
+        "y" : {
+                "type" : "number"
+              },
+        "z" : {
+                "type" : "number"
+              }
+      },
+      "additionalProperties" : false
+    },
+    "ricetimer_proto_Vec3D" : {
+      "type" : "object",
+      "properties" : {
+        "x" : {
+                "type" : "number"
+              },
+        "y" : {
+                "type" : "number"
+              },
+        "z" : {
+                "type" : "number"
+              }
+      },
+      "additionalProperties" : false
+    },
+    "ricetimer_proto_LatLonF" : {
+      "type" : "object",
+      "properties" : {
+        "lat" : {
+                "type" : "number"
+              },
+        "lon" : {
+                "type" : "number"
+              }
+      },
+      "additionalProperties" : false
+    },
+    "ricetimer_proto_LatLonD" : {
+      "type" : "object",
+      "properties" : {
+        "lat" : {
+                "type" : "number"
+              },
+        "lon" : {
+                "type" : "number"
+              }
+      },
+      "additionalProperties" : false
+    },
+    "ricetimer_proto_LLHF" : {
+      "type" : "object",
+      "properties" : {
+        "lat" : {
+                "type" : "number"
+              },
+        "lon" : {
+                "type" : "number"
+              },
+        "height" : {
+                "type" : "number"
+              }
+      },
+      "additionalProperties" : false
+    },
+    "ricetimer_proto_LLHD" : {
+      "type" : "object",
+      "properties" : {
+        "lat" : {
+                "type" : "number"
+              },
+        "lon" : {
+                "type" : "number"
+              },
+        "height" : {
+                "type" : "number"
+              }
+      },
+      "additionalProperties" : false
+    },
+    "ricetimer_proto_Polygon2F" : {
+      "type" : "object",
+      "properties" : {
+        "points" : {
+                "type" : "array", "items" : {"$ref" : "#/definitions/ricetimer_proto_Vec2F"}
+              }
+      },
+      "additionalProperties" : false
+    },
+    "ricetimer_proto_Polygon2D" : {
+      "type" : "object",
+      "properties" : {
+        "points" : {
+                "type" : "array", "items" : {"$ref" : "#/definitions/ricetimer_proto_Vec2D"}
+              }
+      },
+      "additionalProperties" : false
+    },
+    "ricetimer_proto_Map" : {
+      "type" : "object",
+      "properties" : {
+        "header" : {
+                "$ref" : "#/definitions/ricetimer_proto_MapHeader"
+              },
+        "checkpoints" : {
+                "type" : "array", "items" : {"$ref" : "#/definitions/ricetimer_proto_Checkpoint"}
+              },
+        "tracks" : {
+                "type" : "array", "items" : {"$ref" : "#/definitions/ricetimer_proto_Track"}
+              }
+      },
+      "additionalProperties" : false
+    },
+    "ricetimer_proto_MapHeader" : {
+      "type" : "object",
+      "properties" : {
+        "name" : {
+                "type" : "string"
+              },
+        "type" : {
+                "$ref" : "#/definitions/ricetimer_proto_MapType"
+              },
+        "origin" : {
+                "$ref" : "#/definitions/ricetimer_proto_LatLonD"
+              },
+        "timezone" : {
+                "type" : "string"
+              }
+      },
+      "additionalProperties" : false
+    },
+    "ricetimer_proto_Checkpoint" : {
+      "type" : "object",
+      "properties" : {
+        "type" : {
+                "$ref" : "#/definitions/ricetimer_proto_CheckpointType"
+              },
+        "position" : {
+                "$ref" : "#/definitions/ricetimer_proto_Vec2F"
+              },
+        "heading_deg" : {
+                "type" : "number"
+              },
+        "heading_tolerance_deg" : {
+                "type" : "number"
+              },
+        "width" : {
+                "type" : "number"
+              }
+      },
+      "additionalProperties" : false
+    },
+    "ricetimer_proto_Track" : {
+      "type" : "object",
+      "properties" : {
+        "ref_line" : {
+                "type" : "array", "items" : {"$ref" : "#/definitions/ricetimer_proto_Vec2F"}
+              },
+        "left_boundary" : {
+                "type" : "array", "items" : {"type" : "number"}
+              },
+        "right_boundary" : {
+                "type" : "array", "items" : {"type" : "number"}
+              }
+      },
+      "additionalProperties" : false
+    }
+  },
+  "$ref" : "#/definitions/ricetimer_proto_Map"
+}
