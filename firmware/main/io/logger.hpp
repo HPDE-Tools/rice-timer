@@ -18,6 +18,7 @@
 #include "common/line_buffer_mpsc.hpp"
 #include "common/macros.hpp"
 #include "common/task.hpp"
+#include "io/fs_utils.hpp"
 
 namespace io {
 
@@ -125,7 +126,7 @@ class Logger : public Task {
 
   LineBufferMpsc line_buf_;
   std::vector<uint8_t> write_buf_;
-  std::unique_ptr<FILE, decltype(&fclose)> file_;
+  OwnedFile file_;
 
   State state_ = kStopped;
   Error last_error_ = kNoError;

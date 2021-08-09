@@ -14,6 +14,7 @@
 #include "driver/gpio.h"
 #include "esp_vfs.h"
 #include "esp_vfs_fat.h"
+#include "flatbuffers/util.h"
 
 #include "common/macros.hpp"
 #include "common/times.hpp"
@@ -26,18 +27,18 @@ constexpr char TAG[] = "fs";
 
 }  // namespace
 
-DirIter::DirIter(const char* path) {
+DirIterImpl::DirIterImpl(const char* path) {
   ESP_LOGD(TAG, "DirIter(%s)", path);
   if (f_opendir(&dir_.emplace(), path) != FR_OK) {
     dir_.reset();
   }
 }
-DirIter::~DirIter() {
+DirIterImpl::~DirIterImpl() {
   if (dir_) {
     (void)f_closedir(&*dir_);
   }
 }
-std::optional<FILINFO*> DirIter::Next() {
+std::optional<FILINFO*> DirIterImpl::Next() {
   if (!dir_) {
     return {};
   }
@@ -59,6 +60,38 @@ esp_err_t FlushAndSync(FILE* f) {
   }
   if (fsync(fileno(f)) != 0) {
     return ESP_FAIL;
+  }
+  return ESP_OK;
+}
+
+OwnedFile OpenFile(const std::string& path, const char* modestr) {
+  return OwnedFile(fopen(path.c_str(), modestr), fclose);
+}
+
+esp_err_t ReadBinaryFileToString(const std::string& path, std::string* out_file_content) {
+  ESP_LOGI(TAG, "ReadBinaryFileToString(%s)", path.c_str());
+  OwnedFile f = OpenFile(path, "rb");
+  if (!f) {
+    ESP_LOGE(TAG, "ReadBinaryFileToString(%s) => %s", path.c_str(), strerror(errno));
+    return ESP_ERR_NOT_FOUND;
+  }
+  FILE* const ff = f.get();
+  if (fseek(ff, 0, SEEK_END) != 0) {
+    return ESP_FAIL;
+  }
+  auto len = ftell(ff);
+  if (len < 0) {
+    return ESP_FAIL;
+  }
+  if (fseek(ff, 0, SEEK_SET) != 0) {
+    return ESP_FAIL;
+  }
+  ESP_LOGI(TAG, "file len: %d", static_cast<int>(len));
+  out_file_content->resize(static_cast<size_t>(len));
+  if (len > 0) {
+    if (fread(out_file_content->data(), len, 1, ff) != 1) {
+      return ESP_FAIL;
+    }
   }
   return ESP_OK;
 }

@@ -6,7 +6,6 @@
 #include "sdmmc_cmd.h"
 
 #include "app/logger_instance.hpp"
-#include "common/iter.hpp"
 #include "io/fs_utils.hpp"
 #include "priorities.hpp"
 #include "ui/model.hpp"
@@ -34,7 +33,7 @@ void HandleSdCardStateChange(bool mounted) {
 #endif
     // DEBUG: test DirIter
     ESP_LOGE(TAG, "=== DirIter ===");
-    for (auto x : RustIter<io::DirIter>(SD_FATFS_ROOT "/")) {
+    for (auto x : io::DirIter(SD_FATFS_ROOT "/BD2AA7C0")) {
       ESP_LOGW(TAG, "%02x %s", x->fattrib, x->fname);
     }
   } else {

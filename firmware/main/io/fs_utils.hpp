@@ -6,6 +6,7 @@
 #include <cstdint>
 #include <cstdio>
 #include <initializer_list>
+#include <memory>
 #include <optional>
 #include <string>
 #include <string_view>
@@ -14,6 +15,7 @@
 #include "esp_err.h"
 #include "ff.h"
 
+#include "common/iter.hpp"
 #include "common/times.hpp"
 
 namespace io {
@@ -30,12 +32,13 @@ constexpr int kSdSectorSize = 512;
 constexpr char kFatfsRoot[] = "0:";
 constexpr char kVfsRoot[] = CONFIG_MOUNT_ROOT;
 
-class DirIter {
+class DirIterImpl {
  public:
   using Item = FILINFO*;
-  DirIter() = default;
-  DirIter(const char* path);
-  ~DirIter();
+  DirIterImpl() = default;
+  DirIterImpl(const char* path);
+  DirIterImpl(const std::string& path) : DirIterImpl(path.c_str()) {}
+  ~DirIterImpl();
 
   std::optional<FILINFO*> Next();
 
@@ -43,7 +46,12 @@ class DirIter {
   std::optional<FF_DIR> dir_;
   FILINFO filinfo_;
 };
+using DirIter = RustIter<DirIterImpl>;
 
+using OwnedFile = std::unique_ptr<FILE, decltype(&fclose)>;
+
+OwnedFile OpenFile(const std::string& path, const char* modestr);
+esp_err_t ReadBinaryFileToString(const std::string& path, std::string* out_file_content);
 esp_err_t FlushAndSync(FILE* f);
 
 esp_err_t Mkdir(const std::string& dir);
