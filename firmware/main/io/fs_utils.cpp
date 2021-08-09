@@ -26,6 +26,30 @@ constexpr char TAG[] = "fs";
 
 }  // namespace
 
+DirIter::DirIter(const char* path) {
+  ESP_LOGD(TAG, "DirIter(%s)", path);
+  if (f_opendir(&dir_.emplace(), path) != FR_OK) {
+    dir_.reset();
+  }
+}
+DirIter::~DirIter() {
+  if (dir_) {
+    (void)f_closedir(&*dir_);
+  }
+}
+std::optional<FILINFO*> DirIter::Next() {
+  if (!dir_) {
+    return {};
+  }
+  if (const FRESULT result = f_readdir(&*dir_, &filinfo_);
+      result != FR_OK || filinfo_.fname[0] == 0) {
+    ESP_LOGD(TAG, "DirIter::Next(): error = %d", (int)result);
+    dir_.reset();
+    return {};
+  }
+  return &filinfo_;
+}
+
 esp_err_t FlushAndSync(FILE* f) {
   if (f == nullptr) {
     return ESP_ERR_INVALID_ARG;
