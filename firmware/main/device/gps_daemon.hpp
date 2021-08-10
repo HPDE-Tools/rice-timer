@@ -25,9 +25,6 @@
 
 class GpsDaemon : public Task {
  public:
-  static constexpr int kBuildCentury = ((__DATE__[7] - '0') * 1000 + (__DATE__[8] - '0') * 100);
-  static_assert(kBuildCentury == 2000);  // sure...
-
   struct Option {
     mcpwm_capture_signal_t pps_capture_signal = MCPWM_SELECT_CAP0;
     mcpwm_capture_signal_t software_capture_signal = MCPWM_SELECT_CAP2;
@@ -74,8 +71,11 @@ class GpsDaemon : public Task {
   auto latest_pps() const { return latest_pps_.Get(); }
   auto latest_gps() const { return latest_gps_.Get(); }
 
-  /// \returns whether a time fix had been received (and therefore the system time had been updated)
+  /// \returns whether a precise time fix had been received
   bool had_first_fix() const { return had_first_fix_; }
+
+  /// \returns whether the system time has been updated at all
+  bool initialized_system_time() const { return initialized_system_time_; }
 
   DEFINE_CREATE(GpsDaemon);
 
@@ -96,6 +96,7 @@ class GpsDaemon : public Task {
   Perishable</*data*/ uint32_t, /*time*/ TickType_t> latest_pps_;
   Perishable</*data*/ ParsedNmea, /*time*/ TickType_t> latest_gps_;
   bool had_first_fix_ = false;
+  bool initialized_system_time_ = false;
 
   int century_;
 

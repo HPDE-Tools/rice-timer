@@ -154,6 +154,15 @@ void GpsDaemon::Run() {
       if (time_fix) {
         AdjustSystemTime(*time_fix, sw_capture_);
         had_first_fix_ = true;
+        initialized_system_time_ = true;
+      }
+    } else if (nmea_is_parsed && !initialized_system_time_) {
+      // try to at least set system time coarsely (better than seconds-since-boot)
+      const std::optional<TimeUnixWithUs> nmea_unix = GetTimeFromNmea(nmea);
+      if (nmea_unix) {
+        settimeofday(&*nmea_unix, /*tz*/ nullptr);
+        initialized_system_time_ = true;
+        ESP_LOGW(TAG, "settimeofday (coarse): %" PRIi64, (int64_t)nmea_unix->tv_sec);
       }
     }
 
@@ -197,18 +206,8 @@ void GpsDaemon::ChangeState(GpsDaemon::State state) {
 
 std::optional<GpsTimeFix> GpsDaemon::TryMatchPpsGps(
     uint32_t pps_capture, TickType_t pps_ostime, TickType_t gps_ostime, const ParsedNmea& nmea) {
-  minmea_date date;
-  minmea_time time;
-  const bool nmea_matchable = std::visit(
-      overloaded{
-          [&](const minmea_sentence_rmc& rmc) {
-            date = rmc.date;
-            time = rmc.time;
-            return true;
-          },
-          [](const auto&) { return false; }},
-      nmea);
-  if (!(nmea_matchable && time.microseconds == 0)) {
+  const std::optional<TimeUnixWithUs> nmea_unix = GetTimeFromNmea(nmea);
+  if (!(nmea_unix && nmea_unix->tv_usec == 0)) {
     return {};
   }
   const int pps_to_gps_delay = SignedMinus(gps_ostime, pps_ostime);
@@ -223,13 +222,11 @@ std::optional<GpsTimeFix> GpsDaemon::TryMatchPpsGps(
         kMax);
     return {};
   }
-  TimeZulu nmea_zulu = ToZulu(century_, date, time);
-  const TimeUnix nmea_unix = ToUnix(nmea_zulu);
   return GpsTimeFix{
       .pps_capture = pps_capture,
       .pps_ostime = pps_ostime,
       .gps_ostime = gps_ostime,
-      .parsed_time_unix = nmea_unix,
+      .parsed_time_unix = nmea_unix->tv_sec,
   };
 }
 

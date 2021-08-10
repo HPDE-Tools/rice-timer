@@ -3,14 +3,19 @@
 
 #pragma once
 
+#include <optional>
 #include <string_view>
 #include <variant>
 
 #include "esp_err.h"
 #include "freertos/FreeRTOS.h"
+#include "minmea.h"
 
 #include "common/times.hpp"
 #include "driver/uart.h"
+
+constexpr int kBuildCentury = ((__DATE__[7] - '0') * 1000 + (__DATE__[8] - '0') * 100);
+static_assert(kBuildCentury == 2000);  // sure...
 
 struct GpsTimeFix {
   uint32_t pps_capture;
@@ -46,3 +51,5 @@ IRAM_ATTR ParsedNmea ParseNmea(const std::string& line);
 /// \example payload: "GPRMC,whatever,123,456,test"
 ///          actually sent to UART: "$GPRMC,whatever,123,456,test*54\r\n"
 esp_err_t SendNmea(uart_port_t uart_num, const std::string_view payload);
+
+IRAM_ATTR std::optional<TimeUnixWithUs> GetTimeFromNmea(const ParsedNmea& nmea);

@@ -70,3 +70,33 @@ esp_err_t SendNmea(uart_port_t uart_num, const std::string_view payload) {
   }
   return ESP_OK;
 }
+
+std::optional<TimeUnixWithUs> GetTimeFromNmea(const ParsedNmea& nmea) {
+  std::optional<TimeUnixWithUs> result{};
+  minmea_date date;
+  minmea_time time;
+  const bool matched = std::visit(
+      overloaded{
+          [&](const minmea_sentence_rmc& rmc) {
+            date = rmc.date;
+            time = rmc.time;
+            return true;
+          },
+          [&](const minmea_sentence_zda& zda) {
+            date = zda.date;
+            time = zda.time;
+            return true;
+          },
+          [](const auto&) { return false; }},
+      nmea);
+  if (!matched) {
+    return result;
+  }
+  timespec ts{};
+  if (minmea_gettime(&ts, &date, &time) == 0) {
+    result.emplace();
+    result->tv_sec = ts.tv_sec;
+    result->tv_usec = ts.tv_nsec / 1000;
+  }
+  return result;
+}

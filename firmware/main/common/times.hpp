@@ -9,7 +9,6 @@
 #include <type_traits>
 
 #include "fmt/chrono.h"
-#include "minmea.h"
 
 #include "common/utils.hpp"
 
@@ -83,15 +82,6 @@ constexpr int64_t operator-(const TimeUnixWithUs& a, const TimeUnixWithUs& b) {
 }
 
 //////////////////////////////////////////////////////////////
-
-constexpr TimeZulu ToZulu(int century, const minmea_date& date, const minmea_time& time) {
-  return ZuluFromParts(
-      date.year + century, date.month, date.day, time.hours, time.minutes, time.seconds);
-}
-
-inline TimeUnixWithUs ToUnixWithUs(int century, const minmea_date& date, const minmea_time& time) {
-  return ToUnix(ToZulu(century, date, time), time.microseconds);
-}
 
 constexpr uint16_t ToFat32Date(const TimeZulu& t_zulu) {
   // bit15:9

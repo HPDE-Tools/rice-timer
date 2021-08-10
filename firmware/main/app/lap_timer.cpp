@@ -14,6 +14,7 @@
 #include "common/macros.hpp"
 #include "common/task.hpp"
 #include "common/times.hpp"
+#include "device/gps_utils.hpp"
 #include "math/polyfill.hpp"
 #include "math/segment2.hpp"
 #include "priorities.hpp"
@@ -88,7 +89,7 @@ class LapTimer : public Task {
       const Eigen::Vector2f curr_gps_pos =
           LatLonToLtm(minmea_tocoord(&rmc.latitude), minmea_tocoord(&rmc.longitude));
       // TODO(summivox): properly pass through timestamp
-      const int64_t curr_gps_time_ms = ToMilliseconds(ToUnixWithUs(2000, rmc.date, rmc.time));
+      const int64_t curr_gps_time_ms = ToMilliseconds(*GetTimeFromNmea(rmc));
       ui::g_model.ltm_x = curr_gps_pos.x();
       ui::g_model.ltm_y = curr_gps_pos.y();
       SCOPE_EXIT {

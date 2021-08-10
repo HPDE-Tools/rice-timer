@@ -131,7 +131,7 @@ void HandleGpsData(
                 ui::g_model.gps.emplace();
               }
               auto& g = *ui::g_model.gps;
-              g.year = rmc.date.year + GpsDaemon::kBuildCentury;
+              g.year = rmc.date.year + kBuildCentury;
               g.month = rmc.date.month;
               g.day = rmc.date.day;
               g.hour = rmc.time.hours;
