@@ -25,6 +25,8 @@ class MapIndex {
 
   esp_err_t Load(std::string_view map_data_path);
 
+  const Entry& GetNearestMap(const Eigen::Vector2d& latlon);
+
  private:
   std::string map_data_path_;
 
