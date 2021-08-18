@@ -35,6 +35,7 @@ struct IdleScreen : public Screen {
     lv_obj_set_style_pad_left(label_info, 3, 0);
     lv_obj_set_style_text_align(label_info, LV_TEXT_ALIGN_CENTER, 0);
     lv_obj_set_flex_grow(label_info, 1);
+    lv_label_set_text_static(label_info, "");
 
     nav = lv_obj_create(screen);
     lv_obj_set_size(nav, LV_PCT(100), LV_SIZE_CONTENT);
@@ -107,14 +108,16 @@ struct IdleScreen : public Screen {
 
     const TimeZulu t = NowZulu();
 
-    std::string sd_logger_status{};
+    std::string sd_status{};
+    std::string logger_status{};
     if (model.sd_card) {
-      sd_logger_status =
-          fmt::format(
-              UTF8 "{:02}G" EMSP13 "{}" EMSP13,
-              model.sd_card->free_bytes / 1'000'000'000,
-              model.is_logger_running ? ((now % 2000 < 1000) ? u8"\uf111" : u8" ") : u8"\uf04c")
-              .c_str();
+      sd_status = fmt::format(UTF8 "{:02}G" EMSP13, model.sd_card->free_bytes / 1'000'000'000);
+      logger_status = model.is_logger_running ?
+                          ((now % 2000 < 1000) ? UTF8 "\uf111" EMSP13 : UTF8 " " EMSP13) :
+                          UTF8 "\uf04c" EMSP13;
+      if (model.logger) {
+        logger_status += std::to_string(model.logger->session_id);
+      }
     }
     // clang-format off
     lv_label_set_text_fmt(
@@ -122,11 +125,13 @@ struct IdleScreen : public Screen {
         UTF8 
         "\uf970" EMSP13 "%02d "
         "\uf017" EMSP13 "%02d:%02d "
-        "\ue706" EMSP13 "%s"
+        "\n"
+        "\ue706" EMSP13 "%s %s"
         ,
         model.gps ? (int)model.gps->num_sats : -1,
         t.tm_hour, t.tm_min,
-        model.sd_card ? sd_logger_status.c_str() : UTF8 "=" SYM_NO
+        model.sd_card ? sd_status.c_str() : UTF8 "=" SYM_NO,
+        model.sd_card ? logger_status.c_str() : ""
     );
     // clang-format on
   }
