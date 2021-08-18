@@ -38,11 +38,7 @@ def tabulate_with_profile(events: list[tuple[str, datetime, Any]], profile):
         gnss_signals,
         resample_signal(gnss_signals.index, raw_imu_signals, 'linear'),
         *(resample_signal(gnss_signals.index, DataFrame(can_signal), can_interp_methods[i])
-<< << << < HEAD
           for i, can_signal in enumerate(can_signals) if can_signal is not None),
-== == ===
-          for i, can_signal in enumerate(can_signals) if can_signal),
->>>>>> > 780ce9417c5d843df7aff4fa7a342480174be602
     ], axis = 1)
 
 
