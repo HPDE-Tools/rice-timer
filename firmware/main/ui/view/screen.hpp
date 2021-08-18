@@ -21,7 +21,7 @@ struct Screen {
 
   Screen* Load() {
     ESP_LOGI(TAG, "loading: 0x%08x", (uintptr_t)screen);
-    lv_scr_load(screen);
+    lv_scr_load_anim(screen, LV_SCR_LOAD_ANIM_NONE, 1, 1, false);
     SetInputGroup(group);
     return this;
   }
