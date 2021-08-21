@@ -13,7 +13,7 @@ set(srcs
 # geographiclib/src/GARS.cpp
 # geographiclib/src/Geocentric.cpp
 # geographiclib/src/GeoCoords.cpp
-# geographiclib/src/Geodesic.cpp
+geographiclib/src/Geodesic.cpp
 # geographiclib/src/GeodesicExactC4.cpp
 # geographiclib/src/GeodesicExact.cpp
 # geographiclib/src/GeodesicLine.cpp
