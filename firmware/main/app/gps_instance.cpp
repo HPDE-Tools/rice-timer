@@ -90,7 +90,7 @@ bool GpsDeviceSetup(io::UartLineReader* line_reader) {
         false);
   } else if constexpr (2 <= CONFIG_HW_VERSION && CONFIG_HW_VERSION <= 3) {
     // DEBUG: don't do I2C
-#if 0
+#if 1
     OK_OR_RETURN(
         SetupUbloxGpsI2c(
             I2C_NUM_0,

@@ -113,7 +113,7 @@ void Controller::Run() {
 
   while (true) {
     const TimeUnixWithUs render_begin_time = NowUnixWithUs();
-    gpio_set_level(GPIO_NUM_17, 1);  // DEBUG
+    // gpio_set_level(GPIO_NUM_17, 1);  // DEBUG
 
     const ButtonHelper::Result button1 = button1_helper.Update(GetButtonState(1));
     const ButtonHelper::Result button3 = button3_helper.Update(GetButtonState(3));
@@ -154,13 +154,13 @@ void Controller::Run() {
 
     loaded_screen_->Render(g_model);
 
-    gpio_set_level(GPIO_NUM_17, 0);  // DEBUG
+    // gpio_set_level(GPIO_NUM_17, 0);  // DEBUG
     const TimeUnixWithUs lv_begin_time = NowUnixWithUs();
-    gpio_set_level(GPIO_NUM_16, 1);  // DEBUG
+    // gpio_set_level(GPIO_NUM_16, 1);  // DEBUG
 
     lv_task_handler();
 
-    gpio_set_level(GPIO_NUM_16, 0);  // DEBUG
+    // gpio_set_level(GPIO_NUM_16, 0);  // DEBUG
     const TimeUnixWithUs end_time = NowUnixWithUs();
 
     ESP_LOGD(

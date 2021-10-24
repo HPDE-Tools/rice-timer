@@ -112,10 +112,12 @@ extern "C" void app_main(void) {
   CHECK_OK(NvsInit());
 
   // DEBUG: use SCL and SDA pin as debug
+#if 0
   gpio_set_direction(GPIO_NUM_17, GPIO_MODE_OUTPUT);
   gpio_pad_select_gpio(GPIO_NUM_17);
   gpio_set_direction(GPIO_NUM_16, GPIO_MODE_OUTPUT);
   gpio_pad_select_gpio(GPIO_NUM_16);
+#endif
 
 #if 0
   esp_register_freertos_idle_hook_for_cpu(

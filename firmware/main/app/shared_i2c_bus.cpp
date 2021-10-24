@@ -53,9 +53,9 @@ esp_err_t SetupSharedI2cBus() {
       .clk_flags = I2C_SCLK_SRC_FLAG_FOR_NOMAL,
   };
 
-  // TRY(i2c_param_config(port, &conf));
-  // TRY(i2c_set_timeout(port, kI2cTimeout));
-  // TRY(i2c_driver_install(port, I2C_MODE_MASTER, /*rx buf*/ 0, /*tx buf*/ 0, /*flags*/ 0));
+  TRY(i2c_param_config(port, &conf));
+  TRY(i2c_set_timeout(port, kI2cTimeout));
+  TRY(i2c_driver_install(port, I2C_MODE_MASTER, /*rx buf*/ 0, /*tx buf*/ 0, /*flags*/ 0));
   return ESP_OK;
 }
 
