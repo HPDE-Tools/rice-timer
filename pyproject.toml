@@ -6,7 +6,7 @@ authors = ["summivox <summivox@github.com>"]
 license = "GPLv2"
 
 [tool.poetry.dependencies]
-python = "=3.9"
+python = "^3.9"
 click = "^8.0.1"
 numpy = "^1.21.0"
 pynmea2 = "^1.18.0"
