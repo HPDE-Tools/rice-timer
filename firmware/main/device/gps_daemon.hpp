@@ -106,7 +106,7 @@ class GpsDaemon : public Task {
   void ChangeState(State state);
   void DebugPrintState();
 
-  std::optional<GpsTimeFix> TryMatchPpsGps(
+  static std::optional<GpsTimeFix> TryMatchPpsGps(
       uint32_t pps_capture, TickType_t pps_ostime, TickType_t gps_ostime, const ParsedNmea& nmea);
 
   static void AdjustSystemTime(const GpsTimeFix& time_fix, const CaptureChannel& sw_capture);
