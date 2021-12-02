@@ -57,7 +57,15 @@
     "mprealsupport": "cpp",
     "nonlinearoptimization": "cpp",
     "openglsupport": "cpp",
-    "bit": "cpp"
+    "bit": "cpp",
+    "system_error": "cpp",
+    "type_traits": "cpp",
+    "xlocmon": "cpp",
+    "xlocnum": "cpp",
+    "xtr1common": "cpp",
+    "ratio": "cpp",
+    "tuple": "cpp",
+    "format": "cpp"
   },
   "editor.formatOnSave": true,
   "editor.tabSize": 2
