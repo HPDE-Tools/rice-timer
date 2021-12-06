@@ -9,7 +9,7 @@
 
 constexpr int kPriorityLogger = 1;
 constexpr int kPrioritySdCard = 2;
-constexpr int kPriorityLapTimer = 3;
+constexpr int kPriorityOnboardAnalysis = 3;
 constexpr int kPriorityUi = 4;
 constexpr int kPriorityCan = 5;
 constexpr int kPriorityGpsd = 6;

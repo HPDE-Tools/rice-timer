@@ -22,8 +22,8 @@
 #include "app/device_id.hpp"
 #include "app/gps_instance.hpp"
 #include "app/imu_instance.hpp"
-#include "app/lap_timer.hpp"
 #include "app/logger_instance.hpp"
+#include "app/onboard_analysis.hpp"
 #include "app/sd_card_instance.hpp"
 #include "common/macros.hpp"
 #include "common/strings.hpp"
@@ -52,7 +52,7 @@ void Main() {
   CHECK_OK(SetupGps());
   CHECK_OK(SetupCan());
   CHECK_OK(SetupImu());
-  // CHECK_OK(SetupLapTimer());
+  CHECK_OK(SetupOnboardAnalysis());
   CHECK_OK(ui::SetupUi());
 
   ESP_LOGI(TAG, "MainTask setup complete");
@@ -62,7 +62,7 @@ void Main() {
   CHECK_OK(StartGpsInstance());
   CHECK_OK(StartCanInstance());
   CHECK_OK(StartImuInstance());
-  // CHECK_OK(StartLapTimerTask());
+  CHECK_OK(StartOnboardAnalysisTask());
   CHECK_OK(ui::StartUi());
 }
 

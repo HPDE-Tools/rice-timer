@@ -143,7 +143,7 @@ void HandleGpsData(
               g.speed_knot = minmea_tofloat(&rmc.speed);
               g.course_deg = minmea_tofloat(&rmc.course);
               ++ui::g_model.counter.gps;
-              // UpdateGps(rmc);  // TODO: track timer
+              // OnboardAnalysisUpdateGps(rmc);  // TODO: track timer
             }
           },
           [](const minmea_sentence_gga& gga) {

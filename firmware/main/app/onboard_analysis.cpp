@@ -1,7 +1,7 @@
 // Copyright 2021 summivox. All rights reserved.
 // Authors: summivox@gmail.com
 
-#include "app/lap_timer.hpp"
+#include "app/onboard_analysis.hpp"
 
 #include <cmath>
 #include <optional>
