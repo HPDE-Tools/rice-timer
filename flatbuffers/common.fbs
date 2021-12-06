@@ -1,5 +1,20 @@
 namespace ricetimer.proto;
 
+struct IntervalI {
+  begin:int32;
+  end:int32;
+}
+
+struct IntervalF {
+  begin:float;
+  end:float;
+}
+
+struct IntervalD {
+  begin:double;
+  end:double;
+}
+
 struct Vec2F {
   x:float;
   y:float;

@@ -38,8 +38,7 @@ table Checkpoint {
 
 table Track {
   ref_line:[Vec2F];
-  left_boundary:[float];
-  right_boundary:[float];
+  boundary:[IntervalF];
 }
 
 root_type Map;
