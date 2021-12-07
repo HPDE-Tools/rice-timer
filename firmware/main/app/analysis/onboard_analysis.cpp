@@ -1,7 +1,7 @@
 // Copyright 2021 summivox. All rights reserved.
 // Authors: summivox@gmail.com
 
-#include "app/onboard_analysis.hpp"
+#include "app/analysis/onboard_analysis.hpp"
 
 #include <cmath>
 #include <optional>

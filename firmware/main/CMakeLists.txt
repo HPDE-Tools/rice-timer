@@ -2,12 +2,12 @@ set(srcs
 "app_main.cpp"
 "lvgl_tick.c"
 
+"app/analysis/onboard_analysis.cpp"
 "app/can_instance.cpp"
 "app/device_id.cpp"
 "app/gps_instance.cpp"
 "app/imu_instance.cpp"
 "app/logger_instance.cpp"
-"app/onboard_analysis.cpp"
 "app/sd_card_instance.cpp"
 "app/shared_i2c_bus.cpp"
 "app/shared_spi_bus.cpp"
