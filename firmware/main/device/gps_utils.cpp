@@ -71,8 +71,19 @@ esp_err_t SendNmea(uart_port_t uart_num, const std::string_view payload) {
   return ESP_OK;
 }
 
-std::optional<TimeUnixWithUs> GetTimeFromNmea(const ParsedNmea& nmea) {
+std::optional<TimeUnixWithUs> GetTimestampFromMinmeaDateTime(
+    const minmea_date& date, const minmea_time& time) {
   std::optional<TimeUnixWithUs> result{};
+  timespec ts{};
+  if (minmea_gettime(&ts, &date, &time) == 0) {
+    result.emplace();
+    result->tv_sec = ts.tv_sec;
+    result->tv_usec = ts.tv_nsec / 1000;
+  }
+  return result;
+}
+
+std::optional<TimeUnixWithUs> GetTimeFromNmea(const ParsedNmea& nmea) {
   minmea_date date;
   minmea_time time;
   const bool matched = std::visit(
@@ -90,13 +101,20 @@ std::optional<TimeUnixWithUs> GetTimeFromNmea(const ParsedNmea& nmea) {
           [](const auto&) { return false; }},
       nmea);
   if (!matched) {
-    return result;
+    return std::nullopt;
   }
-  timespec ts{};
-  if (minmea_gettime(&ts, &date, &time) == 0) {
-    result.emplace();
-    result->tv_sec = ts.tv_sec;
-    result->tv_usec = ts.tv_nsec / 1000;
-  }
+  return GetTimestampFromMinmeaDateTime(date, time);
+}
+
+std::optional<minmea_time> GetTimeOfDayFromNmea(const ParsedNmea& nmea) {
+  std::optional<minmea_time> result{};
+  std::visit(
+      overloaded{
+          [&](const minmea_sentence_rmc& rmc) { result = rmc.time; },
+          [&](const minmea_sentence_gga& gga) { result = gga.time; },
+          [&](const minmea_sentence_gst& gst) { result = gst.time; },
+          [&](const minmea_sentence_zda& zda) { result = zda.time; },
+          [](const auto&) {}},
+      nmea);
   return result;
 }

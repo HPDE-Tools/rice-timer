@@ -26,6 +26,8 @@ set(srcs
 "io/logger.cpp"
 "io/sd_card_daemon.cpp"
 "io/uart_line_reader.cpp"
+"localization/gps_collector.cpp"
+"localization/localizer.cpp"
 "map/map_index.cpp"
 "ui/controller.cpp"
 "ui/display.cpp"

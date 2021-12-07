@@ -52,4 +52,14 @@ IRAM_ATTR ParsedNmea ParseNmea(const std::string& line);
 ///          actually sent to UART: "$GPRMC,whatever,123,456,test*54\r\n"
 esp_err_t SendNmea(uart_port_t uart_num, const std::string_view payload);
 
+IRAM_ATTR std::optional<TimeUnixWithUs> GetTimestampFromMinmeaDateTime(
+    const minmea_date& date, const minmea_time& time);
+
 IRAM_ATTR std::optional<TimeUnixWithUs> GetTimeFromNmea(const ParsedNmea& nmea);
+
+IRAM_ATTR std::optional<minmea_time> GetTimeOfDayFromNmea(const ParsedNmea& nmea);
+
+inline bool operator==(const minmea_time& lhs, const minmea_time& rhs) {
+  return lhs.hours == rhs.hours && lhs.minutes == rhs.minutes && lhs.seconds == rhs.seconds &&
+         lhs.microseconds == rhs.microseconds;
+}

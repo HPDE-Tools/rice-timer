@@ -4,6 +4,7 @@
 #pragma once
 
 #include <array>
+#include <cmath>
 #include <cstdint>
 #include <memory>
 #include <type_traits>
@@ -16,6 +17,23 @@ constexpr char HexDigitUpper(uint8_t i) { return "0123456789ABCDEF"[i & uint8_t{
 template <typename T>
 constexpr auto SignedMinus(T a, T b) -> std::make_signed_t<T> {
   return static_cast<std::make_signed_t<T>>(a - b);
+}
+
+template <typename T>
+constexpr T kGravity{9.80665};
+
+template <typename T>
+constexpr T kRadInDeg{180.0 / M_PI};
+template <typename T>
+constexpr T kDegInRad{M_PI / 180.0};
+
+template <typename T>
+constexpr T RadToDeg(T rad) {
+  return rad * kRadInDeg<T>;
+}
+template <typename T>
+constexpr T DegToRad(T deg) {
+  return deg * kDegInRad<T>;
 }
 
 // https://en.cppreference.com/w/cpp/utility/variant/visit

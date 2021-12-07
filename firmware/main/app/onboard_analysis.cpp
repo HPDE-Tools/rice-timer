@@ -25,32 +25,18 @@ namespace app {
 namespace {
 
 constexpr char TAG[] = "lap";
-constexpr int kLapTimerStackSize = 4096;
-constexpr int kLapTimerGpsQueueSize = 10;
-
-// NOTE(summivox): Hard-coded fake test track (CW) start-finish line
-
-constexpr double kStartLeftLat = 37.540250;
-constexpr double kStartLeftLon = -122.061657;
-constexpr double kStartRightLat = 37.540089;
-constexpr double kStartRightLon = -122.061477;
-constexpr double kOriginLat = std::midpoint(kStartLeftLat, kStartRightLat);
-constexpr double kOriginLon = std::midpoint(kStartLeftLon, kStartRightLon);
+constexpr int kOnboardAnalysisStackSize = 4096;
+constexpr int kOnboardAnalysisGpsQueueSize = 10;
 
 }  // namespace
 
-class LapTimer : public Task {
+class OnboardAnalysis : public Task {
  public:
-  LapTimer()
-      : gps_queue_(
-            CHECK_NOTNULL(xQueueCreate(kLapTimerGpsQueueSize, sizeof(minmea_sentence_rmc)))) {
-    double unused_x;
-    ltm_.Forward(kOriginLon, kOriginLat, kOriginLon, /*out*/ unused_x, /*out*/ origin_y_);
-    start_finish_ = {
-        LatLonToLtm(kStartLeftLat, kStartLeftLon), LatLonToLtm(kStartRightLat, kStartRightLon)};
-  }
+  OnboardAnalysis()
+      : gps_queue_(CHECK_NOTNULL(
+            xQueueCreate(kOnboardAnalysisGpsQueueSize, sizeof(minmea_sentence_rmc)))) {}
 
-  virtual ~LapTimer() { Task::Kill(); }
+  virtual ~OnboardAnalysis() { Task::Kill(); }
 
   void Reset() {
     num_laps_ = 0;
@@ -60,19 +46,11 @@ class LapTimer : public Task {
     ui::g_model.lap_start_time_ms = std::nullopt;
   }
 
-  void UpdateGps(const minmea_sentence_rmc& rmc) { xQueueSendToBack(gps_queue_, &rmc, 0); }
+  void UpdateGps(const ParsedNmea& nmea) { xQueueSendToBack(gps_queue_, &nmea, 0); }
 
   esp_err_t Start() {
     Reset();
-    return Task::SpawnSame(TAG, kLapTimerStackSize, kPriorityLapTimer);
-  }
-
-  Eigen::Vector2f LatLonToLtm(double lat, double lon) {
-    double x = NAN;
-    double y = NAN;
-    ltm_.Forward(kOriginLon, lat, lon, /*out*/ x, /*out*/ y);
-    y -= origin_y_;
-    return {x, y};
+    return Task::SpawnSame(TAG, kOnboardAnalysisStackSize, kPriorityOnboardAnalysis);
   }
 
   int num_laps() const { return num_laps_; }
@@ -86,51 +64,11 @@ class LapTimer : public Task {
       if (!rmc.valid) {
         continue;
       }
-      const Eigen::Vector2f curr_gps_pos =
-          LatLonToLtm(minmea_tocoord(&rmc.latitude), minmea_tocoord(&rmc.longitude));
-      // TODO(summivox): properly pass through timestamp
-      const int64_t curr_gps_time_ms = ToMilliseconds(*GetTimeFromNmea(rmc));
-      ui::g_model.ltm_x = curr_gps_pos.x();
-      ui::g_model.ltm_y = curr_gps_pos.y();
-      SCOPE_EXIT {
-        last_gps_pos_ = curr_gps_pos;
-        last_gps_time_ms_ = curr_gps_time_ms;
-      };
-      if (!std::isfinite(last_gps_pos_.x())) {
-        continue;
-      }
-      const math::Segment2f gps_step{last_gps_pos_, curr_gps_pos};
-      float step_ratio = NAN;
-      if (math::Intersect(
-              start_finish_,
-              gps_step,
-              /*ratio1*/ (float*)nullptr,
-              &step_ratio,
-              /*point*/ (Eigen::Vector2f*)nullptr)) {
-        // TODO(summivox): filter by normal vector, ...
-        num_laps_++;
-        lap_start_time_ms_ =
-            last_gps_time_ms_ +
-            static_cast<int64_t>(std::round((curr_gps_time_ms - last_gps_time_ms_) * step_ratio));
-
-        ui::g_model.num_laps = num_laps_;
-        ui::g_model.lap_start_time_ms = lap_start_time_ms_;
-
-        ESP_LOGW(TAG, "cross start finish line: lap #%d @ %lld", num_laps_, lap_start_time_ms_);
-      }
     }
   }
 
  private:
-  GeographicLib::TransverseMercator ltm_{
-      GeographicLib::Constants::WGS84_a(),
-      GeographicLib::Constants::WGS84_f(),
-      /*scale*/ 1.0,
-  };
-  double origin_y_;
   QueueHandle_t gps_queue_{};
-
-  math::Segment2f start_finish_;
 
   int num_laps_ = 0;
   int64_t lap_start_time_ms_ = 0;
@@ -140,29 +78,31 @@ class LapTimer : public Task {
 
 ////////////////////////////////////////
 
-std::unique_ptr<LapTimer> g_lap_timer{};
+std::unique_ptr<OnboardAnalysis> g_onboard_analysis{};
 
-TaskHandle_t GetLapTimerTask() { return g_lap_timer ? g_lap_timer->handle() : nullptr; }
-
-esp_err_t SetupLapTimer() {
-  g_lap_timer = std::make_unique<LapTimer>();
-  return g_lap_timer ? ESP_OK : ESP_FAIL;
+TaskHandle_t GetOnboardAnalysisTask() {
+  return g_onboard_analysis ? g_onboard_analysis->handle() : nullptr;
 }
 
-esp_err_t StartLapTimerTask() {
-  CHECK(g_lap_timer != nullptr);
-  return g_lap_timer->Start();
+esp_err_t SetupOnboardAnalysis() {
+  g_onboard_analysis = std::make_unique<OnboardAnalysis>();
+  return g_onboard_analysis ? ESP_OK : ESP_FAIL;
 }
 
-void ResetLapTimer() {
-  if (g_lap_timer) {
-    g_lap_timer->Reset();
+esp_err_t StartOnboardAnalysisTask() {
+  CHECK(g_onboard_analysis != nullptr);
+  return g_onboard_analysis->Start();
+}
+
+void ResetOnboardAnalysis() {
+  if (g_onboard_analysis) {
+    g_onboard_analysis->Reset();
   }
 }
 
-void UpdateGps(const minmea_sentence_rmc& rmc) {
-  if (g_lap_timer) {
-    g_lap_timer->UpdateGps(rmc);
+void OnboardAnalysisUpdateGps(const ParsedNmea& nmea) {
+  if (g_onboard_analysis) {
+    g_onboard_analysis->UpdateGps(nmea);
   }
 }
 

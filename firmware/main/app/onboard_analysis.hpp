@@ -8,20 +8,20 @@
 #include "esp_err.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
-#include "minmea.h"
 
 #include "common/times.hpp"
-#include "map/car_pose.hpp"
+#include "device/gps_utils.hpp"
+#include "interface/localization.hpp"
 
 namespace app {
 
-class LapTimer;
-extern std::unique_ptr<LapTimer> g_lap_timer;
+class OnboardAnalysis;
+extern std::unique_ptr<OnboardAnalysis> g_onboard_analysis;
 
-TaskHandle_t GetLapTimerTask();
-esp_err_t SetupLapTimer();
-esp_err_t StartLapTimerTask();
-void ResetLapTimer();
-void UpdateGps(const minmea_sentence_rmc& rmc);
+TaskHandle_t GetOnboardAnalysisTask();
+esp_err_t SetupOnboardAnalysis();
+esp_err_t StartOnboardAnalysisTask();
+void ResetOnboardAnalysis();
+void OnboardAnalysisUpdateGps(const ParsedNmea& nmea);
 
 }  // namespace app

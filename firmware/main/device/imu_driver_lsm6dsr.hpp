@@ -3,6 +3,7 @@
 
 #pragma once
 
+#include <cmath>
 #include <cstdint>
 #include <functional>
 #include <memory>
@@ -13,6 +14,7 @@
 #include "esp_err.h"
 
 #include "common/task.hpp"
+#include "common/utils.hpp"
 #include "device/capture_manager.hpp"
 
 class Lsm6dsr : Task {
@@ -84,6 +86,7 @@ class Lsm6dsr : Task {
   esp_err_t Start(RawImuDataSubscriber subscriber);
   void Stop();
 
+  /// Convert raw accel reading (scalar) to g
   float AccelRawToG(int16_t a) const {
     switch (option_.accel_full_scale) {
       case kAccelFs2g:
@@ -99,6 +102,10 @@ class Lsm6dsr : Task {
     }
   }
 
+  /// Convert raw accel reading (scalar) to m/s^2
+  float AccelRawToMps2(int16_t a) const { return AccelRawToG(a) * kGravity<float>; }
+
+  /// Convert raw gyro reading (scalar) to deg/s
   float GyroRawToDps(int16_t w) const {
     switch (option_.gyro_full_scale) {
       case kGyroFs125Dps:
@@ -117,6 +124,9 @@ class Lsm6dsr : Task {
         return 0;
     }
   }
+
+  /// Convert raw gyro reading (scalar) to rad/s
+  float GyroRawToRps(int16_t w) const { return DegToRad(GyroRawToDps(w)); }
 
  protected:
   IRAM_ATTR void Run() override;
