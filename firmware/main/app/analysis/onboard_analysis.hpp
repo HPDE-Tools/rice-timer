@@ -9,16 +9,32 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 
+#include "common/task.hpp"
 #include "common/times.hpp"
 #include "device/gps_utils.hpp"
 #include "interface/localization.hpp"
 
 namespace app {
 
-class OnboardAnalysis;
+class OnboardAnalysis : public Task {
+ public:
+  OnboardAnalysis();
+
+  void Reset();
+
+  esp_err_t Start();
+
+  void UpdateGps(const ParsedNmea& nmea) { xQueueSendToBack(gps_queue_, &nmea, 0); }
+
+ protected:
+  void Run() override;
+
+ private:
+  QueueHandle_t gps_queue_{};
+};
+
 extern std::unique_ptr<OnboardAnalysis> g_onboard_analysis;
 
-TaskHandle_t GetOnboardAnalysisTask();
 esp_err_t SetupOnboardAnalysis();
 esp_err_t StartOnboardAnalysisTask();
 void ResetOnboardAnalysis();

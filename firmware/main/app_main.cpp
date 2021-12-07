@@ -72,8 +72,15 @@ void MainTask(void* /* unused */) {
   vTaskDelete(nullptr);
 }
 
-#define LOG_WATER_MARK(name, task) \
-  ESP_LOGI("canary", name ": %d", (task) ? uxTaskGetStackHighWaterMark((task)) : -1)
+#define LOG_WATER_MARK(name, task_handle) \
+  ESP_LOGI("canary", name ": %d", (task_handle) ? uxTaskGetStackHighWaterMark((task_handle)) : -1)
+
+#define LOG_WATER_MARK_P(name, task)            \
+  do {                                          \
+    if ((task)) {                               \
+      LOG_WATER_MARK((name), (task)->handle()); \
+    }                                           \
+  } while (0)
 
 TaskHandle_t g_canary_task{};
 void CanaryTask(void* /*unused*/) {
@@ -87,22 +94,12 @@ void CanaryTask(void* /*unused*/) {
         ui::g_model.lost.can.load());
 #if 0
     LOG_WATER_MARK("canary", g_canary_task);
-    if (g_logger) {
-      LOG_WATER_MARK("logger", g_logger->handle());
-    }
-    if (g_gpsd) {
-      LOG_WATER_MARK("gpsd", g_gpsd->handle());
-    }
-    if (g_can) {
-      LOG_WATER_MARK("can", g_can->handle());
-    }
-    if (g_sd_card) {
-      LOG_WATER_MARK("sd", g_sd_card->handle());
-    }
-    LOG_WATER_MARK("lap", GetLapTimerTask());
-    if (ui::g_controller) {
-      LOG_WATER_MARK("ui/view", ui::g_controller->handle());
-    }
+    LOG_WATER_MARK_P("logger", g_logger);
+    LOG_WATER_MARK_P("gpsd", g_gpsd);
+    LOG_WATER_MARK_P("can", g_can);
+    LOG_WATER_MARK_P("sd", g_sd_card);
+    LOG_WATER_MARK_P("lap", g_onboard_analysis);
+    LOG_WATER_MARK_P("ui/view", ui::g_controller);
 #endif
     vTaskDelayUntil(&last_wake_tick, pdMS_TO_TICKS(kCanaryPeriodMs));
   }
