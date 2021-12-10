@@ -126,12 +126,17 @@ struct IdleScreen : public Screen {
         "\uf970" EMSP13 "%02d "
         "\uf017" EMSP13 "%02d:%02d "
         "\n"
+
         "\ue706" EMSP13 "%s %s"
+        "\n"
+
+        "%s"
         ,
         model.gps ? (int)model.gps->num_sats : -1,
         t.tm_hour, t.tm_min,
         model.sd_card ? sd_status.c_str() : UTF8 "=" SYM_NO,
-        model.sd_card ? logger_status.c_str() : ""
+        model.sd_card ? logger_status.c_str() : "",
+        model.map_name.c_str()
     );
     // clang-format on
   }

@@ -103,7 +103,7 @@ void Controller::Run() {
   };
   idle_screen_->btn_track_click = [this](lv_event_t* e) {
     ESP_LOGI(TAG, "loading track req");
-    loaded_screen_ = track_req_screen_->Load();
+    loaded_screen_ = track_timer_screen_->Load();  // hack: skip the lobby
   };
   track_req_screen_->on_success = [this](lv_event_t* e) {
     ESP_LOGI(TAG, "loading track sel");

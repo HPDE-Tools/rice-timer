@@ -3,6 +3,7 @@ set(srcs
 "lvgl_tick.c"
 
 "app/analysis/checkpoint_detector.cpp"
+"app/analysis/lap_timer.cpp"
 "app/analysis/onboard_analysis.cpp"
 "app/analysis/onboard_analysis_instance.cpp"
 "app/can_instance.cpp"

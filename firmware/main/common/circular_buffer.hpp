@@ -19,6 +19,8 @@ class CircularBuffer {
   explicit CircularBuffer(int capacity)
       : data_(std::make_unique_for_overwrite<T[]>(capacity)), capacity_(capacity) {}
 
+  // TODO(summivox): add a way to allow default construction, then later assign capacity
+
   bool empty() const { return size_ <= 0; }
   bool full() const { return size_ >= capacity_; }
   const T* data() const { return data_.get(); }

@@ -10,6 +10,7 @@
 
 extern lv_font_t cozette13;
 extern lv_font_t creep211;
+extern lv_font_t haxor18;
 extern lv_font_t liberation18bn;
 extern lv_font_t pixerif16;
 extern lv_font_t spleen24;
@@ -56,8 +57,8 @@ struct Style {
   lv_style_t text_big = []() {
     lv_style_t s{};
     lv_style_init(&s);
-    lv_style_set_text_font(&s, &spleen24);
-    lv_style_set_text_letter_space(&s, 1);
+    lv_style_set_text_font(&s, &haxor18);
+    lv_style_set_text_letter_space(&s, 0);
     return s;
   }();
 

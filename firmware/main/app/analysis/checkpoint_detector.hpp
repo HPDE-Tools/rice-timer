@@ -5,6 +5,9 @@
 
 #include <cstdint>
 #include <optional>
+#include <vector>
+
+#include "Eigen/Core"
 
 #include "common/circular_buffer.hpp"
 #include "interface/localization.hpp"

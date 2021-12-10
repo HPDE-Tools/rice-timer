@@ -6,6 +6,7 @@
 #include <atomic>
 #include <cstdint>
 #include <ctime>
+#include <limits>
 #include <optional>
 
 #include "common/times.hpp"
@@ -70,10 +71,15 @@ struct Model {
   };
   std::optional<SdCard> sd_card{};
 
-  std::optional<int64_t> lap_start_time_ms = {};
-  int32_t num_laps = 0;
-  float ltm_x;
-  float ltm_y;
+  std::string map_name;
+  struct LapTimer {
+    int num_complete_laps = 0;
+    std::optional<int64_t> curr_lap_start_timestamp_ms{};
+    int64_t min_lap_duration_ms = std::numeric_limits<int64_t>::max();
+    int min_lap_index = -1;
+    std::optional<int64_t> last_lap_duration_ms{};
+  };
+  std::optional<LapTimer> lap_timer{};
 };
 
 extern Model g_model;

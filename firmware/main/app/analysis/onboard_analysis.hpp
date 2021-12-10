@@ -10,6 +10,7 @@
 #include "freertos/task.h"
 
 #include "app/analysis/checkpoint_detector.hpp"
+#include "app/analysis/lap_timer.hpp"
 #include "common/circular_buffer.hpp"
 #include "common/task.hpp"
 #include "common/times.hpp"
@@ -27,7 +28,6 @@ class OnboardAnalysis : public Task {
   OnboardAnalysis();
 
   void Reset();
-
   esp_err_t Start();
 
   void UpdateGps(const ParsedNmea& nmea) { xQueueSendToBack(gps_queue_, &nmea, 0); }
@@ -41,16 +41,17 @@ class OnboardAnalysis : public Task {
   std::unique_ptr<map::Map> map_ = nullptr;
   std::string map_name_{};
 
-  l10n::GpsCollector gps_collector_;
+  l10n::GpsCollector gps_collector_{};
   std::unique_ptr<l10n::Localizer> localizer_ = nullptr;  // depends on map_
   CircularBuffer<MapLocalPose> pose_history_;
 
   std::unique_ptr<CheckpointDetector> checkpoint_detector_ = nullptr;
+  LapTimer lap_timer_{};
 
   // TODO: ghetto localizer buffer -> "Tail"
 
   // makeshift map region detection states
-  std::optional<GpsPose> last_map_detect_pose_;
+  std::optional<GpsPose> last_map_detect_pose_{};
 
   QueueHandle_t gps_queue_{};
 
