@@ -8,12 +8,14 @@
 
 #include "Eigen/Core"
 #include "GeographicLib/TransverseMercator.hpp"
+#include "fmt/core.h"
 #include "freertos/queue.h"
 #include "scope_guard/scope_guard.hpp"
 
 #include "common/macros.hpp"
 #include "common/task.hpp"
 #include "common/times.hpp"
+#include "device/capture_manager.hpp"
 #include "device/gps_utils.hpp"
 #include "map/utils.hpp"
 #include "math/polyfill.hpp"
@@ -55,13 +57,23 @@ esp_err_t OnboardAnalysis::Start() {
 }
 
 void OnboardAnalysis::Run() {
+  auto capturer = CaptureManager::GetInstance(MCPWM_UNIT_0)->GetChannel(MCPWM_SELECT_CAP2);
   while (true) {
     ParsedNmea nmea{};
     xQueueReceive(gps_queue_, &nmea, portMAX_DELAY);
+
+    const auto tick_begin = capturer.TriggerNow();  // DEBUG
+
     const std::optional<GpsPose> gps_pose = gps_collector_.Update(nmea);
     if (!gps_pose) {
       continue;
     }
+
+    // DEBUG
+    SCOPE_EXIT {
+      const auto tick_end = capturer.TriggerNow();
+      // fmt::print("{:.3}\n", SignedMinus(tick_end, tick_begin) * double{1000.0 / APB_CLK_FREQ});
+    };
 
     const bool new_map_loaded = DetectAndLoadMap(*gps_pose);
     if (new_map_loaded) {
@@ -74,10 +86,17 @@ void OnboardAnalysis::Run() {
     localizer_->UpdateGps(*gps_pose);
     const MapLocalPose pose = localizer_->Compute();
     pose_history_.push_back(pose);
+    // fmt::print("{:+9.2f},{:+9.2f},{:+9.2f}\n", pose.enh[0], pose.enh[1], pose.enh[2]);  // DEBUG
   }
 }
 
 bool OnboardAnalysis::DetectAndLoadMap(const GpsPose& pose) {
+  if (map_index_->entries().empty()) {
+    // TODO: properly deal with delayed loads
+    ESP_LOGE(TAG, "DetectAndLoadMap empty");
+    return false;
+  }
+
   // don't detect too often / too close to the last point
   if (last_map_detect_pose_) {
     if (pose.timestamp_ms - last_map_detect_pose_->timestamp_ms < kMapDetectMinRefreshIntervalMs) {
@@ -90,16 +109,13 @@ bool OnboardAnalysis::DetectAndLoadMap(const GpsPose& pose) {
     }
   }
   last_map_detect_pose_ = pose;
-  if (map_index_->entries().empty()) {
-    // TODO: properly deal with delayed loads
-    return false;
-  }
 
   auto [entry, distance] = map_index_->GetNearestMap(pose.llh.head<2>());
   if (!entry || entry->name == map_name_ || distance > kMapDetectMaxRadiusM) {
     return false;
   }
   map_ = map::Map::FromFile(entry->path);
+  map_name_ = entry->name;
   return true;
 }
 
