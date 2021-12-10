@@ -30,10 +30,10 @@ table MapHeader {
 
 table Checkpoint {
   type:CheckpointType;
-  position:Vec2F;
-  heading_deg:float;
-  heading_tolerance_deg:float;
-  width:float;
+  position:Vec2F;  // middle point of the checkpoint line segment
+  heading_deg:float;  // 0 deg = east, 90 deg = north
+  heading_tolerance_deg:float;  // accepted heading range: [h0 - dh, h0 + dh]
+  width:float;  // length of the checkpoint line segment
 }
 
 table Track {
