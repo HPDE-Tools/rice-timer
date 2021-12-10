@@ -1,6 +1,8 @@
 // Copyright 2021 summivox. All rights reserved.
 // Authors: summivox@gmail.com
 
+#pragma once
+
 #include <memory>
 
 #include "fmt/core.h"
@@ -23,6 +25,12 @@ class CircularBuffer {
   T* data() { return data_.get(); }
   int capacity() const { return capacity_; }
   int size() const { return size_; }
+
+  void clear() {
+    size_ = 0;
+    front_i_ = 0;
+    back_i_ = 0;
+  }
 
   const T& operator[](int i) const { return data_[RealIndex(i)]; }
   T& operator[](int i) { return data_[RealIndex(i)]; }

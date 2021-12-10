@@ -42,8 +42,10 @@ class OnboardAnalysis : public Task {
   std::string map_name_{};
 
   l10n::GpsCollector gps_collector_;
-  std::unique_ptr<l10n::Localizer> localizer_;  // depends on map_
+  std::unique_ptr<l10n::Localizer> localizer_ = nullptr;  // depends on map_
   CircularBuffer<MapLocalPose> pose_history_;
+
+  std::unique_ptr<CheckpointDetector> checkpoint_detector_ = nullptr;
 
   // TODO: ghetto localizer buffer -> "Tail"
 

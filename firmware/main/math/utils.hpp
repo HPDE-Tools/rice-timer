@@ -10,6 +10,11 @@
 
 namespace math {
 
+template <class T>
+constexpr T Sqr(const T& x) {
+  return x * x;
+}
+
 // https://www.boost.org/doc/libs/1_75_0/libs/math/doc/html/math_toolkit/sign_functions.html
 template <class TFloat>
 constexpr int Sign(const TFloat& z) {

@@ -33,7 +33,7 @@ constexpr int kOnboardAnalysisGpsQueueSize = 10;
 
 constexpr double kMapDetectMaxRadiusM = 10000.0;
 constexpr int kMapDetectMinRefreshIntervalMs = 5000;
-constexpr double kMapDetectMinRefreshDistanceM = 5.0;
+constexpr double kMapDetectMinRefreshDistanceM = 10.0;
 
 constexpr int kPoseHistoryDepth = 10;
 
@@ -44,10 +44,13 @@ OnboardAnalysis::OnboardAnalysis()
       gps_queue_(CHECK_NOTNULL(xQueueCreate(kOnboardAnalysisGpsQueueSize, sizeof(ParsedNmea)))) {
   map_index_ = map::MapIndex::GetInstance();
   localizer_ = std::make_unique<l10n::Localizer>();
+  checkpoint_detector_ = std::make_unique<CheckpointDetector>();
 }
 
 void OnboardAnalysis::Reset() {
   gps_collector_.Reset();
+  localizer_->Reset();
+  pose_history_.clear();
   last_map_detect_pose_.reset();
 }
 
@@ -76,10 +79,12 @@ void OnboardAnalysis::Run() {
     };
 
     const bool new_map_loaded = DetectAndLoadMap(*gps_pose);
+    const map::Map* map = map_.get();
     if (new_map_loaded) {
-      localizer_->SetMap(map_.get());
+      localizer_->SetMap(map);
+      checkpoint_detector_->SetMap(map);
     }
-    if (!map_) {
+    if (!map) {
       continue;
     }
 
@@ -87,6 +92,19 @@ void OnboardAnalysis::Run() {
     const MapLocalPose pose = localizer_->Compute();
     pose_history_.push_back(pose);
     // fmt::print("{:+9.2f},{:+9.2f},{:+9.2f}\n", pose.enh[0], pose.enh[1], pose.enh[2]);  // DEBUG
+
+    const std::optional<CheckpointDetector::Result> detect_result =
+        checkpoint_detector_->Detect(pose_history_);
+    if (detect_result) {
+      const TimeZulu cal = ToZulu(static_cast<time_t>(detect_result->timestamp_ms / 1000));
+      fmt::print(
+          "detect #{} @ {:02}:{02}:{02}.{:03}",
+          detect_result->checkpoint_index,
+          cal.tm_hour,
+          cal.tm_min,
+          cal.tm_sec,
+          detect_result->timestamp_ms % 1000);  // DEBUG
+    }
   }
 }
 

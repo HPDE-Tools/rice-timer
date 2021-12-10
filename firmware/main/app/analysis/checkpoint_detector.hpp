@@ -6,27 +6,37 @@
 #include <cstdint>
 #include <optional>
 
+#include "common/circular_buffer.hpp"
 #include "interface/localization.hpp"
 #include "map/map.hpp"
+#include "math/segment2.hpp"
+#include "math/utils.hpp"
 
 namespace analysis {
 
 class CheckpointDetector {
  public:
-  struct Detection {
-    int64_t timestamp_ms;
-    // TODO
+  static constexpr double kMaxDistanceToCenterM = 100.0;
+  static constexpr double kMaxSqrDistanceToCenterM2 = math::Sqr(kMaxDistanceToCenterM);
+
+  struct Result {
+    int64_t timestamp_ms = 0;
+    int checkpoint_index = 0;
   };
 
   CheckpointDetector();
   explicit CheckpointDetector(const map::Map* map);
 
-  void set_map(const map::Map* map);
+  void SetMap(const map::Map* map);
 
-  std::optional<Detection> Detect(const MapLocalPose& pose);
+  std::optional<Result> Detect(const CircularBuffer<MapLocalPose>& pose_history);
 
  private:
   const map::Map* map_ = nullptr;  // not owned
+
+  int num_checkpoints_ = 0;
+  std::vector<math::Segment2f> segments_;
+  Eigen::Matrix2Xf centers_;
 };
 
 }  // namespace analysis
