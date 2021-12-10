@@ -18,7 +18,7 @@
 #include "minmea.h"
 #include "sdmmc_cmd.h"
 
-#include "app/analysis/onboard_analysis.hpp"
+#include "app/analysis/onboard_analysis_instance.hpp"
 #include "app/can_instance.hpp"
 #include "app/device_id.hpp"
 #include "app/gps_instance.hpp"

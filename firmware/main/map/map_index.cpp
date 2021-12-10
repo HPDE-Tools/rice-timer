@@ -11,12 +11,9 @@
 
 namespace map {
 
-using ricetimer::proto::Map;
-using ricetimer::proto::MapHeader;
-
 namespace {
 constexpr char TAG[] = "map_index";
-}
+}  // namespace
 
 MapIndex::MapIndex() = default;
 
@@ -34,8 +31,9 @@ esp_err_t MapIndex::Load(std::string_view map_data_path) {
     TRY(io::ReadBinaryFileToString(path, &file_content));
     ESP_LOG_BUFFER_HEXDUMP(TAG, file_content.data(), file_content.size(), ESP_LOG_VERBOSE);
 
-    const Map* map = ricetimer::proto::GetMap(file_content.data());
+    const ricetimer::proto::Map* map = ricetimer::proto::GetMap(file_content.data());
     Entry& entry = entries_.emplace_back();
+    entry.path = std::move(path);
     entry.name = map->header()->name()->str();
     entry.origin_latlon << map->header()->origin()->lat(), map->header()->origin()->lon();
     entry.type = map->header()->type();
@@ -50,7 +48,7 @@ esp_err_t MapIndex::Load(std::string_view map_data_path) {
   return ESP_OK;
 }
 
-const MapIndex::Entry& MapIndex::GetNearestMap(const Eigen::Vector2d& latlon) {
+std::pair<const MapIndex::Entry*, double> MapIndex::GetNearestMap(const Eigen::Vector2d& latlon) {
   CHECK(!entries_.empty());
   // TODO: use some kind of nearest neighbor impl
   ESP_LOGE(TAG, "GetNearestMap(%+9.5f, %+10.5f)", latlon[0], latlon[1]);  // DEBUG
@@ -64,7 +62,7 @@ const MapIndex::Entry& MapIndex::GetNearestMap(const Eigen::Vector2d& latlon) {
       min_entry = &entry;
     }
   }
-  return *min_entry;
+  return {min_entry, min_distance};
 }
 
 }  // namespace map

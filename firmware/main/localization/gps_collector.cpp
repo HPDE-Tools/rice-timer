@@ -42,10 +42,11 @@ std::optional<GpsPose> GpsCollector::Update(const ParsedNmea& nmea) {
       overloaded{
           [this](const minmea_sentence_rmc& rmc) {
             const auto timestamp = GetTimestampFromMinmeaDateTime(rmc.date, rmc.time);
-            CHECK(timestamp);
-            result_.timestamp_ms = ToMilliseconds(*timestamp);
-            result_.llh[0] = minmea_tofloat(&rmc.latitude);
-            result_.llh[1] = minmea_tofloat(&rmc.longitude);
+            if (timestamp) {
+              result_.timestamp_ms = ToMilliseconds(*timestamp);
+            }
+            result_.llh[0] = minmea_tocoord(&rmc.latitude);
+            result_.llh[1] = minmea_tocoord(&rmc.longitude);
             group_ |= MINMEA_SENTENCE_RMC;
           },
           [this](const minmea_sentence_gga& gga) {

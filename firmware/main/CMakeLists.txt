@@ -2,7 +2,9 @@ set(srcs
 "app_main.cpp"
 "lvgl_tick.c"
 
+"app/analysis/checkpoint_detector.cpp"
 "app/analysis/onboard_analysis.cpp"
+"app/analysis/onboard_analysis_instance.cpp"
 "app/can_instance.cpp"
 "app/device_id.cpp"
 "app/gps_instance.cpp"
@@ -28,6 +30,7 @@ set(srcs
 "io/uart_line_reader.cpp"
 "localization/gps_collector.cpp"
 "localization/localizer.cpp"
+"map/map.cpp"
 "map/map_index.cpp"
 "ui/controller.cpp"
 "ui/display.cpp"

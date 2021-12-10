@@ -8,6 +8,7 @@
 #include "driver/uart.h"
 #include "soc/uart_periph.h"
 
+#include "app/analysis/onboard_analysis_instance.hpp"
 #include "app/logger_instance.hpp"
 #include "app/shared_i2c_bus.hpp"
 #include "common/macros.hpp"
@@ -118,6 +119,8 @@ void HandleGpsData(
       (int)state,
       (int)nmea.index(),
       (int)!!time_fix);
+  OnboardAnalysisUpdateGps(nmea);
+  // TODO: this visit should be replaced with "collected GPS" instead
   std::visit(
       overloaded{
           [](const minmea_sentence_rmc& rmc) {
@@ -143,7 +146,6 @@ void HandleGpsData(
               g.speed_knot = minmea_tofloat(&rmc.speed);
               g.course_deg = minmea_tofloat(&rmc.course);
               ++ui::g_model.counter.gps;
-              // OnboardAnalysisUpdateGps(rmc);  // TODO: track timer
             }
           },
           [](const minmea_sentence_gga& gga) {

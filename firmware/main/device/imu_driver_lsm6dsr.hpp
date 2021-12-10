@@ -16,6 +16,7 @@
 #include "common/task.hpp"
 #include "common/utils.hpp"
 #include "device/capture_manager.hpp"
+#include "math/utils.hpp"
 
 class Lsm6dsr : Task {
  public:
@@ -103,7 +104,7 @@ class Lsm6dsr : Task {
   }
 
   /// Convert raw accel reading (scalar) to m/s^2
-  float AccelRawToMps2(int16_t a) const { return AccelRawToG(a) * kGravity<float>; }
+  float AccelRawToMps2(int16_t a) const { return AccelRawToG(a) * math::kGravity<float>; }
 
   /// Convert raw gyro reading (scalar) to deg/s
   float GyroRawToDps(int16_t w) const {
@@ -126,7 +127,7 @@ class Lsm6dsr : Task {
   }
 
   /// Convert raw gyro reading (scalar) to rad/s
-  float GyroRawToRps(int16_t w) const { return DegToRad(GyroRawToDps(w)); }
+  float GyroRawToRps(int16_t w) const { return math::DegToRad(GyroRawToDps(w)); }
 
  protected:
   IRAM_ATTR void Run() override;

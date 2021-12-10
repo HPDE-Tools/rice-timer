@@ -5,17 +5,30 @@
 
 #include "interface/localization.hpp"
 
+namespace map {
+class Map;
+}  // namespace map
+
 namespace l10n {
 
 class Localizer {
  public:
-  static Localizer* GetInstance();
+  Localizer();
+  explicit Localizer(const map::Map* map);
+
+  void Reset();
+  void SetMap(const map::Map* map);
 
   void UpdateGps(const GpsPose& gps_pose);
   void UpdateImu(const ImuReading& imu_raw);
 
+  MapLocalPose Compute();
+
  private:
-  Localizer();
+  const map::Map* map_ = nullptr;  // not owned
+
+  // NOTE: This is currently a trivial forwarder of GPS info
+  std::optional<GpsPose> last_gps_pose_{};
 };
 
 }  // namespace l10n

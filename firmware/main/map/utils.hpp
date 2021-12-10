@@ -9,7 +9,7 @@
 
 namespace map {
 
-double GeodesicDistance(const Eigen::Vector2d& a, const Eigen::Vector2d& b) {
+inline double GeodesicDistance(const Eigen::Vector2d& a, const Eigen::Vector2d& b) {
   double distance{};
   (void)GeographicLib::Geodesic::WGS84().Inverse(a[0], a[1], b[0], b[1], distance);
   return distance;
