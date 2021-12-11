@@ -108,7 +108,7 @@ void OnboardAnalysis::Run() {
     const auto* checkpoint = (*map->checkpoints())[detect_result->checkpoint_index];
 
     fmt::print(
-        "checkpoint #{} @ {:02}:{02}:{02}.{:03}",
+        "checkpoint #{} @ {:02}:{:02}:{:02}.{:03}",
         detect_result->checkpoint_index,
         cal.tm_hour,
         cal.tm_min,
