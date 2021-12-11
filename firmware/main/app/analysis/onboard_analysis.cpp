@@ -70,7 +70,7 @@ void OnboardAnalysis::Run() {
     const auto tick_begin = capturer.TriggerNow();  // DEBUG
 
     const std::optional<GpsPose> gps_pose = gps_collector_.Update(nmea);
-    if (!gps_pose) {
+    if (!gps_pose || !gps_pose->is_valid) {
       continue;
     }
 
