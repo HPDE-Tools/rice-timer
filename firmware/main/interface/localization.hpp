@@ -16,6 +16,7 @@ struct GpsPose {
   float speed = 0;                                      // speed-over-ground [m/s]
   float course = 0;                                     // course-over-ground (north-CW) [deg]
   float heading = 0;                                    // heading of the rover (north-CW) [deg]
+  bool is_valid = false;
 };
 
 /// Raw IMU reading (in IMU local frame), scaled to SI units

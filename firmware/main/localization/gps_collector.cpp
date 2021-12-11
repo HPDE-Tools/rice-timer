@@ -9,15 +9,19 @@
 
 namespace l10n {
 
+namespace {
+constexpr char TAG[] = "l10n/gps";
+}
+
 void GpsCollector::Reset() {
-  group_ = 0u;
+  received_ = 0u;
   group_time_.reset();
-  result_ = {};
+  pose_ = {};
 }
 
 bool GpsCollector::StartCalibration() {
   // TODO: actually enter calibration mode (consider auto-exit too)
-  group_mask_ = MINMEA_SENTENCE_RMC | MINMEA_SENTENCE_GGA | MINMEA_SENTENCE_GST;
+  expected_ = MINMEA_SENTENCE_RMC | MINMEA_SENTENCE_GGA | MINMEA_SENTENCE_GST;
   return true;
 }
 
@@ -29,7 +33,7 @@ std::optional<GpsPose> GpsCollector::Update(const ParsedNmea& nmea) {
   if (time_of_day) {
     if (group_time_) {
       if (*time_of_day != *group_time_) {
-        result = result_;
+        result = pose_;
         Reset();
         return result;
       }
@@ -38,39 +42,43 @@ std::optional<GpsPose> GpsCollector::Update(const ParsedNmea& nmea) {
     }
   }
 
+  pose_.is_valid = true;
   std::visit(
       overloaded{
           [this](const minmea_sentence_rmc& rmc) {
             const auto timestamp = GetTimestampFromMinmeaDateTime(rmc.date, rmc.time);
             if (timestamp) {
-              result_.timestamp_ms = ToMilliseconds(*timestamp);
+              pose_.timestamp_ms = ToMilliseconds(*timestamp);
             }
-            result_.llh[0] = minmea_tocoord(&rmc.latitude);
-            result_.llh[1] = minmea_tocoord(&rmc.longitude);
-            group_ |= MINMEA_SENTENCE_RMC;
+            pose_.llh[0] = minmea_tocoord(&rmc.latitude);
+            pose_.llh[1] = minmea_tocoord(&rmc.longitude);
+            if (!rmc.valid) {
+              pose_.is_valid = false;
+            }
+            received_ |= MINMEA_SENTENCE_RMC;
           },
           [this](const minmea_sentence_gga& gga) {
             // (Antenna height above ellipsoid) = (Antenna altitude above geoid) +
             //                                    (Geoid height above ellipsoid)
             // See: https://gis.stackexchange.com/a/174116
-            result_.llh[2] = minmea_tofloat(&gga.altitude) + minmea_tofloat(&gga.height);
-            group_ |= MINMEA_SENTENCE_GGA;
+            pose_.llh[2] = minmea_tofloat(&gga.altitude) + minmea_tofloat(&gga.height);
+            received_ |= MINMEA_SENTENCE_GGA;
           },
           [this](const minmea_sentence_gst& gst) {
             // clang-format off
-            result_.sigma_llh <<
+            pose_.sigma_llh <<
                 minmea_tofloat(&gst.latitude_error_deviation),
                 minmea_tofloat(&gst.longitude_error_deviation),
                 minmea_tofloat(&gst.altitude_error_deviation);
             // clang-format on
-            group_ |= MINMEA_SENTENCE_GST;
+            received_ |= MINMEA_SENTENCE_GST;
           },
           [](const auto&) {},
       },
       nmea);
 
-  if ((group_ & group_mask_) == group_mask_) {
-    result = result_;
+  if ((received_ & expected_) == expected_) {
+    result = pose_;
     Reset();
   }
   return result;
