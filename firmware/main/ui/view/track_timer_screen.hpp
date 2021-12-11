@@ -101,7 +101,12 @@ struct TrackTimerScreen : public Screen {
       duration /= 60;
       const int min = duration;
       lv_label_set_text_fmt(
-          label_best_lap, "best %2d:%02d.%03d #%d", min, sec, ms, model.lap_timer->min_lap_index);
+          label_best_lap,
+          "best %2d:%02d.%03d #%d",
+          min,
+          sec,
+          ms,
+          model.lap_timer->min_lap_index + 1);
     } else {
       lv_label_set_text_static(label_best_lap, "best");
     }
