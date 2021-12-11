@@ -139,6 +139,7 @@ void Controller::Run() {
         }
         [[fallthrough]];
       }
+      case ButtonHelper::kLongHold:
       case ButtonHelper::kLongClick: {
         ESP_LOGI(TAG, "btn3 click");
         loaded_screen_ = idle_screen_->Load();
@@ -163,12 +164,16 @@ void Controller::Run() {
     // gpio_set_level(GPIO_NUM_16, 0);  // DEBUG
     const TimeUnixWithUs end_time = NowUnixWithUs();
 
-    ESP_LOGD(
-        TAG,
-        "%lld (render) + %lld (lv) = %lld (total)",
-        lv_begin_time - render_begin_time,
-        end_time - lv_begin_time,
-        end_time - render_begin_time);
+    static int k = 0;
+    if (++k == 10) {
+      k = 0;
+      ESP_LOGD(
+          TAG,
+          "%lld (render) + %lld (lv) = %lld (total)",
+          lv_begin_time - render_begin_time,
+          end_time - lv_begin_time,
+          end_time - render_begin_time);
+    }
     vTaskDelayUntil(&last_wake_time, pdMS_TO_TICKS(kRefreshPeriodMs));
   }
 }
