@@ -77,7 +77,7 @@ struct TrackTimerScreen : public Screen {
       diff /= 10;
       const int sec = diff % 60;
       diff /= 60;
-      const int min = diff;
+      const int min = std::min(diff, 99);
       lv_label_set_text_fmt(label_curr_lap, "%3d|%2d:%02d.%d", lap_counter, min, sec, ds);
     } else {
       lv_label_set_text_static(label_curr_lap, kCurrLapPlaceholder);
@@ -88,7 +88,7 @@ struct TrackTimerScreen : public Screen {
       duration /= 1000;
       const int sec = duration % 60;
       duration /= 60;
-      const int min = duration;
+      const int min = std::min(duration, 99);
       lv_label_set_text_fmt(label_last_lap, "last %2d:%02d.%03d", min, sec, ms);
     } else {
       lv_label_set_text_static(label_last_lap, "last");
@@ -99,7 +99,7 @@ struct TrackTimerScreen : public Screen {
       duration /= 1000;
       const int sec = duration % 60;
       duration /= 60;
-      const int min = duration;
+      const int min = std::min(duration, 99);
       lv_label_set_text_fmt(
           label_best_lap,
           "best %2d:%02d.%03d #%d",
