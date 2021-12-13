@@ -48,6 +48,12 @@ esp_err_t SetupDisplayDriver() {
   return ESP_OK;
 }
 
+void SetFlipped(bool flipped) {
+  g_oled->SetFlipLr(flipped);
+  g_oled->SetFlipUd(flipped);
+  g_encoder_dir = flipped ? -1 : +1;
+}
+
 }  // namespace
 
 std::unique_ptr<Controller> g_controller{};
@@ -81,6 +87,8 @@ esp_err_t Controller::Setup() {
   softkey_prompt_1_ = std::make_unique<view::SoftkeyPrompt>();
   softkey_prompt_3_ = std::make_unique<view::SoftkeyPrompt>();
 
+  SetFlipped(flipped_);
+
   return ESP_OK;
 }
 
@@ -105,6 +113,11 @@ void Controller::Run() {
     ESP_LOGI(TAG, "loading track req");
     loaded_screen_ = track_timer_screen_->Load();  // hack: skip the lobby
   };
+  idle_screen_->btn_flip_click = [this](lv_event_t* e) {
+    flipped_ = !flipped_;
+    SetFlipped(flipped_);
+    ESP_LOGI(TAG, "flipping screen: %d", (int)flipped_);
+  };
   track_req_screen_->on_success = [this](lv_event_t* e) {
     ESP_LOGI(TAG, "loading track sel");
     loaded_screen_ = track_sel_screen_->LoadAnim(
@@ -115,8 +128,9 @@ void Controller::Run() {
     const TimeUnixWithUs render_begin_time = NowUnixWithUs();
     // gpio_set_level(GPIO_NUM_17, 1);  // DEBUG
 
-    const ButtonHelper::Result button1 = button1_helper.Update(GetButtonState(1));
-    const ButtonHelper::Result button3 = button3_helper.Update(GetButtonState(3));
+    // HACK: buttons 1 and 3 are also flipped; not sure where is the best place to put this
+    const ButtonHelper::Result button1 = button1_helper.Update(GetButtonState(flipped_ ? 3 : 1));
+    const ButtonHelper::Result button3 = button3_helper.Update(GetButtonState(flipped_ ? 1 : 3));
     switch (button1) {
       case ButtonHelper::kShortClick: {
         ESP_LOGI(TAG, "btn1 short click");
