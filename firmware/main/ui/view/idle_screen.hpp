@@ -16,10 +16,12 @@ struct IdleScreen : public Screen {
   lv_obj_t* btn_track;
   lv_obj_t* btn_review;
   lv_obj_t* btn_settings;
+  lv_obj_t* btn_flip;
 
   LvEventHandler btn_track_click{};
   LvEventHandler btn_review_click{};
   LvEventHandler btn_settings_click{};
+  LvEventHandler btn_flip_click{};
 
   virtual ~IdleScreen() = default;
 
@@ -95,6 +97,18 @@ struct IdleScreen : public Screen {
     }
     lv_group_add_obj(group, btn_settings);
     LvListen(btn_settings, LV_EVENT_CLICKED, btn_settings_click);
+
+    btn_flip = lv_btn_create(nav);
+    FixButton(btn_flip);
+    lv_obj_set_width(btn_flip, 19);
+    {
+      lv_obj_t* const label = lv_label_create(btn_flip);
+      lv_label_set_text_static(label, UTF8 "\u2B81");
+      lv_obj_set_width(label, LV_PCT(100));
+      lv_obj_set_style_text_align(label, LV_TEXT_ALIGN_CENTER, 0);
+    }
+    lv_group_add_obj(group, btn_flip);
+    LvListen(btn_flip, LV_EVENT_CLICKED, btn_flip_click);
   }
 
   void Render(const Model& model) override {

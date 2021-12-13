@@ -52,6 +52,8 @@ class Controller : public Task {
   std::unique_ptr<view::SoftkeyPrompt> softkey_prompt_1_;
   std::unique_ptr<view::SoftkeyPrompt> softkey_prompt_3_;
 
+  bool flipped_ = true;  // TODO: maybe pass by option? getter/setter?
+
   Controller();
   esp_err_t Setup();
 

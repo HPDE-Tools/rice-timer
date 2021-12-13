@@ -104,11 +104,11 @@ esp_err_t RegisterEncoderDriver() {
     const int16_t pos = (diff + 1) / 4;
     const int16_t neg = (diff - 1) / 4;
     if (pos >= 1) {
-      data->enc_diff = pos;
+      data->enc_diff = pos * g_encoder_dir;
       last_whole_count_raw += pos * 4;
       ESP_LOGD(TAG, "enc++ => %d", last_whole_count_raw);
     } else if (neg <= -1) {
-      data->enc_diff = neg;
+      data->enc_diff = neg * g_encoder_dir;
       last_whole_count_raw += neg * 4;
       ESP_LOGD(TAG, "enc-- => %d", last_whole_count_raw);
     }
@@ -151,6 +151,8 @@ esp_err_t RegisterButtonDriver() {
 
 lv_indev_t* g_encoder_indev{};
 lv_indev_t* g_buttons_indev{};
+
+int g_encoder_dir = +1;
 
 esp_err_t RegisterLvglInputDrivers() {
   TRY(SetupAdc());
