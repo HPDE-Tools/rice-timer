@@ -8,6 +8,7 @@
 #include <cstdint>
 #include <memory>
 #include <type_traits>
+#include <variant>
 
 constexpr char HexDigitLower(uint8_t i) { return "0123456789abcdef"[i & uint8_t{0xf}]; }
 constexpr char HexDigitUpper(uint8_t i) { return "0123456789ABCDEF"[i & uint8_t{0xf}]; }
@@ -28,7 +29,7 @@ template <class... Ts>
 overloaded(Ts...) -> overloaded<Ts...>;
 
 // usually not zero-sized, but good enough
-struct Unit {};
+using Unit = std::monostate;
 
 constexpr uint16_t Uint16LeAt(const uint8_t* bytes) {
   return static_cast<uint16_t>(
