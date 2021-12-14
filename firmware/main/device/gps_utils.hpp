@@ -31,8 +31,9 @@ using ParsedNmea = std::variant<
     minmea_sentence_gst,
     minmea_sentence_zda>;
 
-constexpr float kKnotInMph = 1.151f;
-constexpr float kKnotInKph = 1.852f;
+constexpr float kKnotInKph = 1.852;
+constexpr float kKnotInMph = kKnotInKph / 1.609344;
+constexpr float kKnotInMps = kKnotInKph / 3.6;
 
 /// Attempt to parse an NMEA sentence
 ///

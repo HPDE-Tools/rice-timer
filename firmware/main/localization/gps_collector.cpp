@@ -52,6 +52,8 @@ std::optional<GpsPose> GpsCollector::Update(const ParsedNmea& nmea) {
             }
             pose_.llh[0] = minmea_tocoord(&rmc.latitude);
             pose_.llh[1] = minmea_tocoord(&rmc.longitude);
+            pose_.speed_knot = minmea_tofloat(&rmc.speed);
+            pose_.course_north_cw_deg = minmea_tofloat(&rmc.course);
             if (!rmc.valid) {
               pose_.is_valid = false;
             }

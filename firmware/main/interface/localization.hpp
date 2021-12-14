@@ -13,9 +13,8 @@ struct GpsPose {
   int64_t timestamp_ms = 0;                             // time since unix epoch [ms]
   Eigen::Vector3d llh = Eigen::Vector3d::Zero();        // lat [deg], long [deg], height [m]
   Eigen::Vector3f sigma_llh = Eigen::Vector3f::Zero();  // 1-sigma error for lat-long-height
-  float speed = 0;                                      // speed-over-ground [m/s]
-  float course = 0;                                     // course-over-ground (north-CW) [deg]
-  float heading = 0;                                    // heading of the rover (north-CW) [deg]
+  float speed_knot = 0;                                 // speed-over-ground [knot]
+  float course_north_cw_deg = 0;                        // course-over-ground (north-CW) [deg]
   bool is_valid = false;
 };
 
