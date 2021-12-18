@@ -68,5 +68,9 @@ def write_vbo(table: DataFrame, f: TextIOBase):
                     col *= 60
                 elif headers[col_i] == 'long':
                     col *= -60
-                f.write(formats[col_i].format(col))
+                try:
+                    f.write(formats[col_i].format(col))
+                except ValueError:
+                    f.write(' ')
+                    f.write(col)
         f.write('\n')

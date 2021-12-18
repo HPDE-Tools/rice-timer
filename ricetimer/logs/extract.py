@@ -114,7 +114,7 @@ def extract_can_signals(can_db: Database,
         except KeyError:
             continue
         try:
-            signals = msg.decode(data)
+            signals = msg.decode(data, decode_choices=False)  # TODO: make this an option
         except ValueError as e:
             if can_id not in fail_to_decode_ids:
                 logging.warning(

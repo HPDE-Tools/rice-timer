@@ -7,7 +7,7 @@ import click_spinner
 import toml
 
 from ricetimer import DATA_PATH
-from ricetimer.logs import format
+from ricetimer.logs.format import vbo as format_vbo
 from ricetimer.logs.ingest import ingest_log_lines
 from ricetimer.logs.processing import tabulate_with_profile
 
@@ -39,7 +39,7 @@ def vbo(src_dir: Path, output_file: Path, profile_name):
         table = tabulate_with_profile(log_events, profile)
     click.echo('writing output file...')
     with click_spinner.spinner():
-        format.vbo.write_vbo(table, output_file)
+        format_vbo.write_vbo(table, output_file)
     click.echo('done!')
 
 
