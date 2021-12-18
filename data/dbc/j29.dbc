@@ -1,0 +1,141 @@
+VERSION ""
+
+
+NS_ : 
+	NS_DESC_
+	CM_
+	BA_DEF_
+	BA_
+	VAL_
+	CAT_DEF_
+	CAT_
+	FILTER
+	BA_DEF_DEF_
+	EV_DATA_
+	ENVVAR_DATA_
+	SGTYPE_
+	SGTYPE_VAL_
+	BA_DEF_SGTYPE_
+	BA_SGTYPE_
+	SIG_TYPE_REF_
+	VAL_TABLE_
+	SIG_GROUP_
+	SIG_VALTYPE_
+	SIGTYPE_VALTYPE_
+	BO_TX_BU_
+	BA_DEF_REL_
+	BA_REL_
+	BA_DEF_DEF_REL_
+	BU_SG_REL_
+	BU_EV_REL_
+	BU_BO_REL_
+	SG_MUL_VAL_
+
+BS_:
+
+BU_: DME BDC KOMBI
+
+
+BO_ 3221225472 VECTOR__INDEPENDENT_SIG_MSG: 0 Vector__XXX
+ SG_ Brake_Position_173 : 56|6@1+ (1,0) [0|0] "" Vector__XXX
+
+BO_ 417 PT_1A1: 5 Vector__XXX
+ SG_ rolling_counter_1A1 : 8|4@1+ (1,0) [0|14] "" Vector__XXX
+ SG_ Vehicle_Speed_1A1 : 16|16@1+ (0.015259,0) [0|0] "km/h" Vector__XXX
+ SG_ maybe_speed_dir_1A1 : 36|3@1+ (1,0) [0|0] "" Vector__XXX
+
+BO_ 165 PT_0A5: 8 Vector__XXX
+ SG_ rolling_counter_0A5 : 8|4@1+ (1,0) [0|14] "" Vector__XXX
+ SG_ Engine_Speed_0A5 : 40|16@1+ (0.25,0) [0|10000] "RPM" Vector__XXX
+ SG_ maybe_const_81_0A5 : 56|8@1+ (1,0) [0|0] "" Vector__XXX
+
+BO_ 217 PT_0D9: 8 Vector__XXX
+ SG_ rolling_counter_0D9 : 8|4@1+ (1,0) [0|0] "" Vector__XXX
+ SG_ Throttle_Position_0D9 : 16|12@1+ (0.025,0) [0|100] "%" Vector__XXX
+ SG_ Throttle_Position_Filtered_0D9 : 32|12@1+ (0.025,0) [0|100] "%" Vector__XXX
+ SG_ maybe_const_CF_0D9 : 56|8@1+ (1,0) [0|0] "" Vector__XXX
+
+BO_ 371 PT_173: 8 Vector__XXX
+ SG_ rolling_counter_173 : 8|4@1+ (1,0) [0|0] "" Vector__XXX
+
+BO_ 220 PT_0DC: 6 Vector__XXX
+ SG_ rolling_counter_0DC : 8|4@1+ (1,0) [0|0] "" Vector__XXX
+ SG_ maybe_const_24_0DC : 16|8@1+ (1,0) [0|0] "" Vector__XXX
+ SG_ Vehicle_Speed_0DC : 24|12@1+ (0.125,-250) [0|0] "km/h" Vector__XXX
+
+BO_ 194 PT_0C2: 8 Vector__XXX
+ SG_ checksum_0C2 : 0|8@1+ (1,0) [0|0] "" Vector__XXX
+ SG_ rolling_counter_0C2 : 8|4@1+ (1,0) [0|0] "" Vector__XXX
+ SG_ maybe_raw_RPM_0C2 : 16|16@1+ (1,-900) [0|0] "RPM" Vector__XXX
+ SG_ unknown_1_0C2 : 32|8@1+ (1,0) [0|0] "" Vector__XXX
+
+BO_ 243 PT_0F3: 8 Vector__XXX
+ SG_ checksum_0F3 : 0|8@1+ (1,0) [0|0] "" Vector__XXX
+ SG_ rolling_counter_0F3 : 8|4@1+ (1,0) [0|0] "" Vector__XXX
+ SG_ maybe_RPM_gauge_0F3 : 12|12@1+ (10,0) [0|0] "RPM" Vector__XXX
+
+BO_ 409 PT_199: 6 Vector__XXX
+ SG_ checksum_199 : 0|8@1+ (1,0) [0|0] "" Vector__XXX
+ SG_ rolling_counter_199 : 8|4@1+ (1,0) [0|0] "" Vector__XXX
+ SG_ Longitudinal_Acceleration_199 : 16|16@1+ (0.002,-65) [0|0] "m/s^2" Vector__XXX
+ SG_ maybe_const_0020_199 : 32|16@1+ (1,0) [0|0] "" Vector__XXX
+
+BO_ 410 PT_19A: 6 Vector__XXX
+ SG_ checksum_19A : 0|8@1+ (1,0) [0|0] "" Vector__XXX
+ SG_ rolling_counter_19A : 8|4@1+ (1,0) [0|0] "" Vector__XXX
+ SG_ Lateral_Acceleration_19A : 16|16@1+ (0.002,-65) [0|0] "m/s^2" Vector__XXX
+
+BO_ 239 PT_0EF: 8 Vector__XXX
+ SG_ checksum_0EF : 0|8@1+ (1,0) [0|0] "" Vector__XXX
+ SG_ rolling_counter_0EF : 8|4@1+ (1,0) [0|0] "" Vector__XXX
+ SG_ Brake_Pedal_Filtered_0EF : 16|16@1+ (-1,32000) [0|0] "" Vector__XXX
+ SG_ maybe_const_21_0EF : 32|8@1+ (1,0) [0|0] "" Vector__XXX
+ SG_ Brake_Pedal_Raw_0EF : 40|16@1+ (-1,32000) [0|0] "" Vector__XXX
+ SG_ Brake_Flags_0EF : 56|8@1+ (1,0) [0|0] "" Vector__XXX
+
+BO_ 596 PT_254: 8 Vector__XXX
+ SG_ Wheel_Speed_A_254 : 0|16@1+ (1,0) [0|0] "" Vector__XXX
+ SG_ Wheel_Speed_B_254 : 16|16@1+ (1,0) [0|0] "" Vector__XXX
+ SG_ Wheel_Speed_C_254 : 32|16@1+ (1,0) [0|0] "" Vector__XXX
+ SG_ Wheel_Speed_D_254 : 48|16@1+ (1,0) [0|0] "" Vector__XXX
+
+BO_ 160 PT_0A0: 8 Vector__XXX
+ SG_ checksum_0A0 : 0|8@1+ (1,0) [0|0] "" Vector__XXX
+ SG_ rolling_counter_0A0 : 8|4@1+ (1,0) [0|0] "" Vector__XXX
+ SG_ unknown_1_0A0 : 16|12@1+ (1,-2000) [0|0] "" Vector__XXX
+ SG_ unknown_2_0A0 : 48|16@1+ (1,0) [0|0] "" Vector__XXX
+
+BO_ 770 PT_302: 7 Vector__XXX
+ SG_ checksum_302 : 0|8@1+ (1,0) [0|0] "" Vector__XXX
+ SG_ rolling_counter_302 : 8|4@1+ (1,0) [0|0] "" Vector__XXX
+ SG_ Steering_Wheel_Angle_302 : 16|16@1+ (0.033333333333,-1092.266666666667) [-1000|1000] "deg" Vector__XXX
+
+
+
+CM_ BO_ 417 "50 Hz";
+CM_ SG_ 417 rolling_counter_1A1 "step 1, mod 0xE";
+CM_ BO_ 165 "100 Hz";
+CM_ SG_ 165 rolling_counter_0A5 "step 1, mod 0xE
+";
+CM_ BO_ 217 "100 Hz";
+CM_ SG_ 217 rolling_counter_0D9 "step 1, mod 0xE";
+CM_ SG_ 217 Throttle_Position_0D9 "
+";
+CM_ SG_ 217 Throttle_Position_Filtered_0D9 "lags by ~1 message but not always completely bit equal";
+CM_ BO_ 371 "20 Hz";
+CM_ SG_ 371 rolling_counter_173 "step 5, mod 0xE, phase undefined";
+CM_ BO_ 220 "50 Hz";
+CM_ BO_ 194 "50 Hz";
+CM_ BO_ 243 "50 Hz";
+CM_ SG_ 243 maybe_RPM_gauge_0F3 "heavily filtered";
+CM_ BO_ 409 "50 Hz";
+CM_ BO_ 410 "50 Hz";
+CM_ BO_ 239 "50 Hz";
+CM_ SG_ 239 Brake_Pedal_Filtered_0EF "unknown unit/gain";
+CM_ SG_ 239 Brake_Pedal_Raw_0EF "unknown unit/gain; faster transients than the filtered version";
+CM_ SG_ 239 Brake_Flags_0EF "00 when steady-state braking; likely brake switch or something related.";
+CM_ BO_ 596 "50 Hz";
+CM_ BO_ 160 "50 Hz";
+CM_ BO_ 770 "25 Hz";
+VAL_ 417 maybe_speed_dir_1A1 0 "zero?" 1 "forward?" 3 "???" ;
+

@@ -1,0 +1,16 @@
+[can]
+db = 'j29.dbc'
+
+[can.signals]
+'PT_1A1.Vehicle_Speed_1A1' = { name = 'speed_can_kph', interp = 'linear' }
+'PT_0A5.Engine_Speed_0A5' = { name = 'engine_rpm', interp = 'linear' }
+# 'FK8_GEARBOX.GEAR_NUM' = { name = 'gear', interp = 'previous' }
+'PT_19A.Lateral_Acceleration_19A' = { name = 'lat_acc_can', interp = 'linear' }
+'PT_199.Longitudinal_Acceleration_199' = { name = 'lon_acc_can', interp = 'linear' }
+'PT_302.Steering_Wheel_Angle_302' = { name = 'steer_angle', interp = 'linear' }
+# 'FK8_CLUTCH_PEDAL.PEDAL_CLUTCH' = { name = 'pedal_clutch', interp = 'linear' }
+'PT_0D9.Throttle_Position_0D9' = { name = 'pedal_gas', interp = 'linear' }
+'PT_0EF.Brake_Pedal_Raw_0EF' = { name = 'pedal_brake', interp = 'linear' }
+# 'VSA_STATUS.USER_BRAKE' = { name = 'brake_pressure_mpa', interp = 'linear' }
+# 'GAS_PEDAL_2.ENGINE_TORQUE_REQUEST' = { name = 'torque_request', interp = 'linear' }
+# 'GAS_PEDAL_2.ENGINE_TORQUE_ESTIMATE' = { name = 'torque_estimate', interp = 'linear' }
