@@ -4,18 +4,19 @@ from itertools import chain
 import logging
 from typing import Any, Optional, Iterable
 
-import numba
 import numpy as np
 import pynmea2
+from scipy.interpolate import interp1d
 
-from ricetimer.common.math import interp_rolling_uint32
+from ricetimer.common.timeit import timeit
+from ricetimer.common.math import interp_rolling_uint32, unwrap_uint32
 
 """
 Functions for converting raw log lines into structured events with high-resolution timestamps.
 """
 
 
-def ingest_log_lines(lines: Iterable[str], *, window_half_width: int = 2):
+def ingest_log_lines(lines: Iterable[str], use_pps=True):
     """
     Parse all lines from the raw log and perform timestamp recovery.
     Return a list of valid timestamped events, each consisting of the following parts:
@@ -27,10 +28,24 @@ def ingest_log_lines(lines: Iterable[str], *, window_half_width: int = 2):
         - 'i' (IMU raw): list of float
         - 'c' (CAN raw): (id, len, data)
     """
-    parsed_lines = [
+    return recover_timestamps(parse_lines(lines), use_pps=use_pps)
+
+
+def parse_lines(lines: Iterable[str]):
+    """
+    Parse all lines from the raw log.
+    Return a list of valid events, each consisting of the following parts:
+
+    - type character (see below)
+    - raw 32-bit rolling timestamp
+    - type-specific parsed data:
+        - 'g' (GNSS): parsed NMEA sentence
+        - 'i' (IMU raw): list of float
+        - 'c' (CAN raw): (id, len, data)
+    """
+    return [
         parsed for line in lines
         if (parsed := parse_line(line)) is not None]
-    return recover_timestamps(parsed_lines, window_half_width=window_half_width)
 
 
 def parse_line(line: str):
@@ -114,81 +129,63 @@ def _parse_can(can_frame_str: str):
 
 
 def recover_timestamps(parsed_lines: list[tuple[str, int, Any]],
-                       window_half_width=2):
+                       use_pps=True) -> list[tuple[str, float, Any]]:
     """
-    Convert 32-bit rolling timestamps in the parsed logs to GNSS time by interpolating nearby PPS events.
-    This only requires the PPS events to be ordered by the time they happened.
-    All other log lines may be locally out-of-order and still be assigned the correct timestamp.
+    Convert 32-bit rolling timestamps in the parsed log lines to either:
+    
+    - `use_pps == True`: GNSS timestamp (s) since the UNIX epoch, as interpolated / extrapolated from PPS
+      events (capture clock + GNSS timestamp).
+      This only requires the PPS events ('p') to be strictly monotonic.
+      All other log lines may be locally out-of-order and still be assigned the correct timestamp.
 
-    In the result:
-    - PPS events are be discarded as they only provide timing information.
-    - Lines not between two PPS events, or severely out of order, are discarded.
+    - `use_pps == False`: Estimated time elapsed (s) since the first event, as measured by the capture clock.
+
+    Regardless, PPS events are excluded from the result as they do not provide information other than timing,
+    which is already encoded into the result.
     """
-    pps_events = _filter_pps_from_parsed(parsed_lines)
-    typechars, captures = _typechar_capture_from_parsed(parsed_lines)
-    timestamps = _interp_timestamps(typechars,
-                                    captures,
-                                    pps_events,
-                                    window_half_width=window_half_width)
-    return [(typechar, datetime.utcfromtimestamp(timestamp), payload)
-            for i, (typechar, _, payload) in enumerate(parsed_lines)
-            if np.isfinite(timestamp := timestamps[i])]
+    captures = _captures_from_parsed(parsed_lines)
+    captures_unwrapped = unwrap_uint32(captures)
+    captures_unwrapped -= captures_unwrapped[0]
+    if use_pps:
+        pps_events = _filter_pps_from_parsed(parsed_lines, captures_unwrapped)
+        timestamps = _interp_timestamps(captures_unwrapped, pps_events)
+        return [(typechar, timestamp, payload)
+                for i, (typechar, _, payload) in enumerate(parsed_lines)
+                if np.isfinite(timestamp := timestamps[i])]
+    else:
+        # TODO: unify the relative / absolute pipelines
+        return [(typechar, captures_unwrapped[i] / 80e6, payload)
+                for i, (typechar, _, payload) in enumerate(parsed_lines)
+                if typechar != 'p']
+
+
+def _captures_from_parsed(parsed_lines: list[tuple[str, int, Any]]):
+    captures = np.empty(len(parsed_lines), dtype=np.uint32)
+    for i, (_, capture, _) in enumerate(parsed_lines):
+        captures[i] = capture
+    return captures
 
 
 def _filter_pps_from_parsed(
-        parsed_lines: list[tuple[str, int, Any]]) -> np.ndarray:
-    pps_events = np.fromiter(chain.from_iterable(
-        (i, capture, timestamp)
-        for i, (typechar, capture, timestamp) in enumerate(parsed_lines)
-        if typechar == 'p'),
-        dtype=np.int64).reshape((-1, 3))
+        parsed_lines: list[tuple[str, int, Any]],
+        captures_unwrapped: np.ndarray) -> np.ndarray:
+    pps_events = np.array([
+        (i, captures_unwrapped[i], timestamp)
+        for i, (typechar, _, timestamp) in enumerate(parsed_lines)
+        if typechar == 'p'
+    ])
 
-    # make sure PPS unix timestamps are at least strictly sorted
+    # validate that PPS unix timestamps are monotonically increasing
     if not np.all(np.diff(pps_events[:, 2]) > 0):
         raise ValueError('PPS events out of order in input')
 
     return pps_events
 
 
-def _typechar_capture_from_parsed(parsed_lines: list[tuple[str, int, Any]]):
-    return (np.array([x for x, _, _ in parsed_lines]), np.array([y for _, y, _ in parsed_lines]))
-
-
-@numba.njit
-def _interp_timestamps(typechars,
-                       captures,
-                       pps_events: np.ndarray,
-                       window_half_width: int):
-    # TODO(summivox): more robust algorithm that takes care of long stretches of missing PPS
-    # For now, make sure the window is "reasonably sized", defined as spanning not across 32-bit
-    # counter overflow at the default clock rate of 80 MHz.
-    ROLLOVER_LIMIT_SEC = 2**32 / 80e6 / 4
-
-    n = len(typechars)
-    timestamps = np.zeros(n, dtype=np.double)
-    last_seen_pps_index = -1
-    window = pps_events[0:window_half_width + 1, :]
-    for i in range(n):
-        # update PPS interpolation window
-        if typechars[i] == 'p':
-            last_seen_pps_index = min(last_seen_pps_index + 1,
-                                      len(pps_events) - 1)
-            window_low = max(last_seen_pps_index - window_half_width, 0)
-            window_high = min(last_seen_pps_index + window_half_width + 1,
-                              len(pps_events))
-            window = pps_events[window_low:window_high, :]
-            # check window time span not too large to cause 32-bit counter overflow`
-            if window[-1, 2] - window[0, 2] > ROLLOVER_LIMIT_SEC:
-                raise ValueError('gap too large')
-            timestamps[i] = np.nan
-            continue
-
-        # discard any line not within the PPS window in the lines
-        if not window[0, 0] <= i <= window[-1, 0]:
-            timestamps[i] = np.nan
-            continue
-
-        # interpolate from rolling timestamp to unix timestamp
-        timestamps[i] = interp_rolling_uint32(
-            captures[i], window[:, 1], window[:, 2], extrapolate=False)
+def _interp_timestamps(captures_unwrapped: np.ndarray,
+                       pps_events: np.ndarray):
+    timestamps = interp1d(
+        pps_events[:, 1], pps_events[:, 2], fill_value='extrapolate')(captures_unwrapped)
+    for i, _, _ in pps_events:
+        timestamps[i] = np.nan
     return timestamps

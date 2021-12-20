@@ -5,6 +5,7 @@ from pathlib import Path
 import click
 import click_spinner
 import toml
+from tqdm import tqdm
 
 from ricetimer import DATA_PATH
 from ricetimer.logs.format import vbo as format_vbo
@@ -46,29 +47,33 @@ def vbo(src_dir: Path, output_file: Path, profile_name):
 @export.command()
 @click.option('-o', '--output', 'output_file', type=click.File(mode='w', encoding='utf8'))
 @click.option('-h/-H', '--header/--noheader', 'write_header', default=True)
+@click.option('--relative', is_flag=True)
 @click.argument('src_dir', type=click.Path(exists=True, file_okay=False, path_type=Path))
-def can(src_dir: Path, output_file: TextIOBase, write_header: bool):
+def can(src_dir: Path, output_file: TextIOBase, write_header: bool, relative: bool):
     if write_header:
         output_file.write('timestamp,id,dlc,data\n')
     count = 0
-    log_events = load_events(src_dir)
-    for typestr, timestamp, content in log_events:
+    log_events = load_events(src_dir, use_pps=not relative)
+    for typestr, timestamp, content in tqdm(log_events):
         if typestr != 'c':
             continue
         id, dlc, data = content
+        output_file.write(f'{timestamp:.6f},')
         # hack: ID within 11-bit range will be considered standard; otherwise extended
-        id_str = f'{id:03X}' if id <= 0x7ff else f'{id:08X}'
-        output_file.write(f'{timestamp.timestamp():.3f},{id_str},{dlc},{data.hex().upper()}\n')
+        if id < 0x7ff:
+            output_file.write(f'{id:03X},')
+        else:
+            output_file.write(f'{id:08X},')
+        output_file.write(f'{dlc},{data.hex().upper()}\n')
         count += 1
     click.echo(f'{count} CAN frames written.')
 
 
-def load_events(src_dir: Path):
+def load_events(src_dir: Path, use_pps=True):
     splits = find_log_files(src_dir)
     click.echo(f'found {len(splits)} log files in: {src_dir}')
     click.echo('loading log...')
-    with click_spinner.spinner():
-        log_events = ingest_log_lines(files_to_lines(splits))
+    log_events = ingest_log_lines(tqdm(files_to_lines(splits)), use_pps=use_pps)
     click.echo(f'{len(log_events)} events loaded.')
     return log_events
 

@@ -21,7 +21,7 @@ from ricetimer.logs.extract import extract_can_signals
 DBC_PATH = DATA_PATH / 'dbc'
 
 
-def tabulate_with_profile(events: list[tuple[str, datetime, Any]], profile):
+def tabulate_with_profile(events: list[tuple[str, float, Any]], profile):
     gnss_signals = extract_gnss_signals(events)
     raw_imu_signals = extract_raw_imu_signals(events)
 

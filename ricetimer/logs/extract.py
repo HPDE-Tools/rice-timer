@@ -2,15 +2,12 @@ from __future__ import annotations
 from dataclasses import dataclass, astuple
 from datetime import datetime
 import logging
-from typing import Any, Literal, Optional
+from typing import Any
 
 from cantools.database import Database, Message
-import numba
 import numpy as np
-import pandas as pd
 from pandas import DataFrame, Series
 import pynmea2
-import pytz
 
 
 KPH_IN_KNOT = 1.852
@@ -27,7 +24,7 @@ class GnssSignal:
     num_sats: float = 0
 
 
-def extract_gnss_signals(events: list[tuple[str, datetime, Any]]):
+def extract_gnss_signals(events: list[tuple[str, float, Any]]):
     # NOTE: GNSS sentences of different types that are transmitted together represent
     # a single data point at a single instant. Each group is led by its RMC sentence.
     signal_data = []
@@ -81,9 +78,9 @@ def extract_gnss_signals(events: list[tuple[str, datetime, Any]]):
         index='timestamp')
 
 
-def extract_raw_imu_signals(events: list[tuple[str, datetime, Any]]):
+def extract_raw_imu_signals(events: list[tuple[str, float, Any]]):
     raw_imu_events = [
-        (timestamp, *payload)
+        (datetime.utcfromtimestamp(timestamp), *payload)
         for typechar, timestamp, payload in events if typechar == 'i'
     ]
     if not raw_imu_events:
@@ -92,18 +89,18 @@ def extract_raw_imu_signals(events: list[tuple[str, datetime, Any]]):
     column_names = [f'imu{i}' for i in range(dims)]
     return DataFrame.from_records(
         raw_imu_events,
-        columns=('timestamp', *(f'imu{i}' for i in range(dims))),
+        columns=('timestamp', *column_names),
         index='timestamp')
 
 
 def extract_can_signals(can_db: Database,
                         signals_spec: list[tuple[str, str, str]],
-                        events: list[tuple[str, datetime, Any]]):
+                        events: list[tuple[str, float, Any]]):
     num_signals = len(signals_spec)
     if num_signals == 0:
         return []
     decode_dict = _build_can_decode_dict(can_db, signals_spec)
-    signals_data: list[tuple[float, float]] = [[] for _ in range(num_signals)]
+    signals_data: list[tuple[datetime, float]] = [[] for _ in range(num_signals)]
     fail_to_decode_ids = set()
     for typechar, timestamp, payload in events:
         if typechar != 'c':
@@ -124,7 +121,7 @@ def extract_can_signals(can_db: Database,
         for sig_name, sig_value in signals.items():
             try:
                 signals_data[signal_dict[sig_name]].append(
-                    (timestamp, sig_value))
+                    (datetime.utcfromtimestamp(timestamp), sig_value))
             except KeyError:
                 continue
 
