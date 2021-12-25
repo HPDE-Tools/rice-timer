@@ -26,6 +26,7 @@
 #include "app/logger_instance.hpp"
 #include "app/sd_card_instance.hpp"
 #include "common/macros.hpp"
+#include "common/perf.hpp"
 #include "common/strings.hpp"
 #include "common/utils.hpp"
 #include "ui/controller.hpp"
@@ -34,10 +35,14 @@
 namespace {
 constexpr char TAG[] = "main";
 
-constexpr int kCanaryPeriodMs = 991;
+// constexpr int kCanaryPeriodMs = 991;
 // constexpr int kCanaryPeriodMs = 9973;
+constexpr int kCanaryPeriodMs = 5009;
 
 }  // namespace
+
+DECLARE_PERF(ui_controller);
+DECLARE_PERF(onboard_analysis);
 
 using namespace app;  // TODO: move this file altogether
 
@@ -86,12 +91,16 @@ TaskHandle_t g_canary_task{};
 void CanaryTask(void* /*unused*/) {
   TickType_t last_wake_tick = xTaskGetTickCount();
   while (true) {
+#if 0
     ESP_LOGW(
         "canary",
         "loss: g=%d i=%d c=%d",
         ui::g_model.lost.gps.load(),
         ui::g_model.lost.imu.load(),
         ui::g_model.lost.can.load());
+#endif
+    PERF_ui_controller.Dump();
+    PERF_onboard_analysis.Dump();
 #if 0
     LOG_WATER_MARK("canary", g_canary_task);
     LOG_WATER_MARK_P("logger", g_logger);
@@ -126,7 +135,7 @@ extern "C" void app_main(void) {
       PRO_CPU_NUM);
 #endif
 
-#if 0
+#if 1
   xTaskCreatePinnedToCore(
       CanaryTask,
       "canary",

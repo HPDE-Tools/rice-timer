@@ -13,6 +13,7 @@
 #include "scope_guard/scope_guard.hpp"
 
 #include "common/macros.hpp"
+#include "common/perf.hpp"
 #include "common/task.hpp"
 #include "common/times.hpp"
 #include "device/capture_manager.hpp"
@@ -22,6 +23,8 @@
 #include "math/segment2.hpp"
 #include "priorities.hpp"
 #include "ui/model.hpp"
+
+DEFINE_PERF(onboard_analysis);
 
 namespace analysis {
 
@@ -63,22 +66,16 @@ esp_err_t OnboardAnalysis::Start() {
 }
 
 void OnboardAnalysis::Run() {
-  auto capturer = CaptureManager::GetInstance(MCPWM_UNIT_0)->GetChannel(MCPWM_SELECT_CAP2);
   while (true) {
     ParsedNmea nmea{};
     xQueueReceive(gps_queue_, &nmea, portMAX_DELAY);
-    const auto tick_begin = capturer.TriggerNow();  // DEBUG
 
     const std::optional<GpsPose> gps_pose = gps_collector_.Update(nmea);
     if (!gps_pose || !gps_pose->is_valid) {
       continue;
     }
 
-    // DEBUG
-    SCOPE_EXIT {
-      const auto tick_end = capturer.TriggerNow();
-      // fmt::print("{:.3}\n", SignedMinus(tick_end, tick_begin) * double{1000.0 / APB_CLK_FREQ});
-    };
+    SCOPE_PERF(onboard_analysis);
 
     const bool new_map_loaded = DetectAndLoadMap(*gps_pose);
     const map::Map* map = map_.get();

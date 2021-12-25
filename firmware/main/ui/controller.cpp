@@ -12,6 +12,7 @@
 #include "app/logger_instance.hpp"
 #include "common/button_helper.hpp"
 #include "common/macros.hpp"
+#include "common/perf.hpp"
 #include "common/times.hpp"
 #include "priorities.hpp"
 #include "ui/display.hpp"
@@ -24,6 +25,8 @@
 #include "ui/view/track_req_screen.hpp"
 #include "ui/view/track_sel_screen.hpp"
 #include "ui/view/track_timer_screen.hpp"
+
+DEFINE_PERF(ui_controller);
 
 namespace ui {
 
@@ -125,20 +128,18 @@ void Controller::Run() {
   };
 
   while (true) {
-    const TimeUnixWithUs render_begin_time = NowUnixWithUs();
-    // gpio_set_level(GPIO_NUM_17, 1);  // DEBUG
+    vTaskDelayUntil(&last_wake_time, pdMS_TO_TICKS(kRefreshPeriodMs));
+    SCOPE_PERF(ui_controller);
 
     // HACK: buttons 1 and 3 are also flipped; not sure where is the best place to put this
     const ButtonHelper::Result button1 = button1_helper.Update(GetButtonState(flipped_ ? 3 : 1));
     const ButtonHelper::Result button3 = button3_helper.Update(GetButtonState(flipped_ ? 1 : 3));
     switch (button1) {
       case ButtonHelper::kShortClick: {
-        ESP_LOGI(TAG, "btn1 short click");
         TryStartLogger();
         break;
       }
       case ButtonHelper::kLongHoldBegin: {
-        ESP_LOGI(TAG, "btn1 long hold begin");
         StopLogger();
         break;
       }
@@ -147,15 +148,12 @@ void Controller::Run() {
     }
     switch (button3) {
       case ButtonHelper::kShortClick: {
-        ESP_LOGI(TAG, "btn3 short click");
         if (IsOnTrack()) {
           break;
         }
         [[fallthrough]];
       }
-      case ButtonHelper::kLongHold:
-      case ButtonHelper::kLongClick: {
-        ESP_LOGI(TAG, "btn3 click");
+      case ButtonHelper::kLongHoldBegin: {
         loaded_screen_ = idle_screen_->Load();
         break;
       }
@@ -168,27 +166,7 @@ void Controller::Run() {
     }
 
     loaded_screen_->Render(g_model);
-
-    // gpio_set_level(GPIO_NUM_17, 0);  // DEBUG
-    const TimeUnixWithUs lv_begin_time = NowUnixWithUs();
-    // gpio_set_level(GPIO_NUM_16, 1);  // DEBUG
-
     lv_task_handler();
-
-    // gpio_set_level(GPIO_NUM_16, 0);  // DEBUG
-    const TimeUnixWithUs end_time = NowUnixWithUs();
-
-    static int k = 0;
-    if (++k == 10) {
-      k = 0;
-      ESP_LOGD(
-          TAG,
-          "%lld (render) + %lld (lv) = %lld (total)",
-          lv_begin_time - render_begin_time,
-          end_time - lv_begin_time,
-          end_time - render_begin_time);
-    }
-    vTaskDelayUntil(&last_wake_time, pdMS_TO_TICKS(kRefreshPeriodMs));
   }
 }
 

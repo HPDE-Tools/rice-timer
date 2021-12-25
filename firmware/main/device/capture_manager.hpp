@@ -28,6 +28,7 @@ class CaptureManager {
       Callback callback);
   void Unsubscribe(mcpwm_capture_signal_t signal);
   uint32_t TriggerNow(mcpwm_capture_signal_t signal);
+  uint32_t TriggerNowThreadUnsafe(mcpwm_capture_signal_t signal);
   static uint32_t GetNominalFreqHz();
 
   CaptureChannel GetChannel(mcpwm_capture_signal_t signal);
@@ -62,6 +63,7 @@ class CaptureChannel {
   }
   void Unsubscribe() const { manager_->Unsubscribe(signal_); }
   uint32_t TriggerNow() const { return manager_->TriggerNow(signal_); }
+  uint32_t TriggerNowThreadUnsafe() const { return manager_->TriggerNowThreadUnsafe(signal_); }
   static uint32_t GetNominalFreqHz() { return CaptureManager::GetNominalFreqHz(); }
 
   mcpwm_unit_t unit() const { return manager_->unit(); }

@@ -27,6 +27,8 @@ CaptureManager* CaptureManager::GetInstance(mcpwm_unit_t unit) {
       {MCPWM_UNIT_1, &MCPWM1},
   };
   CHECK(0 <= unit && unit < MCPWM_UNIT_MAX);
+  // HACK: enable the module in case only software capture is intended
+  periph_module_enable(static_cast<periph_module_t>(static_cast<int>(PERIPH_PWM0_MODULE) + unit));
   return &instances[unit];
 }
 
@@ -82,6 +84,12 @@ void CaptureManager::Unsubscribe(mcpwm_capture_signal_t signal) {
 uint32_t CaptureManager::TriggerNow(mcpwm_capture_signal_t signal) {
   vPortEnterCritical(&lock_);
   SCOPE_EXIT { vPortExitCritical(&lock_); };
+  dev_->cap_cfg_ch[signal].en = true;
+  dev_->cap_cfg_ch[signal].sw = true;
+  return dev_->cap_val_ch[signal];
+}
+
+uint32_t CaptureManager::TriggerNowThreadUnsafe(mcpwm_capture_signal_t signal) {
   dev_->cap_cfg_ch[signal].en = true;
   dev_->cap_cfg_ch[signal].sw = true;
   return dev_->cap_val_ch[signal];
