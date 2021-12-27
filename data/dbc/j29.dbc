@@ -36,7 +36,6 @@ BS_:
 BU_: DME BDC KOMBI
 
 
-
 BO_ 417 PT_1A1: 5 Vector__XXX
  SG_ checksum_1A1 : 0|8@1+ (1,0) [0|0] "" Vector__XXX
  SG_ rolling_counter_1A1 : 8|4@1+ (1,0) [0|14] "" Vector__XXX
@@ -47,8 +46,8 @@ BO_ 165 PT_0A5: 8 DME
  SG_ checksum_0A5 : 0|8@1+ (1,0) [0|0] "" Vector__XXX
  SG_ rolling_counter_0A5 : 8|4@1+ (1,0) [0|14] "" Vector__XXX
  SG_ maybe_const_0_0A5 : 12|4@1+ (1,0) [0|0] "" Vector__XXX
- SG_ Engine_Torque_Estimate_0A5 : 16|12@1+ (1,-2000) [0|0] "" Vector__XXX
- SG_ Engine_Torque_Request_0A5 : 28|12@1+ (1,-2000) [0|0] "" Vector__XXX
+ SG_ Engine_Torque_Estimate_0A5 : 16|12@1+ (0.48828125,-1000) [0|0] "N*m" Vector__XXX
+ SG_ Engine_Torque_Request_0A5 : 28|12@1+ (0.48828125,-1000) [0|0] "N*m" Vector__XXX
  SG_ Engine_Speed_0A5 : 40|16@1+ (0.25,0) [0|10000] "RPM" Vector__XXX
  SG_ maybe_const_81_0A5 : 56|8@1+ (1,0) [0|0] "" Vector__XXX
 
@@ -127,9 +126,8 @@ CM_ SG_ 417 rolling_counter_1A1 "step 1, mod 0xE";
 CM_ BO_ 165 "100 Hz; complete";
 CM_ SG_ 165 rolling_counter_0A5 "step 1, mod 0xE
 ";
-CM_ SG_ 165 Engine_Torque_Estimate_0A5 "unknown unit";
-CM_ SG_ 165 Engine_Torque_Request_0A5 "unknown unit
-";
+CM_ SG_ 165 Engine_Torque_Estimate_0A5 "scaling is estimated (1000/2048)";
+CM_ SG_ 165 Engine_Torque_Request_0A5 "scaling is estimated (1000/2048)";
 CM_ BO_ 217 "100 Hz";
 CM_ SG_ 217 rolling_counter_0D9 "step 1, mod 0xE";
 CM_ SG_ 217 Throttle_Position_0D9 "
