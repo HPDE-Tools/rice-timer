@@ -7,7 +7,7 @@ import click_spinner
 import toml
 from tqdm import tqdm
 
-from ricetimer import DATA_PATH
+from ricetimer.paths import DATA_PATH
 from ricetimer.logs.format import vbo as format_vbo
 from ricetimer.logs.ingest import ingest_log_lines
 from ricetimer.logs.processing import tabulate_with_profile

@@ -12,7 +12,7 @@ from pandas import DataFrame, Series
 import pynmea2
 import scipy.interpolate
 
-from ricetimer import DATA_PATH
+from ricetimer.paths import DATA_PATH
 from ricetimer.logs.extract import extract_gnss_signals
 from ricetimer.logs.extract import extract_raw_imu_signals
 from ricetimer.logs.extract import extract_can_signals
