@@ -13,6 +13,7 @@ enum CheckpointType : byte {
   Finish,
   Split,
   Node,
+  Junction,
 }
 
 table Map {
@@ -39,6 +40,8 @@ table Checkpoint {
 table Track {
   ref_line:[Vec2F];
   boundary:[IntervalF];
+  from_checkpoint_index:int32;
+  to_checkpoint_index:int32;
 }
 
 root_type Map;

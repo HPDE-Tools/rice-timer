@@ -1,0 +1,73 @@
+[header]
+name = "Laguna Seca"
+type = "Circuit"
+origin = {lat = 36.5864582, lon = -121.7566371}
+timezone = "America/Los_Angeles"
+
+[osm]
+file = "laguna-seca.osm"
+
+
+######## Main track ########
+
+[[checkpoints]]
+type = "StartFinish"
+description = "Main start finish"
+position = {lat = 36.5864582, lon = -121.7566371}
+heading_tolerance_deg = 40.0
+width = 15.0
+
+[[checkpoints]]
+type = "Split"
+description = "Brake zone before T2"
+position = {lat = 36.583091, lon = -121.757756}
+heading_tolerance_deg = 40.0
+width = 15.0
+
+[[checkpoints]]
+type = "Split"
+description = "Crest at T7 (brake zone before the Corkscrew)"
+position = {lat = 36.583976, lon = -121.749215}
+heading_tolerance_deg = 40.0
+width = 20.0
+
+[[checkpoints]]
+type = "Split"
+description = "Brake zone before T11"
+position = {lat = 36.588283, lon = -121.754174}
+heading_tolerance_deg = 40.0
+width = 18.0
+
+
+######## Pit lane ########
+
+[[checkpoints]]
+type = "Junction"
+description = "Pit lane entrance between T10 and T11"
+position = {lat = 36.587152, lon = -121.753430}
+
+[[checkpoints]]
+type = "Node"
+description = "Pit lane entrance between T10 and T11 (after junction)"
+position = {lat = 36.588210, lon = -121.754343}
+heading_tolerance_deg = 45.0
+width = 10.0
+
+[[checkpoints]]
+type = "Node"
+description = "Pit lane next to start/finish"
+position = {lat = 36.586401, lon = -121.756531}
+heading_tolerance_deg = 45.0
+width = 10.0
+
+[[checkpoints]]
+type = "Node"
+description = "Pit lane exit after T2 (before junction)"
+position = {lat = 36.582807, lon = -121.757083}
+heading_tolerance_deg = 45.0
+width = 10.0
+
+[[checkpoints]]
+type = "Junction"
+description = "Pit lane exit after T2"
+position = {lat = 36.583121, lon = -121.756978}
