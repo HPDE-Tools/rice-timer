@@ -1,0 +1,115 @@
+[header]
+name = "Thunderhill"
+type = "Circuit"
+origin = { lat = 39.5384764, lon = -122.3311785 }
+timezone = "America/Los_Angeles"
+
+[osm]
+file = "thunderhill.osm"
+
+
+######## East (Bypass / Cyclone) ########
+
+[[checkpoints]]
+type = "StartFinish"
+description = "East start finish"
+position = { lat = 39.5384764, lon = -122.3311780 }
+heading_tolerance_deg = 40.0
+width_left = 10.0
+width_right = 15.0
+
+[[checkpoints]]
+type = "Split"
+description = "T2 exit"
+position = { lat = 39.5374653, lon = -122.3274070 }
+heading_tolerance_deg = 50.0
+width = 20.0
+
+[[checkpoints]]
+type = "Junction"
+description = "Junction before T5 Bypass/Cyclone split"
+position = { lat = 39.5403054, lon = -122.3289480 }
+
+[[checkpoints]]
+type = "Node"
+description = "T5 Bypass"
+position = { lat = 39.5408361, lon = -122.3295240 }
+heading_tolerance_deg = 50.0
+width = 20.0
+
+[[checkpoints]]
+type = "Node"
+description = "T5 Cyclone"
+position = { lat = 39.541024, lon = -122.329219 }
+heading_tolerance_deg = 50.0
+width = 20.0
+
+[[checkpoints]]
+type = "Junction"
+description = "Junction after T5 Bypass/Cyclone split"
+position = { lat = 39.5414300, lon = -122.3299620 }
+
+[[checkpoints]]
+type = "Split"
+description = "T6 entry"
+position = { lat = 39.5425811, lon = -122.3291470 }
+heading_tolerance_deg = 50.0
+width = 20.0
+
+[[checkpoints]]
+type = "Split"
+description = "Brake zone before T9"
+position = { lat = 39.5432785, lon = -122.3356020 }
+heading_tolerance_deg = 40.0
+width = 20.0
+
+[[checkpoints]]
+type = "Junction"
+description = "East-to-West fork at East T8-T9"
+position = { lat = 39.5431037, lon = -122.3358210 }
+
+[[checkpoints]]
+type = "Node"
+description = "T9 apex"
+position = { lat = 39.5425616, lon = -122.3363160 }
+heading_tolerance_deg = 50.0
+width = 20.0
+
+[[checkpoints]]
+type = "Node"
+description = "Before West-to-East merge at East T9-T10"
+position = { lat = 39.5402470, lon = -122.3356440 }
+heading_tolerance_deg = 40.0
+width = 20.0
+
+[[checkpoints]]
+type = "Junction"
+description = "West-to-East merge at East T9-T10"
+position = { lat = 39.5395953, lon = -122.3355890 }
+
+[[checkpoints]]
+type = "Split"
+description = "Brake zone before T10"
+position = { lat = 39.5388263, lon = -122.3354810 }
+
+[[checkpoints]]
+type = "Split"
+description = "Brake zone before T14"
+position = { lat = 39.5430655, lon = -122.3328050 }
+
+
+######## East Pit Lane ########
+# NOTE: Because East pit lane is so close to the main straight (T15-start-T1)
+# while being mostly parallel to it, we will not add it as a branch road.
+
+# [[checkpoints]]
+# type = "Junction"
+# description = "East pit lane entrance at T14-T15"
+# position = { lat = 39.5440780, lon = -122.3323860 }
+
+# [[checkpoints]]
+# type = "Junction"
+# description = "East pit lane exit after T1"
+# position = { lat = 39.536351, lon = -122.330320 }
+
+
