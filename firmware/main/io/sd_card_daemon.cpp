@@ -178,7 +178,6 @@ int32_t SdCardDaemon::GetFreeSpaceSectors() {
 }
 
 int64_t SdCardDaemon::GetFreeSpaceBytes() {
-  // NOTE(summivox): reason this is not implemented thru GetFreeSpaceSectors: we need `fatfs` too.
   if (!sd_card_) {
     return -1;
   }
