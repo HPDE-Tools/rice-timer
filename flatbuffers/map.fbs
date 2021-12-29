@@ -34,7 +34,9 @@ table Checkpoint {
   position:Vec2F;  // middle point of the checkpoint line segment
   heading_deg:float;  // 0 deg = east, 90 deg = north
   heading_tolerance_deg:float;  // accepted heading range: [h0 - dh, h0 + dh]
-  width:float;  // length of the checkpoint line segment
+  width:float = 0.0;  // length of the checkpoint line segment (both left and right)
+  width_left:float = 0.0;  // alternatively, width to the left and right separately
+  width_right:float = 0.0;  // alternatively, width to the left and right separately
 }
 
 table Track {
