@@ -73,14 +73,11 @@ esp_err_t SendNmea(uart_port_t uart_num, const std::string_view payload) {
 
 std::optional<TimeUnixWithUs> GetTimestampFromMinmeaDateTime(
     const minmea_date& date, const minmea_time& time) {
-  std::optional<TimeUnixWithUs> result{};
   timespec ts{};
   if (minmea_gettime(&ts, &date, &time) == 0) {
-    result.emplace();
-    result->tv_sec = ts.tv_sec;
-    result->tv_usec = ts.tv_nsec / 1000;
+    return ToUnix(ts);
   }
-  return result;
+  return {};
 }
 
 std::optional<TimeUnixWithUs> GetTimeFromNmea(const ParsedNmea& nmea) {

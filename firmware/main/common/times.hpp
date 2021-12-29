@@ -67,6 +67,12 @@ inline TimeUnixWithUs ToUnix(TimeZulu t_zulu, int32_t dt_us) {
       .tv_usec = dt_us,
   };
 }
+inline TimeUnixWithUs ToUnix(const timespec& t) {
+  return {
+      .tv_sec = t.tv_sec,
+      .tv_usec = t.tv_nsec / 1000,
+  };
+}
 
 inline TimeZulu ToZulu(TimeUnix t_unix) { return fmt::gmtime(t_unix); }
 inline TimeZulu ToZulu(TimeUnixWithUs t_unix) { return fmt::gmtime(t_unix.tv_sec); }
