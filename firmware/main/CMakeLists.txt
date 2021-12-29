@@ -43,9 +43,29 @@ set(srcs
 file(GLOB fonts "ui/fonts/*.c")
 file(GLOB my_fbs_src "${COMPONENT_DIR}/../../flatbuffers/*.fbs")
 
+set(requires
+# System
+esp_adc_cal
+fatfs
+nvs_flash
+sdmmc
+vfs
+
+# Project
+eigen
+flatbuffers
+fmtlib
+geographiclib
+lvgl
+minmea
+ringbuf
+scope_guard
+)
+
 idf_component_register(
     SRCS ${srcs} ${fonts}
     INCLUDE_DIRS "."
+    REQUIRES ${requires}
 )
 
 target_compile_options(${COMPONENT_LIB} PRIVATE -std=gnu++2a -Wno-deprecated-declarations -Wno-multichar)
