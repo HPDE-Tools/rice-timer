@@ -32,7 +32,7 @@ void HandleSdCardStateChange(bool mounted) {
       ESP_LOGE(TAG, "logger cannot be started: %s", esp_err_to_name(err));
     }
 #endif
-    map::MapIndex::GetInstance()->Load(SD_FATFS_ROOT "/map");
+    map::MapIndex::GetInstance()->Load(SD_VFS_ROOT "/map");  // TODO: path priority
   } else {
     ui::g_model.sd_card.reset();
     StopLogging();

@@ -3,6 +3,12 @@
 
 #pragma once
 
+extern "C" {
+#include <dirent.h>
+#include <sys/stat.h>
+#include <sys/types.h>
+}
+
 #include <cstdint>
 #include <cstdio>
 #include <initializer_list>
@@ -32,21 +38,45 @@ constexpr int kSdSectorSize = 512;
 constexpr char kFatfsRoot[] = "0:";
 constexpr char kVfsRoot[] = CONFIG_MOUNT_ROOT;
 
+/// Implementation for `DirIter`
 class DirIterImpl {
  public:
-  using Item = FILINFO*;
+  using Item = dirent*;
   DirIterImpl() = default;
-  DirIterImpl(const char* path);
-  DirIterImpl(const std::string& path) : DirIterImpl(path.c_str()) {}
-  ~DirIterImpl();
+  DirIterImpl(const char* path) : dir_(opendir(path)) {}
+  ~DirIterImpl() {
+    if (dir_) {
+      (void)closedir(dir_);
+    }
+  }
 
-  std::optional<FILINFO*> Next();
+  std::optional<dirent*> Next() {
+    if (!dir_) {
+      return std::nullopt;
+    }
+    dirent* p = readdir(dir_);
+    if (p) {
+      return p;
+    }
+    return std::nullopt;
+  }
+
+  NON_COPYABLE_NOR_MOVABLE(DirIterImpl)
 
  private:
-  std::optional<FF_DIR> dir_;
-  FILINFO filinfo_;
+  DIR* dir_;
 };
-using DirIter = RustIter<DirIterImpl>;
+
+/// Iterator/Iterable for listing items in an FS dir. Wraps over `opendir` and `readdir`.
+///
+/// \see DirIterImpl
+class DirIter : public RustIter<DirIterImpl> {
+ public:
+  /// \param path   absolute path string; must be null-terminated
+  explicit DirIter(const char* path) : RustIter<DirIterImpl>(path) {}
+  /// \param path   absolute path string
+  explicit DirIter(const std::string& path) : DirIter(path.c_str()) {}
+};
 
 using OwnedFile = std::unique_ptr<FILE, decltype(&fclose)>;
 

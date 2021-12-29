@@ -25,15 +25,18 @@ MapIndex* MapIndex::GetInstance() {
 esp_err_t MapIndex::Load(std::string_view map_data_path) {
   map_data_path_ = map_data_path;
   std::string file_content;  // reuse internal buffer
-  for (auto ff_info : io::DirIter(map_data_path_.c_str())) {
-    std::string path = SD_VFS_ROOT + map_data_path_.substr(2) + "/" + ff_info->fname;  // HACK
-    ESP_LOGI(TAG, "read file: %s", path.c_str());
-    TRY(io::ReadBinaryFileToString(path, &file_content));
+  for (dirent* file_info : io::DirIter(map_data_path_.c_str())) {
+    if (file_info->d_type != DT_REG) {
+      continue;
+    }
+    std::string file_path = map_data_path_ + '/' + file_info->d_name;
+    ESP_LOGI(TAG, "read file: %s", file_path.c_str());
+    TRY(io::ReadBinaryFileToString(file_path, &file_content));
     ESP_LOG_BUFFER_HEXDUMP(TAG, file_content.data(), file_content.size(), ESP_LOG_VERBOSE);
 
     const ricetimer::proto::Map* map = ricetimer::proto::GetMap(file_content.data());
     Entry& entry = entries_.emplace_back();
-    entry.path = std::move(path);
+    entry.path = std::move(file_path);
     entry.name = map->header()->name()->str();
     entry.origin_latlon << map->header()->origin()->lat(), map->header()->origin()->lon();
     entry.type = map->header()->type();
