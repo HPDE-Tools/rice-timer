@@ -17,7 +17,6 @@ extern "C" {
 #include "driver/gpio.h"
 #include "esp_vfs.h"
 #include "esp_vfs_fat.h"
-#include "flatbuffers/util.h"
 
 #include "common/macros.hpp"
 #include "common/times.hpp"
