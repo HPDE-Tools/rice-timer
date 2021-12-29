@@ -48,8 +48,6 @@ class OnboardAnalysis : public Task {
   std::unique_ptr<CheckpointDetector> checkpoint_detector_ = nullptr;
   LapTimer lap_timer_{};
 
-  // TODO: ghetto localizer buffer -> "Tail"
-
   // makeshift map region detection states
   std::optional<GpsPose> last_map_detect_pose_{};
 
