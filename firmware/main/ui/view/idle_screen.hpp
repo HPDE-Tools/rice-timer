@@ -120,7 +120,7 @@ struct IdleScreen : public Screen {
     }
     last_time = now;
 
-    const TimeZulu t = NowZulu();
+    const TimeParts t = NowParts();
 
     std::string sd_status{};
     std::string logger_status{};

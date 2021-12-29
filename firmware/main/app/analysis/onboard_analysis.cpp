@@ -101,7 +101,7 @@ void OnboardAnalysis::Run() {
     if (!detect_result) {
       continue;
     }
-    const TimeZulu cal = ToZulu(static_cast<time_t>(detect_result->timestamp_ms / 1000));
+    const TimeParts cal = ToParts(static_cast<time_t>(detect_result->timestamp_ms / 1000));
     const auto* checkpoint = (*map->checkpoints())[detect_result->checkpoint_index];
 
     fmt::print(

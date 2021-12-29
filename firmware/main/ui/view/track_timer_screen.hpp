@@ -44,7 +44,7 @@ struct TrackTimerScreen : public Screen {
   virtual void Render(const Model& model) {
     const TimeUnixWithUs now = NowUnixWithUs();
     const int64_t now_ms = ToMilliseconds(now);
-    const TimeZulu now_cal = ToZulu(now);
+    const TimeParts now_cal = ToParts(now);
 
     std::string logger_status{};
     if (model.sd_card) {
