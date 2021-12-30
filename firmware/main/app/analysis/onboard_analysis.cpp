@@ -45,7 +45,6 @@ constexpr int kPoseHistoryDepth = 10;
 OnboardAnalysis::OnboardAnalysis()
     : pose_history_(kPoseHistoryDepth),
       gps_queue_(CHECK_NOTNULL(xQueueCreate(kOnboardAnalysisGpsQueueSize, sizeof(ParsedNmea)))) {
-  map_index_ = map::MapIndex::GetInstance();
   localizer_ = std::make_unique<l10n::Localizer>();
   checkpoint_detector_ = std::make_unique<CheckpointDetector>();
 }
@@ -132,7 +131,8 @@ void OnboardAnalysis::Run() {
 }
 
 bool OnboardAnalysis::DetectAndLoadMap(const GpsPose& pose) {
-  if (map_index_->entries().empty()) {
+  auto map_index = map::MapIndex::GetInstance();
+  if (map_index->entries().empty()) {
     // TODO: properly deal with delayed loads
     ESP_LOGE(TAG, "DetectAndLoadMap empty");
     return false;
@@ -152,7 +152,7 @@ bool OnboardAnalysis::DetectAndLoadMap(const GpsPose& pose) {
   }
   last_map_detect_pose_ = pose;
 
-  auto [entry, distance] = map_index_->GetNearestMap(pose.llh.head<2>());
+  auto [entry, distance] = map_index->GetNearestMap(pose.llh.head<2>());
   if (!entry || entry->name == map_name_ || distance > kMapDetectMaxRadiusM) {
     return false;
   }

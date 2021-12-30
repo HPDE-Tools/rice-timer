@@ -15,11 +15,11 @@ namespace {
 constexpr char TAG[] = "map_index";
 }  // namespace
 
-MapIndex::MapIndex() = default;
+MapIndex::MapIndex() : mutex_(xSemaphoreCreateMutex()){};
 
-MapIndex* MapIndex::GetInstance() {
-  static MapIndex instance{};
-  return &instance;
+RustMutexGuard<MapIndex> MapIndex::GetInstance() {
+  static RustMutex<MapIndex> instance{};
+  return instance.Lock();
 }
 
 esp_err_t MapIndex::Load(std::string_view map_data_path) {

@@ -10,6 +10,7 @@
 #include "Eigen/Core"
 #include "esp_err.h"
 
+#include "common/mutex.hpp"
 #include "proto/map_generated.h"
 
 namespace map {
@@ -23,7 +24,9 @@ class MapIndex {
     Eigen::Vector2d origin_latlon;
     MapType type;
   };
-  static MapIndex* GetInstance();
+
+  friend class RustMutex<MapIndex>;
+  static RustMutexGuard<MapIndex> GetInstance();
 
   const std::vector<Entry>& entries() const { return entries_; }
 
@@ -37,6 +40,8 @@ class MapIndex {
   std::string map_data_path_;
 
   std::vector<Entry> entries_;
+
+  SemaphoreHandle_t mutex_{};
 
   MapIndex();
 };
