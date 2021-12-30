@@ -29,10 +29,13 @@ void CheckpointDetector::SetMap(const map::Map* map) {
     const auto* checkpoint = checkpoints[i];
     const Eigen::Vector2f center = math::ToEigen(*checkpoint->position());
     const float heading = math::DegToRad(checkpoint->heading_deg());
-    const float half_width = checkpoint->width() * 0.5f;
-    const Eigen::Vector2f center_to_left{-sin(heading) * half_width, cos(heading) * half_width};
-    const Eigen::Vector2f left{center + center_to_left};
-    const Eigen::Vector2f right{center - center_to_left};
+    const float width_left =
+        checkpoint->width_left() > 0 ? checkpoint->width_left() : checkpoint->width() * 0.5f;
+    const float width_right =
+        checkpoint->width_right() > 0 ? checkpoint->width_right() : checkpoint->width() * 0.5f;
+    const Eigen::Vector2f center_to_left_dir{-sin(heading), cos(heading)};
+    const Eigen::Vector2f left{center + center_to_left_dir * width_left};
+    const Eigen::Vector2f right{center - center_to_left_dir * width_right};
     segments_.emplace_back(left, right);
     centers_.col(i) = center;
 

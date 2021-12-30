@@ -162,7 +162,7 @@ class Logger : public Task {
   IRAM_ATTR Error WriteIncomingLine(std::string_view line);
   Error FlushWriteBuf(bool sync);
 
-  NON_COPYABLE_NOR_MOVABLE(Logger)
+  NOT_COPYABLE_NOR_MOVABLE(Logger)
 };
 
 }  // namespace io

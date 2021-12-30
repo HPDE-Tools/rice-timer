@@ -27,7 +27,7 @@ class LineBufferMpsc {
     std::string_view line_;
     LineBufferMpsc* buf_;
 
-    NON_COPYABLE_NOR_MOVABLE(LineGuard)
+    NOT_COPYABLE_NOR_MOVABLE(LineGuard)
   };
 #endif
 

@@ -61,7 +61,7 @@ class DirIterImpl {
     return std::nullopt;
   }
 
-  NON_COPYABLE_NOR_MOVABLE(DirIterImpl)
+  NOT_COPYABLE_NOR_MOVABLE(DirIterImpl)
 
  private:
   DIR* dir_;

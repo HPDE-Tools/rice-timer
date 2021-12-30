@@ -63,12 +63,6 @@
     xx;                                                                        \
   })
 
-/// Place this macro inside a class to prevent instances of the class from being copied or moved.
-#define NON_COPYABLE_NOR_MOVABLE(T)    \
-  T(T const&) = delete;                \
-  void operator=(T const& t) = delete; \
-  T(T&&) = delete;
-
 /// Implement factory pattern with parameterized ctor and `esp_err_t Setup()`
 #define DEFINE_CREATE(CLASS)                                         \
   template <typename... T>                                           \
