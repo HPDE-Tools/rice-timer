@@ -60,6 +60,7 @@ lvgl
 minmea
 ringbuf
 scope_guard
+unity
 )
 
 idf_component_register(

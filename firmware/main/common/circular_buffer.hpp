@@ -6,6 +6,7 @@
 #include <memory>
 
 #include "fmt/core.h"
+#include "fmt/format.h"
 
 #include "common/macros.hpp"
 #include "common/polyfill.hpp"
@@ -76,11 +77,7 @@ class CircularBuffer {
   void Dump(bool dump_data = true) {
     fmt::print("Circular{{m={} n={} f={} b={}", capacity_, size_, front_i_, back_i_);
     if (dump_data) {
-      fmt::print(" data={{");
-      for (int i = 0; i < capacity_; i++) {
-        fmt::print("{},", data_[i]);
-      }
-      fmt::print("}}");
+      fmt::print(" data={{{}}}", fmt::join(data_.get(), data_.get() + capacity_, ", "));
     }
     fmt::print("}}\n");
   }

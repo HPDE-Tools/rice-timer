@@ -6,7 +6,6 @@ esptool_py
 main
 )
 
+set(TEST_COMPONENTS main)
 include($ENV{IDF_PATH}/tools/cmake/project.cmake)
 project(rice-timer-firmware)
-
-# target_link_libraries(${project_elf} stdc++fs)  # this does not work (yet)

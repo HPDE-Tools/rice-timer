@@ -3,7 +3,11 @@
 
 #include "common/circular_buffer.hpp"
 
+#include "fmt/core.h"
+
 #include "unity.h"
+
+using fmt::print;
 
 TEST_CASE("CircularBuffer - basic integer", "[common]") {
   CircularBuffer<int> q(5);
@@ -61,6 +65,8 @@ TEST_CASE("CircularBuffer - basic integer", "[common]") {
   TEST_ASSERT(q.front() == 7);
 }
 
+#if 0
+
 class A {
  public:
   A() { print("A() -- {}\n", x_); }
@@ -91,8 +97,9 @@ class A {
   double x_;
 };
 
-void TestClass() {
+TEST_CASE("CircularBuffer - ctor & dtor", "[common]") {
   CircularBuffer<A> q(3);
+  print("--- ready ---\n");
   q.Dump();
 
   q.emplace_back(1.1);
@@ -101,6 +108,7 @@ void TestClass() {
   q.Dump();
   q.emplace_back(1.3);
   q.Dump();
+  return;
   q.emplace_back(2.1);
   q.Dump();
   print("--- push_back ---\n");
@@ -114,3 +122,4 @@ void TestClass() {
   q.Dump();
   TEST_ASSERT(double(popped) == 2.1);
 }
+#endif

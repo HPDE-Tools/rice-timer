@@ -10,13 +10,12 @@
 #include <string_view>
 
 #include "driver/gpio.h"
-#include "driver/twai.h"
-#include "esp_freertos_hooks.h"
+#include "esp_task_wdt.h"
 #include "fmt/chrono.h"
 #include "fmt/core.h"
 #include "freertos/FreeRTOS.h"
-#include "minmea.h"
-#include "sdmmc_cmd.h"
+
+#include "esp_freertos_hooks.h"  // depends on FreeRTOS.h
 
 #include "app/analysis/onboard_analysis_instance.hpp"
 #include "app/can_instance.hpp"
@@ -29,6 +28,7 @@
 #include "common/perf.hpp"
 #include "common/strings.hpp"
 #include "common/utils.hpp"
+#include "run_tests.hpp"
 #include "ui/controller.hpp"
 #include "ui/model.hpp"
 
@@ -43,6 +43,8 @@ constexpr int kCanaryPeriodMs = 5009;
 
 DECLARE_PERF(ui_controller);
 DECLARE_PERF(onboard_analysis);
+
+using fmt::print;
 
 using namespace app;  // TODO: move this file altogether
 
@@ -116,6 +118,7 @@ void CanaryTask(void* /*unused*/) {
 
 extern "C" void app_main(void) {
   CHECK_OK(NvsInit());
+  RunTests();
 
   // DEBUG: use SCL and SDA pin as debug
 #if 0
