@@ -24,7 +24,7 @@ IRAM_ATTR char* WriteHexUpper(char* s, uint32_t value, int len) {
   return s + len;
 }
 
-IRAM_ATTR void HandleCanMessage(uint32_t current_capture, twai_message_t message) {
+IRAM_ATTR void HandleCanMessage(uint32_t current_capture, const twai_message_t& message) {
   static char buf[] = "c,2147483647,b0b1b2b3,8,d0d1d2d3d4d5d6d7";
   char* const buf_begin = buf + 2;
   char* const buf_end = buf + sizeof(buf);
@@ -42,7 +42,7 @@ IRAM_ATTR void HandleCanMessage(uint32_t current_capture, twai_message_t message
     p = WriteHexUpper(p, message.data[i], 2);
   }
   *p++ = '\0';
-  CHECK(p < buf_end);
+  CHECK(p <= buf_end);
 
   const esp_err_t err = SendToLogger(app::kCanProducer, std::string_view(buf, p - buf - 1));
   if (err == ESP_FAIL) {
