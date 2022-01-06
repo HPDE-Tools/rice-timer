@@ -75,6 +75,7 @@ void Main() {
 
 TaskHandle_t g_main_task{};
 void MainTask(void* /* unused */) {
+  RunTests();
   Main();
   vTaskDelete(nullptr);
 }
@@ -118,7 +119,6 @@ void CanaryTask(void* /*unused*/) {
 
 extern "C" void app_main(void) {
   CHECK_OK(NvsInit());
-  RunTests();
 
   // DEBUG: use SCL and SDA pin as debug
 #if 0
@@ -138,7 +138,7 @@ extern "C" void app_main(void) {
       PRO_CPU_NUM);
 #endif
 
-#if 1
+#if !TEST
   xTaskCreatePinnedToCore(
       CanaryTask,
       "canary",
@@ -151,5 +151,5 @@ extern "C" void app_main(void) {
 #endif
 
   xTaskCreatePinnedToCore(
-      MainTask, "main", 4096, /*arg*/ nullptr, configMAX_PRIORITIES - 1, &g_main_task, APP_CPU_NUM);
+      MainTask, "main", 8192, /*arg*/ nullptr, configMAX_PRIORITIES - 1, &g_main_task, APP_CPU_NUM);
 }

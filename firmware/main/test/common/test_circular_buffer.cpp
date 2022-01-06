@@ -61,11 +61,9 @@ TEST_CASE("CircularBuffer - basic integer", "[common]") {
   TEST_ASSERT(q.size() == 5);
   q.push_back(11);
   q.Dump();
-  // TEST_ASSERT(q.size() == 5);
-  // TEST_ASSERT(q.front() == 7);
+  TEST_ASSERT(q.size() == 5);
+  TEST_ASSERT(q.front() == 7);
 }
-
-#if 0
 
 class A {
  public:
@@ -108,7 +106,6 @@ TEST_CASE("CircularBuffer - ctor & dtor", "[common]") {
   q.Dump();
   q.emplace_back(1.3);
   q.Dump();
-  return;
   q.emplace_back(2.1);
   q.Dump();
   print("--- push_back ---\n");
@@ -122,4 +119,3 @@ TEST_CASE("CircularBuffer - ctor & dtor", "[common]") {
   q.Dump();
   TEST_ASSERT(double(popped) == 2.1);
 }
-#endif

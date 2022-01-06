@@ -18,7 +18,7 @@ template <typename T>
 class CircularBuffer {
  public:
   explicit CircularBuffer(int capacity)
-      : data_(std::make_unique_for_overwrite<T[]>(capacity)), capacity_(capacity) {}
+      : data_(std::make_unique<T[]>(capacity)), capacity_(capacity) {}
 
   // TODO(summivox): add a way to allow default construction, then later assign capacity
 
