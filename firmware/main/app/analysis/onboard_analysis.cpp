@@ -134,7 +134,7 @@ bool OnboardAnalysis::DetectAndLoadMap(const GpsPose& pose) {
   auto map_index = map::MapIndex::GetInstance();
   if (map_index->entries().empty()) {
     // TODO: properly deal with delayed loads
-    ESP_LOGE(TAG, "DetectAndLoadMap empty");
+    // ESP_LOGE(TAG, "DetectAndLoadMap empty");
     return false;
   }
 
