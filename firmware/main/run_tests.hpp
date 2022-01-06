@@ -1,7 +1,5 @@
 #pragma once
 
-#define TEST 1
-
 #if TEST
 #include "esp_task_wdt.h"
 #include "unity.h"
