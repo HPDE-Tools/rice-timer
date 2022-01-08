@@ -15,6 +15,7 @@
 #include "common/task.hpp"
 #include "common/times.hpp"
 #include "device/gps_utils.hpp"
+#include "interface/lap_trace.hpp"
 #include "interface/localization.hpp"
 #include "localization/gps_collector.hpp"
 #include "localization/localizer.hpp"

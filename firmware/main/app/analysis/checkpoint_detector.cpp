@@ -23,12 +23,15 @@ void CheckpointDetector::SetMap(const map::Map* map) {
   }
   const auto& checkpoints = *map->checkpoints();
   num_checkpoints_ = checkpoints.size();
+  segments_.clear();
   segments_.reserve(num_checkpoints_);
-  centers_ = Eigen::Matrix2Xf::Zero(2, num_checkpoints_);
+  centers_.resize(2, num_checkpoints_);
+  course_range_rad_.resize(2, num_checkpoints_);
   for (int i = 0; i < num_checkpoints_; i++) {
     const auto* checkpoint = checkpoints[i];
     const Eigen::Vector2f center = math::ToEigen(*checkpoint->position());
     const float heading = math::DegToRad(checkpoint->heading_deg());
+    const float heading_tol = math::DegToRad(checkpoint->heading_tolerance_deg());
     const float width_left =
         checkpoint->width_left() > 0 ? checkpoint->width_left() : checkpoint->width() * 0.5f;
     const float width_right =
@@ -36,11 +39,14 @@ void CheckpointDetector::SetMap(const map::Map* map) {
     const Eigen::Vector2f center_to_left_dir{-sin(heading), cos(heading)};
     const Eigen::Vector2f left{center + center_to_left_dir * width_left};
     const Eigen::Vector2f right{center - center_to_left_dir * width_right};
+
     segments_.emplace_back(left, right);
     centers_.col(i) = center;
+    course_range_rad_.col(i) << heading - heading_tol, heading + heading_tol;
 
     fmt::print(
-        "({:.2f},{:.2f}) -- ({:.2f},{:.2f}) -- ({:.2f},{:.2f})\n",
+        "[{}] : ({:.2f},{:.2f}) -- ({:.2f},{:.2f}) -- ({:.2f},{:.2f})\n",
+        i,
         left.x(),
         left.y(),
         center.x(),
@@ -61,16 +67,13 @@ std::optional<CheckpointDetector::Result> CheckpointDetector::Detect(
   const Eigen::Vector2f curr_p = curr_pose.enh.head<2>();
   const Eigen::Vector2f last_p = last_pose.enh.head<2>();
   const math::Segment2f step{last_p, curr_p};
+  const float course_rad = std::atan2(step.dir().y(), step.dir().x());
   // TODO(summivox): filter by speed
   for (int i = 0; i < num_checkpoints_; i++) {
-    const auto* checkpoint = (*map_->checkpoints())[i];
     if ((curr_p - centers_.col(i)).squaredNorm() > kMaxSqrDistanceToCenterM2) {
       continue;
     }
-    const float course_deg = math::RadToDeg(std::atan2(step.dir().y(), step.dir().x()));
-    const float course_min_deg = checkpoint->heading_deg() - checkpoint->heading_tolerance_deg();
-    const float course_max_deg = checkpoint->heading_deg() + checkpoint->heading_tolerance_deg();
-    if (!(course_min_deg <= course_deg && course_deg <= course_max_deg)) {
+    if (!(course_range_rad_(0, i) <= course_rad && course_rad <= course_range_rad_(1, i))) {
       continue;
     }
 

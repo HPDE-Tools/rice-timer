@@ -10,6 +10,7 @@
 #include "Eigen/Core"
 
 #include "common/circular_buffer.hpp"
+#include "interface/lap_trace.hpp"
 #include "interface/localization.hpp"
 #include "map/map.hpp"
 #include "math/segment2.hpp"
@@ -22,9 +23,8 @@ class CheckpointDetector {
   static constexpr double kMaxDistanceToCenterM = 100.0;
   static constexpr double kMaxSqrDistanceToCenterM2 = math::Sqr(kMaxDistanceToCenterM);
 
-  struct Result {
+  struct Result : CheckpointHit {
     int64_t timestamp_ms = 0;
-    int checkpoint_index = 0;
   };
 
   CheckpointDetector();
@@ -40,6 +40,7 @@ class CheckpointDetector {
   int num_checkpoints_ = 0;
   std::vector<math::Segment2f> segments_;
   Eigen::Matrix2Xf centers_;
+  Eigen::Matrix2Xf course_range_rad_;
 };
 
 }  // namespace analysis
