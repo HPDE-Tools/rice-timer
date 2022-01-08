@@ -3,7 +3,9 @@
 
 #pragma once
 
+#include <functional>
 #include <memory>
+#include <optional>
 
 #include "esp_err.h"
 #include "freertos/FreeRTOS.h"
@@ -26,6 +28,11 @@ namespace analysis {
 
 class OnboardAnalysis : public Task {
  public:
+  using GpsPoseHandler = std::function<void(const GpsPose& gps_pose)>;
+  using L10nResultHandler = std::function<void(const MapLocalPose& l10n_result)>;
+  using CheckpointHandler = std::function<void(
+      const CheckpointDetector::Result& detection, const ricetimer::proto::Checkpoint& checkpoint)>;
+
   OnboardAnalysis();
 
   void Reset();
@@ -33,6 +40,16 @@ class OnboardAnalysis : public Task {
 
   void UpdateGps(const ParsedNmea& nmea) { xQueueSendToBack(gps_queue_, &nmea, 0); }
   void UpdateImu(const ImuReading& imu);
+
+  void set_gps_pose_handler(GpsPoseHandler&& handler) {
+    gps_pose_handler_ = std::forward<GpsPoseHandler>(handler);
+  }
+  void set_l10n_pose_handler(L10nResultHandler&& handler) {
+    l10n_result_handler_ = std::forward<L10nResultHandler>(handler);
+  }
+  void set_checkpoint_handler(CheckpointHandler&& handler) {
+    checkpoint_handler_ = std::forward<CheckpointHandler>(handler);
+  }
 
  protected:
   void Run() override;
@@ -52,9 +69,16 @@ class OnboardAnalysis : public Task {
   // makeshift map region detection states
   std::optional<GpsPose> last_map_detect_pose_{};
 
+  GpsPoseHandler gps_pose_handler_ = nullptr;
+  L10nResultHandler l10n_result_handler_ = nullptr;
+  CheckpointHandler checkpoint_handler_ = nullptr;
+
   QueueHandle_t gps_queue_{};
 
   bool DetectAndLoadMap(const GpsPose& pose);
+  void UpdateMapRefs();
+
+  void UpdateLapTimerUi();
 };
 
 extern std::unique_ptr<OnboardAnalysis> g_onboard_analysis;

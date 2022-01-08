@@ -64,6 +64,9 @@ esp_err_t OnboardAnalysis::Start() {
   return Task::SpawnSame(TAG, kOnboardAnalysisStackSize, kPriorityOnboardAnalysis);
 }
 
+// NMEA => GPS pose => map det result => l10n result => l10n history
+// l10n result/history => checkpoint det result => lap time event
+//                     => ...
 void OnboardAnalysis::Run() {
   while (true) {
     ParsedNmea nmea{};
@@ -76,56 +79,31 @@ void OnboardAnalysis::Run() {
 
     SCOPE_PERF(onboard_analysis);
 
-    const bool new_map_loaded = DetectAndLoadMap(*gps_pose);
-    const map::Map* map = map_.get();
-    if (new_map_loaded) {
-      localizer_->SetMap(map);
-      checkpoint_detector_->SetMap(map);
-    }
-    if (!map) {
-      lap_timer_.Reset();
-      ui::g_model.map_name.clear();
-      ui::g_model.lap_timer.reset();
+    (void)DetectAndLoadMap(*gps_pose);
+    if (!map_) {
       continue;
     }
-    ui::g_model.map_name = map_name_;
 
     localizer_->UpdateGps(*gps_pose);
     const MapLocalPose pose = localizer_->Compute();
     pose_history_.push_back(pose);
-    // fmt::print("{:+9.2f},{:+9.2f},{:+9.2f}\n", pose.enh[0], pose.enh[1], pose.enh[2]);  // DEBUG
+    if (l10n_result_handler_) {
+      l10n_result_handler_(pose);
+    }
 
-    const std::optional<CheckpointDetector::Result> detect_result =
+    const std::optional<CheckpointDetector::Result> detection =
         checkpoint_detector_->Detect(pose_history_);
-    if (!detect_result) {
+    if (!detection) {
       continue;
     }
-    const TimeParts cal = ToParts(static_cast<time_t>(detect_result->timestamp_ms / 1000));
-    const auto* checkpoint = (*map->checkpoints())[detect_result->checkpoint_index];
+    const auto& checkpoint = *(*map_->checkpoints())[detection->checkpoint_index];
+    if (checkpoint_handler_) {
+      checkpoint_handler_(*detection, checkpoint);
+    }
 
-    fmt::print(
-        "checkpoint #{} @ {:02}:{:02}:{:02}.{:03}",
-        detect_result->checkpoint_index,
-        cal.tm_hour,
-        cal.tm_min,
-        cal.tm_sec,
-        detect_result->timestamp_ms % 1000);  // DEBUG
-
-    if (checkpoint->type() == ricetimer::proto::CheckpointType::StartFinish) {
-      lap_timer_.HitStartFinish(detect_result->timestamp_ms);
-      if (!ui::g_model.lap_timer) {
-        ui::g_model.lap_timer.emplace();
-      }
-      auto& ui_lap_timer = *ui::g_model.lap_timer;
-      ui_lap_timer.num_complete_laps = lap_timer_.num_complete_laps();
-      ui_lap_timer.curr_lap_start_timestamp_ms = lap_timer_.curr_lap_start_timestamp_ms();
-      ui_lap_timer.min_lap_duration_ms = lap_timer_.min_lap_duration_ms();
-      ui_lap_timer.min_lap_index = lap_timer_.min_lap_index();
-      if (lap_timer_.num_complete_laps() > 0) {
-        ui_lap_timer.last_lap_duration_ms = lap_timer_.complete_lap_durations_ms().back();
-      } else {
-        ui_lap_timer.last_lap_duration_ms.reset();
-      }
+    if (checkpoint.type() == ricetimer::proto::CheckpointType::StartFinish) {
+      lap_timer_.HitStartFinish(detection->timestamp_ms);
+      UpdateLapTimerUi();
     }
   }
 }
@@ -158,7 +136,37 @@ bool OnboardAnalysis::DetectAndLoadMap(const GpsPose& pose) {
   }
   map_ = map::Map::FromFile(entry->path);  // TODO: handle load fail
   map_name_ = entry->name;
+  UpdateMapRefs();
   return true;
+}
+
+void OnboardAnalysis::UpdateMapRefs() {
+  const map::Map* map = map_.get();
+  localizer_->SetMap(map);
+  checkpoint_detector_->SetMap(map);
+  if (map) {
+    ui::g_model.map_name = map_name_;
+  } else {
+    lap_timer_.Reset();
+    ui::g_model.map_name.clear();
+    ui::g_model.lap_timer.reset();
+  }
+}
+
+void OnboardAnalysis::UpdateLapTimerUi() {
+  if (!ui::g_model.lap_timer) {
+    ui::g_model.lap_timer.emplace();
+  }
+  auto& ui_lap_timer = *ui::g_model.lap_timer;
+  ui_lap_timer.num_complete_laps = lap_timer_.num_complete_laps();
+  ui_lap_timer.curr_lap_start_timestamp_ms = lap_timer_.curr_lap_start_timestamp_ms();
+  ui_lap_timer.min_lap_duration_ms = lap_timer_.min_lap_duration_ms();
+  ui_lap_timer.min_lap_index = lap_timer_.min_lap_index();
+  if (lap_timer_.num_complete_laps() > 0) {
+    ui_lap_timer.last_lap_duration_ms = lap_timer_.complete_lap_durations_ms().back();
+  } else {
+    ui_lap_timer.last_lap_duration_ms.reset();
+  }
 }
 
 }  // namespace analysis

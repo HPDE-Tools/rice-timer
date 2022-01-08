@@ -89,6 +89,8 @@ std::optional<CheckpointDetector::Result> CheckpointDetector::Detect(
                              static_cast<int64_t>(std::round(
                                  (curr_pose.timestamp_ms - last_pose.timestamp_ms) * step_ratio));
       result->checkpoint_index = i;
+      result->course_rad = course_rad;
+      result->speed = curr_pose.v_enh.head<2>().norm();
       break;
     }
   }
