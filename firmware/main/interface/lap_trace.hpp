@@ -1,4 +1,4 @@
-// Copyright 2021 summivox. All rights reserved.
+// Copyright 2022 summivox. All rights reserved.
 // Authors: summivox@gmail.com
 
 #pragma once
