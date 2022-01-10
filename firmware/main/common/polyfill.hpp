@@ -36,6 +36,8 @@ struct is_unbounded_array : bool_constant<is_unbounded_array_v<_Ty>> {};
 
 #endif  // __cpp_lib_bounded_array_traits
 
+////////////////////////////////////////////////////////////////////////////////////////////////
+
 #if !defined(__cpp_lib_smart_ptr_for_overwrite) || __cpp_lib_smart_ptr_for_overwrite < 202002
 #define __cpp_lib_smart_ptr_for_overwrite 202002L
 
@@ -58,4 +60,14 @@ void make_unique_for_overwrite(_Types&&...) = delete;
 
 #endif  // __cpp_lib_smart_ptr_for_overwrite
 
+////////////////////////////////////////////////////////////////////////////////////////////////
+
 }  // namespace std
+
+#if !defined(__cpp_lib_span) || __cpp_lib_span < 202002
+#define __cpp_lib_span 202002L
+
+#define TCB_SPAN_NAMESPACE_NAME std
+#include "span.hpp"
+
+#endif  // __cpp_lib_span
