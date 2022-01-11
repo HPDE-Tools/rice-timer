@@ -142,7 +142,7 @@ extern "C" void app_main(void) {
   xTaskCreatePinnedToCore(
       CanaryTask,
       "canary",
-      2500,
+      4096,
       /*arg*/ nullptr,
       // configMAX_PRIORITIES - 2,
       0,
