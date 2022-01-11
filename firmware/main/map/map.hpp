@@ -5,10 +5,13 @@
 
 #include <memory>
 #include <string>
+#include <vector>
 
 #include "Eigen/Core"
 #include "GeographicLib/TransverseMercator.hpp"
 
+#include "common/macros.hpp"
+#include "common/polyfill.hpp"
 #include "proto/map_generated.h"
 
 namespace map {
@@ -23,8 +26,13 @@ class Map {
   }
   Eigen::Vector2f LlhToLtm(Eigen::Vector3d llh) const { return LatLonToLtm(llh[0], llh[1]); }
 
-  // TODO: not expose raw proto
   auto checkpoints() const { return proto_->checkpoints(); }
+  auto& checkpoint(int i) const { return *(*CHECK_NOTNULL(checkpoints()))[i]; }
+  auto tracks() const { return proto_->tracks(); }
+  auto& track(int i) const { return *(*CHECK_NOTNULL(tracks()))[i]; }
+
+  const std::vector<std::span<const int>>& adj_list() const { return adj_list_; }
+  const std::vector<std::span<const int>>& rev_adj_list() const { return rev_adj_list_; }
 
  protected:
   Map();
@@ -44,7 +52,12 @@ class Map {
   double origin_lon_;
   double origin_y_;
 
+  std::vector<int> adj_list_buf_;
+  std::vector<std::span<const int>> adj_list_;
+  std::vector<std::span<const int>> rev_adj_list_;
+
   void InitializeProjection();
+  void MakeAdjList();
 };
 
 }  // namespace map
