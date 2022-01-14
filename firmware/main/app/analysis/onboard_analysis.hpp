@@ -13,6 +13,7 @@
 
 #include "app/analysis/checkpoint_detector.hpp"
 #include "app/analysis/lap_timer.hpp"
+#include "app/analysis/tracer.hpp"
 #include "common/circular_buffer.hpp"
 #include "common/task.hpp"
 #include "common/times.hpp"

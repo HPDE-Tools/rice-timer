@@ -26,6 +26,8 @@
 
 DEFINE_PERF(onboard_analysis);
 
+using ricetimer::proto::CheckpointType;
+
 namespace analysis {
 
 namespace {
@@ -101,7 +103,7 @@ void OnboardAnalysis::Run() {
       checkpoint_handler_(*detection, checkpoint);
     }
 
-    if (checkpoint.type() == ricetimer::proto::CheckpointType::StartFinish) {
+    if (checkpoint.type() == CheckpointType::StartFinish) {
       lap_timer_.HitStartFinish(detection->timestamp_ms);
       UpdateLapTimerUi();
     }

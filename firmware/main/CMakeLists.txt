@@ -6,6 +6,7 @@ set(srcs
 "app/analysis/lap_timer.cpp"
 "app/analysis/onboard_analysis.cpp"
 "app/analysis/onboard_analysis_instance.cpp"
+"app/analysis/tracer.cpp"
 "app/can_instance.cpp"
 "app/device_id.cpp"
 "app/gps_instance.cpp"
