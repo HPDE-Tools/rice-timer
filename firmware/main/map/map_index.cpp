@@ -54,12 +54,12 @@ esp_err_t MapIndex::Load(std::string_view map_data_path) {
 std::pair<const MapIndex::Entry*, double> MapIndex::GetNearestMap(const Eigen::Vector2d& latlon) {
   CHECK(!entries_.empty());
   // TODO: use some kind of nearest neighbor impl
-  ESP_LOGE(TAG, "GetNearestMap(%+9.5f, %+10.5f)", latlon[0], latlon[1]);  // DEBUG
+  // ESP_LOGE(TAG, "GetNearestMap(%+9.5f, %+10.5f)", latlon[0], latlon[1]);  // DEBUG
   double min_distance = 1e100;
   const Entry* min_entry = nullptr;
   for (const Entry& entry : entries_) {
     const double distance = GeodesicDistance(entry.origin_latlon, latlon);
-    ESP_LOGW(TAG, "- %s: %.3f", entry.name.c_str(), distance);  // DEBUG
+    // ESP_LOGW(TAG, "- %s: %.3f", entry.name.c_str(), distance);  // DEBUG
     if (distance < min_distance) {
       min_distance = distance;
       min_entry = &entry;
