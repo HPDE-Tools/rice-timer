@@ -102,8 +102,10 @@ void CanaryTask(void* /*unused*/) {
         ui::g_model.lost.imu.load(),
         ui::g_model.lost.can.load());
 #endif
+#if 0
     PERF_ui_controller.Dump();
     PERF_onboard_analysis.Dump();
+#endif
 #if 0
     LOG_WATER_MARK("canary", g_canary_task);
     LOG_WATER_MARK_P("logger", g_logger);
