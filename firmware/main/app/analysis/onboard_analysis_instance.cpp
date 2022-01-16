@@ -8,6 +8,7 @@
 
 #include "app/analysis/checkpoint_detector.hpp"
 #include "app/analysis/onboard_analysis.hpp"
+#include "app/logger_instance.hpp"
 #include "common/macros.hpp"
 
 using fmt::print;
@@ -29,6 +30,11 @@ void HandleCheckpoint(
       detection.checkpoint_index,
       cal,
       detection.timestamp_ms % 1000);  // DEBUG
+
+  // TODO: configurable triggering
+  if (g_logger && g_logger->state() == io::Logger::State::kStopped) {
+    StartNewLoggingSession();
+  }
 }
 
 }  // namespace

@@ -105,6 +105,7 @@ class Logger : public Task {
 
   // statistics
 
+  State state() const { return state_; }
   int lines_committed() const { return lines_committed_; }
   int64_t bytes_committed() const { return bytes_committed_; }
   TickType_t last_commit_time() const { return last_commit_time_; }
