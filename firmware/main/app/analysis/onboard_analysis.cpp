@@ -78,6 +78,9 @@ void OnboardAnalysis::Run() {
     if (!gps_pose || !gps_pose->is_valid) {
       continue;
     }
+    if (gps_pose_handler_) {
+      gps_pose_handler_(*gps_pose);
+    }
 
     SCOPE_PERF(onboard_analysis);
 
