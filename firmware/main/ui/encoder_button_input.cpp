@@ -53,7 +53,6 @@ esp_adc_cal_characteristics_t g_adc_cal{};
 std::unique_ptr<Encoder> g_encoder;
 
 esp_err_t SetupAdc() {
-  TRY(adc_gpio_init(ADC_UNIT_1, kAdcChannel));
   TRY(adc1_config_width(kAdcWidth));
   TRY(adc1_config_channel_atten(kAdc1Channel, kAdcAtten));
   TRY(esp_adc_cal_characterize(ADC_UNIT_1, kAdcAtten, kAdcWidth, kVref, &g_adc_cal));
