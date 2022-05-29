@@ -15,6 +15,7 @@ set(srcs
 "app/sd_card_instance.cpp"
 "app/shared_i2c_bus.cpp"
 "app/shared_spi_bus.cpp"
+"common/console_command_registry.cpp"
 "common/line_buffer_mpsc.cpp"
 "common/perf.cpp"
 "device/can.cpp"
@@ -46,6 +47,7 @@ file(GLOB my_fbs_src "${COMPONENT_DIR}/../../flatbuffers/*.fbs")
 
 set(requires
 # System
+console
 esp_adc_cal
 fatfs
 nvs_flash
@@ -53,6 +55,7 @@ sdmmc
 vfs
 
 # Project
+cmd_system
 eigen
 flatbuffers
 fmtlib

@@ -9,6 +9,8 @@
 #include <string>
 #include <string_view>
 
+#include "argtable3/argtable3.h"
+#include "cmd_system.h"
 #include "driver/gpio.h"
 #include "esp_task_wdt.h"
 #include "fmt/chrono.h"
@@ -24,10 +26,13 @@
 #include "app/imu_instance.hpp"
 #include "app/logger_instance.hpp"
 #include "app/sd_card_instance.hpp"
+#include "common/console_command.hpp"
+#include "common/console_command_registry.hpp"
 #include "common/macros.hpp"
 #include "common/perf.hpp"
 #include "common/strings.hpp"
 #include "common/utils.hpp"
+#include "priorities.hpp"
 #include "run_tests.hpp"
 #include "ui/controller.hpp"
 #include "ui/model.hpp"
@@ -48,11 +53,32 @@ using fmt::print;
 
 using namespace app;  // TODO: move this file altogether
 
+esp_console_repl_t* InitializeConsole() {
+  esp_console_repl_t* repl = nullptr;
+  esp_console_repl_config_t repl_config = ESP_CONSOLE_REPL_CONFIG_DEFAULT();
+  repl_config.task_priority = kPriorityBackground;
+  repl_config.prompt = "rice>";
+  esp_console_dev_uart_config_t repl_uart_config = ESP_CONSOLE_DEV_UART_CONFIG_DEFAULT();
+  OK_OR_RETURN(esp_console_new_repl_uart(&repl_uart_config, &repl_config, &repl), nullptr);
+  register_system_common();
+  OK_OR_RETURN(ConsoleCommandRegistry::GetInstance()->Register(), nullptr);
+  return repl;
+}
+
+DEFINE_CONSOLE_COMMAND(lsheap, "print heap details", nullptr, {}, 1) {
+  printf("\n");
+  heap_caps_print_heap_info(MALLOC_CAP_8BIT);
+  printf("\n");
+  return 0;
+}
+
 void Main() {
   ESP_LOGI(TAG, "MainTask started");
   LogDeviceMac();
   heap_caps_print_heap_info(MALLOC_CAP_8BIT);
   // vTaskDelay(pdMS_TO_TICKS(2000));
+
+  esp_console_repl_t* repl = InitializeConsole();
 
   CHECK_OK(SetupSdCard());
   CHECK_OK(SetupAndStartLoggerTask());
@@ -71,6 +97,10 @@ void Main() {
   CHECK_OK(StartImuInstance());
   CHECK_OK(StartOnboardAnalysisTask());
   CHECK_OK(ui::StartUi());
+
+  if (repl) {
+    esp_console_start_repl(repl);
+  }
 }
 
 TaskHandle_t g_main_task{};

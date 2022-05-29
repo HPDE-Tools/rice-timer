@@ -7,6 +7,7 @@
 // does only when it's compared to those of other tasks. Having a single place to look up all the
 // priorities puts all the numbers into context.
 
+constexpr int kPriorityBackground = 0;
 constexpr int kPriorityLogger = 1;
 constexpr int kPrioritySdCard = 2;
 constexpr int kPriorityOnboardAnalysis = 3;
