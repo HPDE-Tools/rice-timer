@@ -68,5 +68,6 @@
     "format": "cpp"
   },
   "editor.formatOnSave": true,
-  "editor.tabSize": 2
+  "editor.tabSize": 2,
+  "idf.adapterTargetName": "esp32"
 }
