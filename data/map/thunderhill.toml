@@ -113,3 +113,54 @@ position = { lat = 39.5430655, lon = -122.3328050 }
 # position = { lat = 39.536351, lon = -122.330320 }
 
 
+######## West ########
+
+
+[[checkpoints]]
+type = "StartFinish"
+description = "West start finish"
+position = { lat = 39.5374544, lon = -122.3387965 }
+heading_tolerance_deg = 40.0
+width_left = 10.0
+width_right = 10.0
+
+[[checkpoints]]
+type = "Junction"
+description = "Junction between W1/W2 (link to East T10)"
+position = { lat = 39.5414300, lon = -122.3299620 }
+
+[[checkpoints]]
+type = "Junction"
+description = "Junction after W2 (link from East T9)"
+position = { lat = 39.5409254, lon = -122.3392078 }
+
+[[checkpoints]]
+type = "Split"
+description = "Brake zone before W3 entry"
+position = { lat = 39.5396784, lon = -122.3416096 }
+heading_tolerance_deg = 40.0
+width_left = 10.0
+width_right = 10.0
+
+[[checkpoints]]
+type = "Split"
+description = "Brake zone before W7 (hairpin) entry"
+position = { lat = 39.5330576, lon = -122.3385279 }
+heading_tolerance_deg = 40.0
+width_left = 10.0
+width_right = 10.0
+
+[[checkpoints]]
+type = "Junction"
+description = "Junction at W7 (hairpin) apex for bypass split"
+position = { lat = 39.5332824, lon = -122.3381704 }
+
+[[checkpoints]]
+type = "Junction"
+description = "Junction at W10 entry towards West pit"
+position = { lat = 39.5351402, lon = -122.3387121 }
+
+[[checkpoints]]
+type = "Junction"
+description = "Junction at W10 exit for bypass merge"
+position = { lat = 39.5353369, lon = -122.3384724 }
