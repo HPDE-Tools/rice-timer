@@ -22,8 +22,8 @@ geographiclib/src/Geodesic.cpp
 # geographiclib/src/Geoid.cpp
 # geographiclib/src/Georef.cpp
 # geographiclib/src/Gnomonic.cpp
-geographiclib/src/GravityCircle.cpp
-geographiclib/src/GravityModel.cpp
+# geographiclib/src/GravityCircle.cpp
+# geographiclib/src/GravityModel.cpp
 # geographiclib/src/LambertConformalConic.cpp
 # geographiclib/src/LocalCartesian.cpp
 # geographiclib/src/MagneticCircle.cpp
@@ -32,14 +32,14 @@ geographiclib/src/Math.cpp
 # geographiclib/src/MGRS.cpp
 # geographiclib/src/NormalGravity.cpp
 # geographiclib/src/OSGB.cpp
-geographiclib/src/PolarStereographic.cpp
+# geographiclib/src/PolarStereographic.cpp
 # geographiclib/src/PolygonArea.cpp
 # geographiclib/src/Rhumb.cpp
 # geographiclib/src/SphericalEngine.cpp
 geographiclib/src/TransverseMercator.cpp
 # geographiclib/src/TransverseMercatorExact.cpp
 geographiclib/src/Utility.cpp
-geographiclib/src/UTMUPS.cpp
+# geographiclib/src/UTMUPS.cpp
 )
 set(includedirs
 "${root}/include"
