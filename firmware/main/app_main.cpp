@@ -16,6 +16,7 @@
 #include "fmt/chrono.h"
 #include "fmt/core.h"
 #include "freertos/FreeRTOS.h"
+#include "linenoise/linenoise.h"
 
 #include "esp_freertos_hooks.h"  // depends on FreeRTOS.h
 
@@ -62,6 +63,7 @@ esp_console_repl_t* InitializeConsole() {
   OK_OR_RETURN(esp_console_new_repl_uart(&repl_uart_config, &repl_config, &repl), nullptr);
   register_system_common();
   OK_OR_RETURN(ConsoleCommandRegistry::GetInstance()->Register(), nullptr);
+  linenoiseSetMultiLine(0);
   return repl;
 }
 

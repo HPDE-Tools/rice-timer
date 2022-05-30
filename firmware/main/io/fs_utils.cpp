@@ -135,3 +135,5 @@ int64_t GetFreeSpaceBytes(const char* fatfs_root) {
 }
 
 }  // namespace io
+
+#include "io/fs_commands.inl.cpp"
