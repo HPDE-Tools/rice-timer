@@ -28,6 +28,7 @@ set(srcs
 "device/imu_driver_lsm6dsr.cpp"
 "device/oled_ssd1309.cpp"
 "io/autobaud.cpp"
+"io/file_line_reader.cpp"
 "io/fs_utils.cpp"
 "io/logger.cpp"
 "io/sd_card_daemon.cpp"
