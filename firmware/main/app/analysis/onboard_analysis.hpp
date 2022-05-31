@@ -42,6 +42,8 @@ class OnboardAnalysis : public Task {
   void UpdateGps(const ParsedNmea& nmea) { xQueueSendToBack(gps_queue_, &nmea, 0); }
   void UpdateImu(const ImuReading& imu);
 
+  const LapTimer& lap_timer() const { return lap_timer_; }
+
   void set_gps_pose_handler(GpsPoseHandler&& handler) {
     gps_pose_handler_ = std::forward<GpsPoseHandler>(handler);
   }

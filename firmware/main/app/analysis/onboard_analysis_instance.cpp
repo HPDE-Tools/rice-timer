@@ -71,3 +71,5 @@ void OnboardAnalysisUpdateImu(const ImuReading& imu) {
 }
 
 }  // namespace app
+
+#include "app/analysis/onboard_analysis_sim_command.inl.cpp"
