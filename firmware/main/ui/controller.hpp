@@ -42,15 +42,15 @@ class Controller : public Task {
 
  private:
   std::unique_ptr<view::IdleScreen> idle_screen_;
-  std::unique_ptr<view::DebugScreen> debug_screen_;
-  std::unique_ptr<view::TrackReqScreen> track_req_screen_;
-  std::unique_ptr<view::TrackSelScreen> track_sel_screen_;
+  // std::unique_ptr<view::DebugScreen> debug_screen_;
+  // std::unique_ptr<view::TrackReqScreen> track_req_screen_;
+  // std::unique_ptr<view::TrackSelScreen> track_sel_screen_;
   std::unique_ptr<view::TrackTimerScreen> track_timer_screen_;
 
   view::Screen* loaded_screen_;  // not owned
 
-  std::unique_ptr<view::SoftkeyPrompt> softkey_prompt_1_;
-  std::unique_ptr<view::SoftkeyPrompt> softkey_prompt_3_;
+  // std::unique_ptr<view::SoftkeyPrompt> softkey_prompt_1_;
+  // std::unique_ptr<view::SoftkeyPrompt> softkey_prompt_3_;
 
   bool flipped_ = true;  // TODO: maybe pass by option? getter/setter?
 

@@ -19,11 +19,11 @@
 #include "ui/encoder_button_input.hpp"
 #include "ui/model.hpp"
 #include "ui/style.hpp"
-#include "ui/view/debug_screen.hpp"
+// #include "ui/view/debug_screen.hpp"
 #include "ui/view/idle_screen.hpp"
-#include "ui/view/softkey_prompt.hpp"
-#include "ui/view/track_req_screen.hpp"
-#include "ui/view/track_sel_screen.hpp"
+// #include "ui/view/softkey_prompt.hpp"
+// #include "ui/view/track_req_screen.hpp"
+// #include "ui/view/track_sel_screen.hpp"
 #include "ui/view/track_timer_screen.hpp"
 
 DEFINE_PERF(ui_controller);
@@ -82,13 +82,13 @@ esp_err_t Controller::Setup() {
   TRY(SetupTheme());
 
   idle_screen_ = std::make_unique<view::IdleScreen>();
-  debug_screen_ = std::make_unique<view::DebugScreen>();
-  track_req_screen_ = std::make_unique<view::TrackReqScreen>();
-  track_sel_screen_ = std::make_unique<view::TrackSelScreen>();
+  // debug_screen_ = std::make_unique<view::DebugScreen>();
+  // track_req_screen_ = std::make_unique<view::TrackReqScreen>();
+  // track_sel_screen_ = std::make_unique<view::TrackSelScreen>();
   track_timer_screen_ = std::make_unique<view::TrackTimerScreen>();
 
-  softkey_prompt_1_ = std::make_unique<view::SoftkeyPrompt>();
-  softkey_prompt_3_ = std::make_unique<view::SoftkeyPrompt>();
+  // softkey_prompt_1_ = std::make_unique<view::SoftkeyPrompt>();
+  // softkey_prompt_3_ = std::make_unique<view::SoftkeyPrompt>();
 
   SetFlipped(flipped_);
 
@@ -110,7 +110,7 @@ void Controller::Run() {
 
   idle_screen_->btn_settings_click = [this](lv_event_t* e) {
     ESP_LOGI(TAG, "loading debug");
-    loaded_screen_ = debug_screen_->Load();
+    // loaded_screen_ = debug_screen_->Load();
   };
   idle_screen_->btn_track_click = [this](lv_event_t* e) {
     ESP_LOGI(TAG, "loading track req");
@@ -121,11 +121,11 @@ void Controller::Run() {
     SetFlipped(flipped_);
     ESP_LOGI(TAG, "flipping screen: %d", (int)flipped_);
   };
-  track_req_screen_->on_success = [this](lv_event_t* e) {
-    ESP_LOGI(TAG, "loading track sel");
-    loaded_screen_ = track_sel_screen_->LoadAnim(
-        LV_SCR_LOAD_ANIM_OVER_TOP, /*anim time*/ 500, /*delay*/ 1000, false);
-  };
+  // track_req_screen_->on_success = [this](lv_event_t* e) {
+  //   ESP_LOGI(TAG, "loading track sel");
+  //   loaded_screen_ = track_sel_screen_->LoadAnim(
+  //       LV_SCR_LOAD_ANIM_OVER_TOP, /*anim time*/ 500, /*delay*/ 1000, false);
+  // };
 
   while (true) {
     vTaskDelayUntil(&last_wake_time, pdMS_TO_TICKS(kRefreshPeriodMs));

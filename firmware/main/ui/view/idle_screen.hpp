@@ -66,6 +66,7 @@ struct IdleScreen : public Screen {
     lv_group_add_obj(group, btn_track);
     LvListen(btn_track, LV_EVENT_CLICKED, btn_track_click);
 
+#if 0
     btn_review = lv_btn_create(nav);
     FixButton(btn_review);
 #if 0
@@ -97,6 +98,7 @@ struct IdleScreen : public Screen {
     }
     lv_group_add_obj(group, btn_settings);
     LvListen(btn_settings, LV_EVENT_CLICKED, btn_settings_click);
+#endif
 
     btn_flip = lv_btn_create(nav);
     FixButton(btn_flip);
