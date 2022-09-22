@@ -1,9 +1,17 @@
 {
   "[cpp]": {
-    "editor.quickSuggestions": true
+    "editor.quickSuggestions": {
+      "comments": "on",
+      "strings": "on",
+      "other": "on"
+    }
   },
   "[c]": {
-    "editor.quickSuggestions": true
+    "editor.quickSuggestions": {
+      "comments": "on",
+      "strings": "on",
+      "other": "on"
+    }
   },
   "git.ignoreLimitWarning": true,
   "files.associations": {
@@ -65,7 +73,8 @@
     "xtr1common": "cpp",
     "ratio": "cpp",
     "tuple": "cpp",
-    "format": "cpp"
+    "format": "cpp",
+    "cstddef": "cpp"
   },
   "editor.formatOnSave": true,
   "editor.tabSize": 2,
