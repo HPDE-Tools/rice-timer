@@ -39,27 +39,27 @@ def tabulate_with_profile(events: list[tuple[str, float, Any]], profile):
         resample_signal(gnss_signals.index, raw_imu_signals, 'linear'),
         *(resample_signal(gnss_signals.index, DataFrame(can_signal), can_interp_methods[i])
           for i, can_signal in enumerate(can_signals) if can_signal is not None),
-    ], axis = 1)
+    ], axis=1)
 
 
 def can_spec_from_profile(profile: dict):
-    can_db_path_rel=Path(profile['can']['db'])
+    can_db_path_rel = Path(profile['can']['db'])
     if can_db_path_rel.is_absolute():
-        can_db_path=can_db_path_rel
+        can_db_path = can_db_path_rel
     else:
-        can_db_path=DBC_PATH / can_db_path_rel
-    can_db: Database=cantools.database.load_file(can_db_path)
+        can_db_path = DBC_PATH / can_db_path_rel
+    can_db: Database = cantools.database.load_file(can_db_path)
 
-    can_signals_spec: list[tuple[str, str]]=[]
-    can_interp_methods: list[str]=[]
+    can_signals_spec: list[tuple[str, str]] = []
+    can_interp_methods: list[str] = []
     for key, spec in profile['can']['signals'].items():
-        can_message_name, can_signal_name=key.split('.', maxsplit = 1)
+        can_message_name, can_signal_name = key.split('.', maxsplit=1)
         if isinstance(spec, str):
-            column_name=spec
-            interp_method='previous'
+            column_name = spec
+            interp_method = 'previous'
         elif isinstance(spec, dict):
-            column_name=spec['name']
-            interp_method=spec['interp']
+            column_name = spec['name']
+            interp_method = spec['interp']
         else:
             logging.warning(
                 f'invalid can signal specification: {key} = {spec}')
@@ -81,8 +81,8 @@ _SIMPLE_METHOD_DICT = {
 def resample_signal(new_timestamps: Series, signal: DataFrame, interp_method: str):
     # try to use pandas native reindex method to perform trivial resampling
     if interp_method in _SIMPLE_METHOD_DICT:
-        reindexed = signal.reindex(new_timestamps,
-                                   method=_SIMPLE_METHOD_DICT[interp_method])
+        reindexed = signal.sort_index().reindex(new_timestamps,
+                                                method=_SIMPLE_METHOD_DICT[interp_method])
         reindexed.fillna(method='bfill', inplace=True)
         reindexed.fillna(method='ffill', inplace=True)
         return reindexed

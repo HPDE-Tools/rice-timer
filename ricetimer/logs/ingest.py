@@ -175,9 +175,13 @@ def _filter_pps_from_parsed(
         if typechar == 'p'
     ])
 
+    # validate that PPS captures are monotonically increasing
+    if not np.all(np.diff(pps_events[:, 1]) > 0):
+        raise ValueError('PPS events captures out of order in input')
+
     # validate that PPS unix timestamps are monotonically increasing
     if not np.all(np.diff(pps_events[:, 2]) > 0):
-        raise ValueError('PPS events out of order in input')
+        raise ValueError('PPS events timestamps out of order in input')
 
     return pps_events
 
