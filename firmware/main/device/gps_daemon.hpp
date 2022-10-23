@@ -97,6 +97,7 @@ class GpsDaemon : public Task {
   Perishable</*data*/ ParsedNmea, /*time*/ TickType_t> latest_gps_;
   bool had_first_fix_ = false;
   bool initialized_system_time_ = false;
+  std::string line_buf_;
 
   int century_;
 

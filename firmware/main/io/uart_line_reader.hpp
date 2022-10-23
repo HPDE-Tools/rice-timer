@@ -66,6 +66,8 @@ class UartLineReader : public ::Task {
   ///          otherwise non-empty line (including delimiter chars)
   std::string TryReadOneLine(TickType_t read_timeout = 0);
 
+  bool TryReadOneLineInto(std::string& buf, TickType_t read_timeout = 0);
+
   /// Read one line (including delimiter chars), blocking the current thread until one is available
   /// or timeout.
   ///
@@ -75,6 +77,11 @@ class UartLineReader : public ::Task {
   ///          otherwise non-empty line (including delimiter chars)
   std::string ReadOneLine(
       TickType_t wait_timeout = portMAX_DELAY, TickType_t read_timeout = portMAX_DELAY);
+
+  bool ReadOneLineInto(
+      std::string& buf,
+      TickType_t wait_timeout = portMAX_DELAY,
+      TickType_t read_timeout = portMAX_DELAY);
 
   /// Starts a background task that reads every line (including delimiter chars) as it comes.
   /// This task will share the same CPU as caller.

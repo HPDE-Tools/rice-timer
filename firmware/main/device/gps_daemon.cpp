@@ -128,14 +128,16 @@ void GpsDaemon::Run() {
 
     // Each poll cycle we only wait for a short time, so that we could check for both PPS and GPS
     // stale condition and react accordingly.
-    const std::string line = line_reader_->ReadOneLine(pdMS_TO_TICKS(kGpsPollMs));
+    if (!line_reader_->ReadOneLineInto(line_buf_, pdMS_TO_TICKS(kGpsPollMs))) {
+      line_buf_.clear();
+    }
     const TickType_t now_ostime = xTaskGetTickCount();
     const auto latest_pps = latest_pps_.Check(now_ostime, pps_timeout);
 
     // Timing-sensitive steps have all been done; from here onwards we no longer need to worry about
     // blocking (too much).
 
-    nmea = ParseNmea(line);
+    nmea = ParseNmea(line_buf_);
     // NOTE: parsed: we have converted the line to one of the minmea_sentence_xxx structs;
     //       valid: the line is valid NMEA, but we don't know how to parse it.
     const bool nmea_is_parsed = !std::holds_alternative<esp_err_t>(nmea);
@@ -188,8 +190,8 @@ void GpsDaemon::Run() {
         CHECKED_UNREACHABLE;
     }
 
-    if (line_subscriber_ && !line.empty()) {
-      line_subscriber_(line, nmea_is_valid);
+    if (line_subscriber_ && !line_buf_.empty()) {
+      line_subscriber_(line_buf_, nmea_is_valid);
     }
     if (data_subscriber_ && nmea_is_valid) {
       data_subscriber_(state_, nmea, time_fix);
