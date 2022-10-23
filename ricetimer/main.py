@@ -17,3 +17,7 @@ def main():
 
 
 main.add_command(ricetimer.logs.cli.export)
+
+
+if __name__ == "__main__":
+    main()
