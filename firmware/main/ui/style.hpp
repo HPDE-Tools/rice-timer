@@ -11,9 +11,9 @@
 extern lv_font_t cozette13;
 extern lv_font_t creep211;
 extern lv_font_t haxor18;
-extern lv_font_t liberation18bn;
-extern lv_font_t pixerif16;
-extern lv_font_t spleen24;
+// extern lv_font_t liberation18bn;
+// extern lv_font_t pixerif16;
+// extern lv_font_t spleen24;
 
 namespace ui {
 
@@ -36,23 +36,23 @@ struct Style {
     return s;
   }();
 
-  lv_style_t text_serif = []() {
-    lv_style_t s{};
-    lv_style_init(&s);
-    lv_style_set_text_font(&s, &pixerif16);
-    lv_style_set_text_letter_space(&s, 1);
-    lv_style_set_text_line_space(&s, -2);
-    return s;
-  }();
+  // lv_style_t text_serif = []() {
+  //   lv_style_t s{};
+  //   lv_style_init(&s);
+  //   lv_style_set_text_font(&s, &pixerif16);
+  //   lv_style_set_text_letter_space(&s, 1);
+  //   lv_style_set_text_line_space(&s, -2);
+  //   return s;
+  // }();
 
-  lv_style_t text_title = []() {
-    lv_style_t s{};
-    lv_style_init(&s);
-    lv_style_set_text_font(&s, &liberation18bn);
-    lv_style_set_text_letter_space(&s, 0);
-    lv_style_set_text_line_space(&s, -1);
-    return s;
-  }();
+  // lv_style_t text_title = []() {
+  //   lv_style_t s{};
+  //   lv_style_init(&s);
+  //   lv_style_set_text_font(&s, &liberation18bn);
+  //   lv_style_set_text_letter_space(&s, 0);
+  //   lv_style_set_text_line_space(&s, -1);
+  //   return s;
+  // }();
 
   lv_style_t text_big = []() {
     lv_style_t s{};
@@ -62,14 +62,14 @@ struct Style {
     return s;
   }();
 
-  lv_style_t table_cell_hr = []() {
-    lv_style_t s{};
-    lv_style_init(&s);
-    lv_style_set_pad_hor(&s, 2);
-    lv_style_set_pad_ver(&s, 0);
-    lv_style_set_border_side(&s, LV_BORDER_SIDE_TOP);
-    return s;
-  }();
+  // lv_style_t table_cell_hr = []() {
+  //   lv_style_t s{};
+  //   lv_style_init(&s);
+  //   lv_style_set_pad_hor(&s, 2);
+  //   lv_style_set_pad_ver(&s, 0);
+  //   lv_style_set_border_side(&s, LV_BORDER_SIDE_TOP);
+  //   return s;
+  // }();
 
   lv_style_t btn_normal = []() {
     lv_style_t s{};
@@ -94,16 +94,16 @@ struct Style {
     return s;
   }();
 
-  lv_style_t framed = []() {
-    lv_style_t s{};
-    lv_style_init(&s);
-    lv_style_set_border_width(&s, 1);
-    lv_style_set_border_color(&s, lv_color_white());
-    lv_style_set_border_post(&s, true);
-    lv_style_set_pad_ver(&s, 1);
-    lv_style_set_radius(&s, 4);
-    return s;
-  }();
+  // lv_style_t framed = []() {
+  //   lv_style_t s{};
+  //   lv_style_init(&s);
+  //   lv_style_set_border_width(&s, 1);
+  //   lv_style_set_border_color(&s, lv_color_white());
+  //   lv_style_set_border_post(&s, true);
+  //   lv_style_set_pad_ver(&s, 1);
+  //   lv_style_set_radius(&s, 4);
+  //   return s;
+  // }();
 };
 
 extern std::unique_ptr<Style> g_style;
