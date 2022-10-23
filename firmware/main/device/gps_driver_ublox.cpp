@@ -129,7 +129,7 @@ esp_err_t SetupUbloxGpsI2c(
   TRY(UbxI2cSendFrame(i2c_num, i2c_address_7bit, ubx_cfg_port_uart1));
 
   for (const auto [mnemonic, cls, id, rate] : kNmeaMessages) {
-    ESP_LOGI(TAG, "%c%c%c%c = %d", UINT32_BE_BYTES(mnemonic), rate);
+    ESP_LOGD(TAG, "%c%c%c%c = %d", UINT32_BE_BYTES(mnemonic), rate);
     const UbxFrame ubx_cfg_msg{
         0x06,  // CFG
         0x01,  // CFG_MSG
