@@ -13,8 +13,6 @@
 #include "cmd_system.h"
 #include "driver/gpio.h"
 #include "esp_task_wdt.h"
-#include "fmt/chrono.h"
-#include "fmt/core.h"
 #include "freertos/FreeRTOS.h"
 #include "linenoise/linenoise.h"
 
@@ -49,8 +47,6 @@ constexpr int kCanaryPeriodMs = 5009;
 
 DECLARE_PERF(ui_controller);
 DECLARE_PERF(onboard_analysis);
-
-using fmt::print;
 
 using namespace app;  // TODO: move this file altogether
 
