@@ -28,7 +28,10 @@ def ingest_log_lines(lines: Iterable[str], use_pps=True):
         - 'i' (IMU raw): list of float
         - 'c' (CAN raw): (id, len, data)
     """
-    return recover_timestamps(parse_lines(lines), use_pps=use_pps)
+    parsed_lines = parse_lines(lines)
+    # TODO(summivox): configurable gap threshold
+    heartbeat_filtered_lines = exclude_heartbeat_gaps(parsed_lines, 8000)
+    return recover_timestamps(heartbeat_filtered_lines, use_pps=use_pps)
 
 
 def parse_lines(lines: Iterable[str]):
@@ -141,11 +144,26 @@ def _parse_heartbeat(uptime_str: str):
         return None
 
 
+def exclude_heartbeat_gaps(parsed_lines: list[tuple[str, int, Any]], threshold_ms: int):
+    """
+    When we encounter large gaps between consecutive heartbeats, every event between them should be excluded from processing.
+    """
+    heartbeats = _filter_heartbeat_from_parsed(parsed_lines)  # (i, capture, uptime)
+    if heartbeats.shape[0] < 2:
+        return parsed_lines
+    uptime_diffs = np.diff(heartbeats[:, 2].astype(np.uint32)).astype(np.int32)
+    uptime_gap_indices = np.argwhere(uptime_diffs > threshold_ms)
+    excluded = np.zeros(len(parsed_lines), dtype=np.bool8)
+    for gap_index in uptime_gap_indices:
+        excluded[heartbeats[gap_index, 0]:heartbeats[gap_index + 1, 0]] = 1
+    return [line for i, line in enumerate(parsed_lines) if not excluded[i]]
+
+
 def recover_timestamps(parsed_lines: list[tuple[str, int, Any]],
                        use_pps=True) -> list[tuple[str, float, Any]]:
     """
     Convert 32-bit rolling timestamps in the parsed log lines to either:
-    
+
     - `use_pps == True`: GNSS timestamp (s) since the UNIX epoch, as interpolated / extrapolated from PPS
       events (capture clock + GNSS timestamp).
       This only requires the PPS events ('p') to be strictly monotonic.
@@ -159,8 +177,10 @@ def recover_timestamps(parsed_lines: list[tuple[str, int, Any]],
     captures = _captures_from_parsed(parsed_lines)
     captures_unwrapped = unwrap_uint32(captures)
     captures_unwrapped -= captures_unwrapped[0]
+
     if use_pps:
-        pps_events = _filter_pps_from_parsed(parsed_lines, captures_unwrapped)
+        pps_events = _filter_pps_from_parsed(
+            parsed_lines, captures_unwrapped)  # (i, capture, utctime)
         timestamps = _interp_timestamps(captures_unwrapped, pps_events)
         return [(typechar, timestamp, payload)
                 for i, (typechar, _, payload) in enumerate(parsed_lines)
@@ -169,7 +189,7 @@ def recover_timestamps(parsed_lines: list[tuple[str, int, Any]],
         # TODO: unify the relative / absolute pipelines
         return [(typechar, captures_unwrapped[i] / 80e6, payload)
                 for i, (typechar, _, payload) in enumerate(parsed_lines)
-                if typechar != 'p']
+                if typechar not in ['p', 'h']]
 
 
 def _captures_from_parsed(parsed_lines: list[tuple[str, int, Any]]):
@@ -197,6 +217,16 @@ def _filter_pps_from_parsed(
         raise ValueError('PPS events timestamps out of order in input')
 
     return pps_events
+
+
+def _filter_heartbeat_from_parsed(
+        parsed_lines: list[tuple[str, int, Any]]) -> np.ndarray:
+    heartbeat_events = np.array([
+        (i, capture, uptime)
+        for i, (typechar, capture, uptime) in enumerate(parsed_lines)
+        if typechar == 'h'
+    ])
+    return heartbeat_events
 
 
 def _interp_timestamps(captures_unwrapped: np.ndarray,
