@@ -22,6 +22,7 @@
 #include "app/can_instance.hpp"
 #include "app/device_id.hpp"
 #include "app/gps_instance.hpp"
+#include "app/heartbeat.hpp"
 #include "app/imu_instance.hpp"
 #include "app/logger_instance.hpp"
 #include "app/sd_card_instance.hpp"
@@ -80,6 +81,7 @@ void Main() {
 
   CHECK_OK(SetupSdCard());
   CHECK_OK(SetupAndStartLoggerTask());
+  CHECK_OK(SetupHeartbeat());
   CHECK_OK(SetupGps());
   CHECK_OK(SetupCan());
   CHECK_OK(SetupImu());
@@ -90,6 +92,7 @@ void Main() {
   heap_caps_print_heap_info(MALLOC_CAP_8BIT);
 
   CHECK_OK(StartSdCardInstance());
+  CHECK_OK(StartHeartbeat());
   CHECK_OK(StartGpsInstance());
   CHECK_OK(StartCanInstance());
   CHECK_OK(StartImuInstance());

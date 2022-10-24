@@ -10,6 +10,7 @@ set(srcs
 "app/can_instance.cpp"
 "app/device_id.cpp"
 "app/gps_instance.cpp"
+"app/heartbeat.cpp"
 "app/imu_instance.cpp"
 "app/logger_instance.cpp"
 "app/sd_card_instance.cpp"

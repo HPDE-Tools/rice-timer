@@ -81,6 +81,10 @@ def parse_line(line: str):
         # payload: text serialization of the CAN frame
         #   e.g. "b0b1b2b3,8,d0d1d2d3d4d5d6d7"
         parsed = _parse_can(payload)
+    elif typechar == 'h':
+        # Heartbeat
+        # payload: time elapsed in OS ticks (milliseconds) since device boot as uint32
+        parsed = _parse_heartbeat(payload)
     else:
         logging.warning(f'unrecognized type character: {typechar}')
         return None
@@ -125,6 +129,15 @@ def _parse_can(can_frame_str: str):
         return (id, dlc, data)
     except ValueError:
         logging.warning(f'invalid CAN frame: {repr(can_frame_str)}')
+        return None
+
+
+def _parse_heartbeat(uptime_str: str):
+    # NOTE(summivox): This is the same as `_parse_pps` except for semantics.
+    try:
+        return int(uptime_str)
+    except ValueError:
+        logging.warning(f'Heartbeat invalid: {repr(uptime_str)}')
         return None
 
 

@@ -18,6 +18,7 @@ enum ProducerId {
   kGpsProducer,
   kImuProducer,
   kCanProducer,
+  kHeartbeatProducer,
   kNumProducers,
 };
 
