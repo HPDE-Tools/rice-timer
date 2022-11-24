@@ -46,6 +46,7 @@ std::optional<GpsPose> GpsCollector::Update(const ParsedNmea& nmea) {
   std::visit(
       overloaded{
           [this](const minmea_sentence_rmc& rmc) {
+            ESP_LOGW(TAG, "(%d,%d)", rmc.latitude.value, rmc.longitude.value);
             const auto timestamp = GetTimestampFromMinmeaDateTime(rmc.date, rmc.time);
             if (timestamp) {
               pose_.timestamp_ms = ToMilliseconds(*timestamp);
