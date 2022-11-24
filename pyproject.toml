@@ -25,6 +25,7 @@ pandas = "^1.2.5"
 toml = "^0.10.2"
 tqdm = "^4.62.3"
 pyproj = "^3.3.0"
+telemetry-parser = "^0.2.6"
 
 [tool.poetry.dev-dependencies]
 yapf = "^0.31.0"
