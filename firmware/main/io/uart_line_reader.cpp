@@ -106,7 +106,7 @@ bool UartLineReader::ReadOneLineInto(
   TickType_t start_time_tick = xTaskGetTickCount();
   while (static_cast<int>(xTaskGetTickCount() - start_time_tick) <= wait_timeout) {
     if (TryReadOneLineInto(buf, read_timeout)) {
-      return false;
+      return true;
     }
     uart_event_t event;
     if (xQueueReceive(queue_, &event, option_.poll_interval) != pdTRUE) {
