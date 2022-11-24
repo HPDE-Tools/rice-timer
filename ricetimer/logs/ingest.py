@@ -30,7 +30,7 @@ def ingest_log_lines(lines: Iterable[str], use_pps=True):
     """
     parsed_lines = parse_lines(lines)
     # TODO(summivox): configurable gap threshold
-    heartbeat_filtered_lines = exclude_heartbeat_gaps(parsed_lines, 8000)
+    heartbeat_filtered_lines = parsed_lines # exclude_heartbeat_gaps(parsed_lines, 8000)
     return recover_timestamps(heartbeat_filtered_lines, use_pps=use_pps)
 
 
