@@ -50,7 +50,7 @@ class Logger : public Task {
     /// Max number of bytes the incoming queue of the logger can hold.
     int queue_size_bytes = 8192;
 
-    /// Target number of bytes written to the file in one `fwrite` call.
+    /// FS buffer size (in bytes, as the size argument to `setvbuf`).
     int write_buffer_size_bytes = 512;
 
     /// If true, only keep the latest log on card when running out of space.
@@ -110,6 +110,9 @@ class Logger : public Task {
   int64_t bytes_committed() const { return bytes_committed_; }
   TickType_t last_commit_time() const { return last_commit_time_; }
 
+  int64_t total_lines_in() const { return total_lines_in_; }
+  int64_t total_lines_out() const { return total_lines_out_; }
+
  protected:
   void Run() override;
 
@@ -126,7 +129,6 @@ class Logger : public Task {
   const Option option_;
 
   LineBufferMpsc line_buf_;
-  std::vector<uint8_t> write_buf_;
   OwnedFile file_;
 
   State state_ = kStopped;
@@ -147,6 +149,10 @@ class Logger : public Task {
   int64_t bytes_committed_ = 0;
   TickType_t last_commit_time_{};
 
+  // buffer pressure stats
+  int64_t total_lines_in_ = 0;
+  int64_t total_lines_out_ = 0;
+
   void ChangeState(State state);
 
   Error RunInternal();
@@ -158,10 +164,10 @@ class Logger : public Task {
   Error EnsureSessionPath();
   Error EnsureSplitPath();
   Error MaintainRollingLogHeadroom();
+  Error Flush();
 
   IRAM_ATTR Error WriteIncomingLines();
   IRAM_ATTR Error WriteIncomingLine(std::string_view line);
-  Error FlushWriteBuf(bool sync);
 
   NOT_COPYABLE_NOR_MOVABLE(Logger)
 };

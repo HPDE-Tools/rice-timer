@@ -7,6 +7,7 @@
 #include <sys/stat.h>
 #include <sys/unistd.h>
 #include <cstdio>
+#include <cstring>
 #include <memory>
 #include <optional>
 #include <string>
@@ -14,7 +15,6 @@
 
 #include "esp_log.h"
 #include "esp_system.h"
-#include "fmt/core.h"
 #include "ringbuf_c/ringbuf.h"
 #include "scope_guard/scope_guard.hpp"
 
@@ -24,7 +24,6 @@
 #include "common/times.hpp"
 #include "io/fs_utils.hpp"
 #include "priorities.hpp"
-#include "ui/model.hpp"
 
 namespace io {
 
@@ -56,9 +55,7 @@ Logger::Logger(
       state_change_callback_(state_change_callback),
       option_(option),
       line_buf_(option.queue_size_bytes, num_producers),
-      file_(nullptr, fclose) {
-  write_buf_.reserve(option.write_buffer_size_bytes);
-}
+      file_(nullptr, fclose) {}
 
 Logger::~Logger() { Task::Kill(); }
 
@@ -86,6 +83,7 @@ esp_err_t Logger::AppendLine(int producer_id, std::string_view line_without_sep)
   if (!(Task::handle() && state_ == kRunning)) {
     return ESP_ERR_INVALID_STATE;
   }
+  total_lines_in_++;
   return line_buf_.Push(producer_id, line_without_sep) ? ESP_OK : ESP_FAIL;
 }
 
@@ -166,8 +164,16 @@ Logger::Error Logger::PrepareNewSplit() {
   }
   LOGGER_TRY(EnsureSplitPath());
   ESP_LOGI(TAG, "will open file: %s", split_path_.c_str());
-  file_.reset(fopen(split_path_.c_str(), "w"));
-  return file_ ? kNoError : kOpenError;
+  FILE* file = fopen(split_path_.c_str(), "w");
+  if (!file) {
+    return kOpenError;
+  }
+  file_.reset(file);
+  if (auto err = setvbuf(file, NULL, _IOFBF, option_.write_buffer_size_bytes); err != 0) {
+    ESP_LOGE(TAG, "setvbuf to %d bytes => fail %d", option_.write_buffer_size_bytes, err);
+    return kOpenError;
+  }
+  return kNoError;
 }
 
 Logger::Error Logger::EnsureSessionPath() {
@@ -250,51 +256,42 @@ Logger::Error Logger::WriteIncomingLines() {
     LOGGER_TRY(WriteIncomingLine(line));
     line_buf_.PopPeeked(line);
   }
-  return FlushWriteBuf(/*sync*/ true);
+  return Flush();
 }
 
 Logger::Error Logger::WriteIncomingLine(std::string_view line) {
   const TickType_t now = xTaskGetTickCount();
-  const bool buf_full = (write_buf_.size() + line.size() > write_buf_.capacity());
   const bool should_sync =
       (SignedMinus(now, last_commit_time_) >= pdMS_TO_TICKS(option_.flush_interval_ms));
-  if (buf_full || should_sync) {
-    LOGGER_TRY(FlushWriteBuf(should_sync));
+
+  if (fwrite(line.data(), line.size(), 1, file_.get()) != 1) {
+    ESP_LOGE(TAG, "fail to write (%s):%.*s", strerror(errno), line.size(), line.data());
+    return kWriteError;
   }
-  CHECK(write_buf_.size() + line.size() <= write_buf_.capacity());
-  write_buf_.insert(write_buf_.end(), line.begin(), line.end());
+
   lines_written_++;
   bytes_written_ += line.size();
+  total_lines_out_++;
+
+  if (should_sync) {
+    return Flush();
+  }
   return kNoError;
 }
 
-Logger::Error Logger::FlushWriteBuf(bool sync) {
-  if (!write_buf_.empty()) {
-    // gpio_set_level(GPIO_NUM_17, 1);  // DEBUG
-    if (fwrite(write_buf_.data(), write_buf_.size(), 1, file_.get()) != 1) {
-      ESP_LOGE(
-          TAG, "fail to write (%s):%.*s", strerror(errno), write_buf_.size(), write_buf_.data());
-      return kWriteError;
-    }
-    write_buf_.clear();
-    // gpio_set_level(GPIO_NUM_17, 0);  // DEBUG
+Logger::Error Logger::Flush() {
+  // gpio_set_level(GPIO_NUM_16, 1);  // DEBUG
+  if (const esp_err_t err = FlushAndSync(file_.get()); err != ESP_OK) {
+    ESP_LOGE(TAG, "fail to flush (%s)", strerror(errno));
+    return kFlushError;
   }
-
-  if (sync) {
-    // gpio_set_level(GPIO_NUM_16, 1);  // DEBUG
-    if (const esp_err_t err = FlushAndSync(file_.get()); err != ESP_OK) {
-      ESP_LOGE(TAG, "fail to flush (%s)", strerror(errno));
-      return kFlushError;
-    }
-    lines_committed_ = lines_written_;
-    bytes_committed_ = bytes_written_;
-    last_commit_time_ = xTaskGetTickCount();
-    if (commit_callback_) {
-      commit_callback_(*this, last_commit_time_);
-    }
-    // gpio_set_level(GPIO_NUM_16, 0);  // DEBUG
+  lines_committed_ = lines_written_;
+  bytes_committed_ = bytes_written_;
+  last_commit_time_ = xTaskGetTickCount();
+  if (commit_callback_) {
+    commit_callback_(*this, last_commit_time_);
   }
-
+  // gpio_set_level(GPIO_NUM_16, 0);  // DEBUG
   return kNoError;
 }
 
