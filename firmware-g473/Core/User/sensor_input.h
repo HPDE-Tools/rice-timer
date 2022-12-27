@@ -8,7 +8,6 @@
 #include "spi.h"
 
 static SPI_TypeDef* const kSensorInputSpi = SPI1;
-static SPI_HandleTypeDef* const kSensorInputHSpi = &hspi1;
 static TIM_TypeDef* const kSensorInputTimer = TIM6;
 static TIM_HandleTypeDef* const kSensorInputHTimer = &htim6;
 
