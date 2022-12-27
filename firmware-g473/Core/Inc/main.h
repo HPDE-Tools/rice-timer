@@ -59,8 +59,16 @@ void Error_Handler(void);
 /* Private defines -----------------------------------------------------------*/
 #define LED_Pin GPIO_PIN_13
 #define LED_GPIO_Port GPIOC
+#define IMU_INT_Pin GPIO_PIN_0
+#define IMU_INT_GPIO_Port GPIOA
+#define CS_ADC_IN_Pin GPIO_PIN_1
+#define CS_ADC_IN_GPIO_Port GPIOA
 #define CS_IMU_Pin GPIO_PIN_4
 #define CS_IMU_GPIO_Port GPIOA
+#define CS_ADC_OUT_Pin GPIO_PIN_0
+#define CS_ADC_OUT_GPIO_Port GPIOB
+#define GNSS_PPS_Pin GPIO_PIN_10
+#define GNSS_PPS_GPIO_Port GPIOA
 
 /* USER CODE BEGIN Private defines */
 

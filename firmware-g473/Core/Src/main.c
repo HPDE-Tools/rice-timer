@@ -103,8 +103,10 @@ int main(void)
   MX_TIM2_Init();
   MX_USART2_UART_Init();
   MX_TIM5_Init();
+  MX_TIM6_Init();
   /* USER CODE BEGIN 2 */
-
+  void app_main(void);
+  app_main();
   /* USER CODE END 2 */
 
   /* Infinite loop */

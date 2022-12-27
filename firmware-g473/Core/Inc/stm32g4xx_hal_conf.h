@@ -101,9 +101,9 @@
 #define USE_HAL_SAI_REGISTER_CALLBACKS        0U
 #define USE_HAL_SMARTCARD_REGISTER_CALLBACKS  0U
 #define USE_HAL_SMBUS_REGISTER_CALLBACKS      0U
-#define USE_HAL_SPI_REGISTER_CALLBACKS        0U
+#define USE_HAL_SPI_REGISTER_CALLBACKS        1U
 #define USE_HAL_SRAM_REGISTER_CALLBACKS       0U
-#define USE_HAL_TIM_REGISTER_CALLBACKS        0U
+#define USE_HAL_TIM_REGISTER_CALLBACKS        1U
 #define USE_HAL_UART_REGISTER_CALLBACKS       0U
 #define USE_HAL_USART_REGISTER_CALLBACKS      0U
 #define USE_HAL_WWDG_REGISTER_CALLBACKS       0U
@@ -183,7 +183,7 @@ The real value may vary depending on the variations in voltage and temperature.*
 #define  VDD_VALUE                   (3300UL) /*!< Value of VDD in mv */
 #define  TICK_INT_PRIORITY           (15UL)    /*!< tick interrupt priority (lowest by default)  */
 #define  USE_RTOS                     0U
-#define  PREFETCH_ENABLE              0U
+#define  PREFETCH_ENABLE              1U
 #define  INSTRUCTION_CACHE_ENABLE     1U
 #define  DATA_CACHE_ENABLE            1U
 
