@@ -44,8 +44,9 @@ _Min_Stack_Size = 0x400; /* required amount of stack */
 /* Memories definition */
 MEMORY
 {
-  RAM    (xrw)    : ORIGIN = 0x20000000,   LENGTH = 128K
-  FLASH    (rx)    : ORIGIN = 0x8000000,   LENGTH = 512K
+  RAM    (xrw)    : ORIGIN = 0x20000000,   LENGTH = 96K
+  CCMRAM (xrw)    : ORIGIN = 0x10000000,   LENGTH = 32K
+  FLASH    (rx)   : ORIGIN = 0x8000000,   LENGTH = 512K
 }
 
 /* Sections */
@@ -75,7 +76,16 @@ SECTIONS
     . = ALIGN(4);
     _etext = .;        /* define a global symbols at end of code */
   } >FLASH
-
+  
+  .ccmtext :
+  {
+  	. = ALIGN(4);
+  	*(.ccmtext)
+  	*(.ccmtext*)
+  	. = ALIGN(4);
+  	_eccmtext = .;
+  } >CCMRAM
+  
   /* Constant data into "FLASH" Rom type memory */
   .rodata :
   {
