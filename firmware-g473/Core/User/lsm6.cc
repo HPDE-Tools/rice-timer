@@ -22,6 +22,9 @@ void Lsm6Configure(
       static_cast<uint8_t>(Lsm6Reg::CTRL2_G),
       (static_cast<uint8_t>(data_rate) << 4) | (static_cast<uint8_t>(gyro_full_scale) << 0));
   SensorInputWriteImuReg(
+      static_cast<uint8_t>(Lsm6Reg::CTRL4_C),
+      0b00000100);  // I2C_disable
+  SensorInputWriteImuReg(
       static_cast<uint8_t>(Lsm6Reg::INT2_CTRL),
       0b00000011);  // INT2_DRDY_G, INT2_DRDY_XL
 }
