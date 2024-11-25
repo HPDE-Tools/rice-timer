@@ -78,5 +78,6 @@
   },
   "editor.formatOnSave": true,
   "editor.tabSize": 2,
-  "idf.adapterTargetName": "esp32"
+  "idf.adapterTargetName": "esp32",
+  "dotnet.defaultSolution": "disable"
 }

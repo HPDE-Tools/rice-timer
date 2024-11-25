@@ -10,7 +10,6 @@
 #include <string_view>
 
 #include "argtable3/argtable3.h"
-#include "cmd_system.h"
 #include "driver/gpio.h"
 #include "esp_task_wdt.h"
 #include "freertos/FreeRTOS.h"
@@ -58,7 +57,6 @@ esp_console_repl_t* InitializeConsole() {
   repl_config.prompt = "rice>";
   esp_console_dev_uart_config_t repl_uart_config = ESP_CONSOLE_DEV_UART_CONFIG_DEFAULT();
   OK_OR_RETURN(esp_console_new_repl_uart(&repl_uart_config, &repl_config, &repl), nullptr);
-  register_system_common();
   OK_OR_RETURN(ConsoleCommandRegistry::GetInstance()->Register(), nullptr);
   linenoiseSetMultiLine(0);
   return repl;

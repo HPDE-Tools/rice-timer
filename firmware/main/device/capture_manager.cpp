@@ -4,7 +4,6 @@
 #include "device/capture_manager.hpp"
 
 #include "driver/periph_ctrl.h"
-#include "esp32/clk.h"
 #include "esp_log.h"
 #include "esp_system.h"
 #include "freertos/FreeRTOS.h"

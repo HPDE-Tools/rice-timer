@@ -50,7 +50,10 @@ class RustIter {
   std::monostate end() const noexcept { return {}; }
   friend bool operator!=(const Proxy& lhs, const std::monostate& rhs) { return lhs; }
 
-  NOT_COPYABLE_NOR_MOVABLE(RustIter<TInner>)
+  RustIter<TInner>(const RustIter<TInner>&) = delete;
+  RustIter<TInner>(RustIter<TInner>&&) = delete;
+  RustIter<TInner>& operator=(const RustIter<TInner>&) = delete;
+  RustIter<TInner>&& operator=(RustIter<TInner>&&) = delete;
 
  private:
   TInner inner_;

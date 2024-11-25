@@ -50,14 +50,12 @@ file(GLOB my_fbs_src "${COMPONENT_DIR}/../../flatbuffers/*.fbs")
 set(requires
 # System
 console
-esp_adc_cal
 fatfs
 nvs_flash
 sdmmc
 vfs
 
 # Project
-cmd_system
 eigen
 flatbuffers
 fmtlib
