@@ -1,15 +1,15 @@
-[submodule "firmware/components/fmtlib/fmt"]
-	path = firmware/components/fmtlib/fmt
+[submodule "firmware-v3-esp32/components/fmtlib/fmt"]
+	path = firmware-v3-esp32/components/fmtlib/fmt
 	url = https://github.com/fmtlib/fmt
-[submodule "firmware/components/lvgl"]
-	path = firmware/components/lvgl
+[submodule "firmware-v3-esp32/components/lvgl"]
+	path = firmware-v3-esp32/components/lvgl
 	url = https://github.com/lvgl/lvgl.git
-[submodule "firmware/components/eigen/eigen"]
-	path = firmware/components/eigen/eigen
+[submodule "firmware-v3-esp32/components/eigen/eigen"]
+	path = firmware-v3-esp32/components/eigen/eigen
 	url = https://gitlab.com/libeigen/eigen.git
-[submodule "firmware/components/geographiclib/geographiclib"]
-	path = firmware/components/geographiclib/geographiclib
+[submodule "firmware-v3-esp32/components/geographiclib/geographiclib"]
+	path = firmware-v3-esp32/components/geographiclib/geographiclib
 	url = https://git.code.sf.net/p/geographiclib/code
-[submodule "firmware/components/flatbuffers/flatbuffers"]
-	path = firmware/components/flatbuffers/flatbuffers
+[submodule "firmware-v3-esp32/components/flatbuffers/flatbuffers"]
+	path = firmware-v3-esp32/components/flatbuffers/flatbuffers
 	url = git@github.com:google/flatbuffers.git
