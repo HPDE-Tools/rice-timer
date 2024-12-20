@@ -40,7 +40,7 @@ int main(void) {
 
   printf("\r\n== Start FreeRTOS ==\r\n\r\n");
 
-  // NeopixelTaskInit();
+//  NeopixelTestTaskInit();
   vTaskStartScheduler();
 
   while (1) {

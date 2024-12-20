@@ -6,6 +6,14 @@
 
 #include "neopixel.hpp"
 
+bool FlexioTryPush(FLEXIO_Type* f, uint8_t shifter_i, uint32_t data) {
+  if (f->SHIFTSTAT & (1 << shifter_i)) {
+    f->SHIFTBUFBIS[shifter_i] = data;
+    return true;
+  }
+  return false;
+}
+
 
 constexpr size_t kNeopixelStackSize = 0x100;
 StackType_t g_neopixel_stack[kNeopixelStackSize];

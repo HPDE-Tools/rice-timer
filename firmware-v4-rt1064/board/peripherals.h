@@ -9,11 +9,17 @@
 /***********************************************************************************************************************
  * Included files
  **********************************************************************************************************************/
+#include "fsl_edma.h"
+#include "fsl_dmamux.h"
 #include "fsl_common.h"
 #include "fsl_gpio.h"
 #include "fsl_trng.h"
 #include "fsl_gpt.h"
 #include "fsl_clock.h"
+#include "fsl_lpspi.h"
+#include "fsl_lpspi_edma.h"
+#include "fsl_lpi2c.h"
+#include "fsl_lpi2c_edma.h"
 
 #if defined(__cplusplus)
 extern "C" {
@@ -23,6 +29,10 @@ extern "C" {
  * Definitions
  **********************************************************************************************************************/
 /* Definitions for BOARD_InitPeripherals functional group */
+/* Used DMA device. */
+#define DMA0_DMA_BASEADDR DMA0
+/* Associated DMAMUX device that is used for muxing of requests. */
+#define DMA0_DMAMUX_BASEADDR DMAMUX
 /* GPIO1 interrupt vector ID (number). */
 #define GPIO1_GPIO_COMB_0_15_IRQN GPIO1_Combined_0_15_IRQn
 /* GPIO1 interrupt handler identifier. */
@@ -47,12 +57,80 @@ extern "C" {
 #define GPT2_CLOCK_SOURCE 75000000UL
 /* Definition of GPT2 channel kGPT_InputCapture_Channel2 */
 #define GPT2_IMU_INT_INPUT kGPT_InputCapture_Channel2
+/* GPT2 interrupt vector ID (number). */
+#define GPT2_GPT_IRQN GPT2_IRQn
+/* GPT2 interrupt vector priority. */
+#define GPT2_GPT_IRQ_PRIORITY 2
+/* GPT2 interrupt handler identifier. */
+#define GPT2_GPT_IRQHANDLER GPT2_IRQHandler
+/* BOARD_InitPeripherals defines for LPSPI4 */
+/* Definition of peripheral ID */
+#define LPSPI4_PERIPHERAL LPSPI4
+/* Definition of clock source */
+#define LPSPI4_CLOCK_FREQ 132000000UL
+/* LPSPI4 eDMA source request. */
+#define LPSPI4_RX_DMA_REQUEST kDmaRequestMuxLPSPI4Rx
+/* Selected eDMA channel number. */
+#define LPSPI4_RX_DMA_CHANNEL 5
+/* DMAMUX device that is used for muxing of the request. */
+#define LPSPI4_RX_DMAMUX_BASEADDR DMAMUX
+/* Used DMA device. */
+#define LPSPI4_RX_DMA_BASEADDR DMA0
+/* LPSPI4 eDMA source request. */
+#define LPSPI4_TX_DMA_REQUEST kDmaRequestMuxLPSPI4Tx
+/* Selected eDMA channel number. */
+#define LPSPI4_TX_DMA_CHANNEL 6
+/* DMAMUX device that is used for muxing of the request. */
+#define LPSPI4_TX_DMAMUX_BASEADDR DMAMUX
+/* Used DMA device. */
+#define LPSPI4_TX_DMA_BASEADDR DMA0
+/* BOARD_InitPeripherals defines for LPI2C1 */
+/* Definition of peripheral ID */
+#define LPI2C1_PERIPHERAL LPI2C1
+/* Definition of clock source */
+#define LPI2C1_CLOCK_FREQ 12000000UL
+/* Definition of slave address */
+#define LPI2C1_MASTER_SLAVE_ADDRESS 0
+/* LPI2C1 eDMA source request. */
+#define LPI2C1_DMA_REQUEST kDmaRequestMuxLPI2C1
+/* Selected eDMA channel number. */
+#define LPI2C1_DMA_CHANNEL 7
+/* DMAMUX device that is used for muxing of the request. */
+#define LPI2C1_DMAMUX_BASEADDR DMAMUX
+/* Used DMA device. */
+#define LPI2C1_DMA_BASEADDR DMA0
+/* BOARD_InitPeripherals defines for LPI2C3 */
+/* Definition of peripheral ID */
+#define LPI2C3_PERIPHERAL LPI2C3
+/* Definition of clock source */
+#define LPI2C3_CLOCK_FREQ 12000000UL
+/* Definition of slave address */
+#define LPI2C3_MASTER_SLAVE_ADDRESS 0
+/* LPI2C3 eDMA source request. */
+#define LPI2C3_DMA_REQUEST kDmaRequestMuxLPI2C3
+/* Selected eDMA channel number. */
+#define LPI2C3_DMA_CHANNEL 8
+/* DMAMUX device that is used for muxing of the request. */
+#define LPI2C3_DMAMUX_BASEADDR DMAMUX
+/* Used DMA device. */
+#define LPI2C3_DMA_BASEADDR DMA0
 
 /***********************************************************************************************************************
  * Global variables
  **********************************************************************************************************************/
+extern const edma_config_t DMA0_config;
 extern const trng_config_t TRNG_config;
 extern const gpt_config_t GPT2_config;
+extern const lpspi_master_config_t LPSPI4_config;
+extern edma_handle_t LPSPI4_RX_Handle;
+extern edma_handle_t LPSPI4_TX_Handle;
+extern lpspi_master_edma_handle_t LPSPI4_handle;
+extern const lpi2c_master_config_t LPI2C1_masterConfig;
+extern edma_handle_t LPI2C1_Handle;
+extern lpi2c_master_edma_handle_t LPI2C1_masterHandle;
+extern const lpi2c_master_config_t LPI2C3_masterConfig;
+extern edma_handle_t LPI2C3_Handle;
+extern lpi2c_master_edma_handle_t LPI2C3_masterHandle;
 
 /***********************************************************************************************************************
  * Initialization functions

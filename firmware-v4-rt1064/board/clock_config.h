@@ -37,8 +37,8 @@ void BOARD_InitBootClocks(void);
 
 /* Clock outputs (values are in Hz): */
 #define BOARD_BOOTCLOCKRUN_AHB_CLK_ROOT               300000000UL    /* Clock consumers of AHB_CLK_ROOT output : AIPSTZ1, AIPSTZ2, AIPSTZ3, AIPSTZ4, ARM, FLEXIO3, FLEXSPI, FLEXSPI2, GPIO6, GPIO7, GPIO8, GPIO9 */
-#define BOARD_BOOTCLOCKRUN_CAN_CLK_ROOT               40000000UL     /* Clock consumers of CAN_CLK_ROOT output : CAN1, CAN2, CAN3 */
-#define BOARD_BOOTCLOCKRUN_CKIL_SYNC_CLK_ROOT         0UL            /* Clock consumers of CKIL_SYNC_CLK_ROOT output : CSU, EWM, GPT1, GPT2, KPP, PIT, RTWDOG, SNVS, SPDIF, TEMPMON, TSC, USB1, USB2, WDOG1, WDOG2 */
+#define BOARD_BOOTCLOCKRUN_CAN_CLK_ROOT               12000000UL     /* Clock consumers of CAN_CLK_ROOT output : CAN1, CAN2, CAN3 */
+#define BOARD_BOOTCLOCKRUN_CKIL_SYNC_CLK_ROOT         32768UL        /* Clock consumers of CKIL_SYNC_CLK_ROOT output : CSU, EWM, GPT1, GPT2, KPP, PIT, RTWDOG, SNVS, SPDIF, TEMPMON, TSC, USB1, USB2, WDOG1, WDOG2 */
 #define BOARD_BOOTCLOCKRUN_CLKO1_CLK                  0UL            /* Clock consumers of CLKO1_CLK output : N/A */
 #define BOARD_BOOTCLOCKRUN_CLKO2_CLK                  0UL            /* Clock consumers of CLKO2_CLK output : N/A */
 #define BOARD_BOOTCLOCKRUN_CLK_1M                     1000000UL      /* Clock consumers of CLK_1M output : EWM, RTWDOG */
@@ -59,7 +59,7 @@ void BOARD_InitBootClocks(void);
 #define BOARD_BOOTCLOCKRUN_GPT2_IPG_CLK_HIGHFREQ      75000000UL     /* Clock consumers of GPT2_ipg_clk_highfreq output : GPT2 */
 #define BOARD_BOOTCLOCKRUN_IPG_CLK_ROOT               150000000UL    /* Clock consumers of IPG_CLK_ROOT output : ADC1, ADC2, ADC_ETC, AOI1, AOI2, ARM, BEE, CAN1, CAN2, CAN3, CCM, CMP1, CMP2, CMP3, CMP4, CSI, CSU, DCDC, DCP, DMA0, DMAMUX, ENC1, ENC2, ENC3, ENC4, ENET, ENET2, EWM, FLEXIO1, FLEXIO2, FLEXIO3, FLEXRAM, FLEXSPI, FLEXSPI2, GPC, GPIO1, GPIO10, GPIO2, GPIO3, GPIO4, GPIO5, IOMUXC, KPP, LCDIF, LPI2C1, LPI2C2, LPI2C3, LPI2C4, LPSPI1, LPSPI2, LPSPI3, LPSPI4, LPUART1, LPUART2, LPUART3, LPUART4, LPUART5, LPUART6, LPUART7, LPUART8, NVIC, OCOTP, PMU, PWM1, PWM2, PWM3, PWM4, PXP, ROMC, RTWDOG, SAI1, SAI2, SAI3, SNVS, SPDIF, SRC, TEMPMON, TMR1, TMR2, TMR3, TMR4, TRNG, TSC, USB1, USB2, USDHC1, USDHC2, WDOG1, WDOG2, XBARA1, XBARB2, XBARB3 */
 #define BOARD_BOOTCLOCKRUN_LCDIF_CLK_ROOT             61714285UL     /* Clock consumers of LCDIF_CLK_ROOT output : LCDIF */
-#define BOARD_BOOTCLOCKRUN_LPI2C_CLK_ROOT             60000000UL     /* Clock consumers of LPI2C_CLK_ROOT output : LPI2C1, LPI2C2, LPI2C3, LPI2C4 */
+#define BOARD_BOOTCLOCKRUN_LPI2C_CLK_ROOT             12000000UL     /* Clock consumers of LPI2C_CLK_ROOT output : LPI2C1, LPI2C2, LPI2C3, LPI2C4 */
 #define BOARD_BOOTCLOCKRUN_LPSPI_CLK_ROOT             132000000UL    /* Clock consumers of LPSPI_CLK_ROOT output : LPSPI1, LPSPI2, LPSPI3, LPSPI4 */
 #define BOARD_BOOTCLOCKRUN_LVDS1_CLK                  1200000000UL   /* Clock consumers of LVDS1_CLK output : N/A */
 #define BOARD_BOOTCLOCKRUN_MQS_MCLK                   63529411UL     /* Clock consumers of MQS_MCLK output : N/A */
@@ -80,12 +80,12 @@ void BOARD_InitBootClocks(void);
 #define BOARD_BOOTCLOCKRUN_SEMC_CLK_ROOT              163862068UL    /* Clock consumers of SEMC_CLK_ROOT output : SEMC */
 #define BOARD_BOOTCLOCKRUN_SPDIF0_CLK_ROOT            30000000UL     /* Clock consumers of SPDIF0_CLK_ROOT output : SPDIF */
 #define BOARD_BOOTCLOCKRUN_SPDIF0_EXTCLK_OUT          0UL            /* Clock consumers of SPDIF0_EXTCLK_OUT output : SPDIF */
-#define BOARD_BOOTCLOCKRUN_TRACE_CLK_ROOT             99000000UL     /* Clock consumers of TRACE_CLK_ROOT output : ARM */
-#define BOARD_BOOTCLOCKRUN_UART_CLK_ROOT              80000000UL     /* Clock consumers of UART_CLK_ROOT output : LPUART1, LPUART2, LPUART3, LPUART4, LPUART5, LPUART6, LPUART7, LPUART8 */
+#define BOARD_BOOTCLOCKRUN_TRACE_CLK_ROOT             132000000UL    /* Clock consumers of TRACE_CLK_ROOT output : ARM */
+#define BOARD_BOOTCLOCKRUN_UART_CLK_ROOT              12000000UL     /* Clock consumers of UART_CLK_ROOT output : LPUART1, LPUART2, LPUART3, LPUART4, LPUART5, LPUART6, LPUART7, LPUART8 */
 #define BOARD_BOOTCLOCKRUN_USBPHY1_CLK                0UL            /* Clock consumers of USBPHY1_CLK output : TEMPMON, USB1 */
 #define BOARD_BOOTCLOCKRUN_USBPHY2_CLK                0UL            /* Clock consumers of USBPHY2_CLK output : USB2 */
 #define BOARD_BOOTCLOCKRUN_USDHC1_CLK_ROOT            198000000UL    /* Clock consumers of USDHC1_CLK_ROOT output : USDHC1 */
-#define BOARD_BOOTCLOCKRUN_USDHC2_CLK_ROOT            132000000UL    /* Clock consumers of USDHC2_CLK_ROOT output : USDHC2 */
+#define BOARD_BOOTCLOCKRUN_USDHC2_CLK_ROOT            198000000UL    /* Clock consumers of USDHC2_CLK_ROOT output : USDHC2 */
 
 /*! @brief Arm PLL set for BOARD_BootClockRUN configuration.
  */

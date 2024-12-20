@@ -50,7 +50,8 @@ name: BOARD_BootClockRUN
 called_from_default_init: true
 outputs:
 - {id: AHB_CLK_ROOT.outFreq, value: 300 MHz, locked: true, accuracy: '0.001'}
-- {id: CAN_CLK_ROOT.outFreq, value: 40 MHz}
+- {id: CAN_CLK_ROOT.outFreq, value: 12 MHz}
+- {id: CKIL_SYNC_CLK_ROOT.outFreq, value: 32.768 kHz}
 - {id: CLK_1M.outFreq, value: 1 MHz}
 - {id: CLK_24M.outFreq, value: 24 MHz}
 - {id: CSI_CLK_ROOT.outFreq, value: 12 MHz}
@@ -65,7 +66,7 @@ outputs:
 - {id: GPT2_ipg_clk_highfreq.outFreq, value: 75 MHz}
 - {id: IPG_CLK_ROOT.outFreq, value: 150 MHz}
 - {id: LCDIF_CLK_ROOT.outFreq, value: 432/7 MHz}
-- {id: LPI2C_CLK_ROOT.outFreq, value: 60 MHz}
+- {id: LPI2C_CLK_ROOT.outFreq, value: 12 MHz}
 - {id: LPSPI_CLK_ROOT.outFreq, value: 132 MHz}
 - {id: LVDS1_CLK.outFreq, value: 1.2 GHz}
 - {id: MQS_MCLK.outFreq, value: 1080/17 MHz}
@@ -83,22 +84,27 @@ outputs:
 - {id: SAI3_MCLK3.outFreq, value: 30 MHz}
 - {id: SEMC_CLK_ROOT.outFreq, value: 4752/29 MHz}
 - {id: SPDIF0_CLK_ROOT.outFreq, value: 30 MHz}
-- {id: TRACE_CLK_ROOT.outFreq, value: 99 MHz}
-- {id: UART_CLK_ROOT.outFreq, value: 80 MHz}
+- {id: TRACE_CLK_ROOT.outFreq, value: 132 MHz}
+- {id: UART_CLK_ROOT.outFreq, value: 12 MHz}
 - {id: USDHC1_CLK_ROOT.outFreq, value: 198 MHz, locked: true, accuracy: '0.001'}
-- {id: USDHC2_CLK_ROOT.outFreq, value: 132 MHz}
+- {id: USDHC2_CLK_ROOT.outFreq, value: 198 MHz}
 settings:
 - {id: CCM.AHB_PODF.scale, value: '2'}
+- {id: CCM.CAN_CLK_SEL.sel, value: XTALOSC24M.OSC_CLK}
 - {id: CCM.FLEXIO2_CLK_PODF.scale, value: '2', locked: true}
 - {id: CCM.FLEXIO2_CLK_PRED.scale, value: '3', locked: true}
 - {id: CCM.IPG_PODF.scale, value: '2'}
 - {id: CCM.LCDIF_PODF.scale, value: '5'}
+- {id: CCM.LPI2C_CLK_PODF.scale, value: '2', locked: true}
+- {id: CCM.LPI2C_CLK_SEL.sel, value: XTALOSC24M.OSC_CLK}
 - {id: CCM.PERCLK_PODF.scale, value: '2'}
 - {id: CCM.SEMC_CLK_SEL.sel, value: CCM.SEMC_ALT_CLK_SEL}
 - {id: CCM.SEMC_PODF.scale, value: '2'}
+- {id: CCM.TRACE_PODF.scale, value: '3'}
+- {id: CCM.UART_CLK_PODF.scale, value: '2', locked: true}
+- {id: CCM.UART_CLK_SEL.sel, value: XTALOSC24M.OSC_CLK}
 - {id: CCM.USDHC1_CLK_SEL.sel, value: CCM_ANALOG.PLL2_PFD0_CLK}
 - {id: CCM.USDHC2_CLK_SEL.sel, value: CCM_ANALOG.PLL2_PFD0_CLK}
-- {id: CCM.USDHC2_PODF.scale, value: '3'}
 - {id: CCM_ANALOG.PLL1_BYPASS.sel, value: CCM_ANALOG.PLL1}
 - {id: CCM_ANALOG.PLL1_VDIV.scale, value: '50'}
 - {id: CCM_ANALOG.PLL2.denom, value: '1'}
@@ -118,6 +124,8 @@ settings:
 - {id: CCM_ANALOG.PLL3_PFD2_BYPASS.sel, value: CCM_ANALOG.PLL3_PFD2}
 - {id: CCM_ANALOG.PLL3_PFD3_BYPASS.sel, value: CCM_ANALOG.PLL3_PFD3}
 - {id: CCM_ANALOG_PLL_USB1_POWER_CFG, value: 'Yes'}
+sources:
+- {id: XTALOSC24M.RTC_OSC.outFreq, value: 32.768 kHz, enabled: true}
  * BE CAREFUL MODIFYING THIS COMMENT - IT IS YAML SETTINGS FOR TOOLS **********/
 
 /*******************************************************************************
@@ -154,6 +162,8 @@ const clock_enet_pll_config_t enetPllConfig_BOARD_BootClockRUN =
  ******************************************************************************/
 void BOARD_BootClockRUN(void)
 {
+    /* Init RTC OSC clock frequency. */
+    CLOCK_SetRtcXtalFreq(32768U);
     /* Enable 1MHz clock output. */
     XTALOSC24M->OSC_CONFIG2 |= XTALOSC24M_OSC_CONFIG2_ENABLE_1M_MASK;
     /* Use free 1MHz clock output. */
@@ -202,7 +212,7 @@ void BOARD_BootClockRUN(void)
     /* Disable USDHC2 clock gate. */
     CLOCK_DisableClock(kCLOCK_Usdhc2);
     /* Set USDHC2_PODF. */
-    CLOCK_SetDiv(kCLOCK_Usdhc2Div, 2);
+    CLOCK_SetDiv(kCLOCK_Usdhc2Div, 1);
     /* Set Usdhc2 clock source. */
     CLOCK_SetMux(kCLOCK_Usdhc2Mux, 1);
     /* In SDK projects, SDRAM (configured by SEMC) will be initialized in either debug script or dcd.
@@ -253,7 +263,7 @@ void BOARD_BootClockRUN(void)
     /* Disable TRACE clock gate. */
     CLOCK_DisableClock(kCLOCK_Trace);
     /* Set TRACE_PODF. */
-    CLOCK_SetDiv(kCLOCK_TraceDiv, 3);
+    CLOCK_SetDiv(kCLOCK_TraceDiv, 2);
     /* Set Trace clock source. */
     CLOCK_SetMux(kCLOCK_TraceMux, 2);
     /* Disable SAI1 clock gate. */
@@ -285,9 +295,9 @@ void BOARD_BootClockRUN(void)
     CLOCK_DisableClock(kCLOCK_Lpi2c2);
     CLOCK_DisableClock(kCLOCK_Lpi2c3);
     /* Set LPI2C_CLK_PODF. */
-    CLOCK_SetDiv(kCLOCK_Lpi2cDiv, 0);
+    CLOCK_SetDiv(kCLOCK_Lpi2cDiv, 1);
     /* Set Lpi2c clock source. */
-    CLOCK_SetMux(kCLOCK_Lpi2cMux, 0);
+    CLOCK_SetMux(kCLOCK_Lpi2cMux, 1);
     /* Disable CAN clock gate. */
     CLOCK_DisableClock(kCLOCK_Can1);
     CLOCK_DisableClock(kCLOCK_Can2);
@@ -298,7 +308,7 @@ void BOARD_BootClockRUN(void)
     /* Set CAN_CLK_PODF. */
     CLOCK_SetDiv(kCLOCK_CanDiv, 1);
     /* Set Can clock source. */
-    CLOCK_SetMux(kCLOCK_CanMux, 2);
+    CLOCK_SetMux(kCLOCK_CanMux, 1);
     /* Disable UART clock gate. */
     CLOCK_DisableClock(kCLOCK_Lpuart1);
     CLOCK_DisableClock(kCLOCK_Lpuart2);
@@ -309,9 +319,9 @@ void BOARD_BootClockRUN(void)
     CLOCK_DisableClock(kCLOCK_Lpuart7);
     CLOCK_DisableClock(kCLOCK_Lpuart8);
     /* Set UART_CLK_PODF. */
-    CLOCK_SetDiv(kCLOCK_UartDiv, 0);
+    CLOCK_SetDiv(kCLOCK_UartDiv, 1);
     /* Set Uart clock source. */
-    CLOCK_SetMux(kCLOCK_UartMux, 0);
+    CLOCK_SetMux(kCLOCK_UartMux, 1);
     /* Disable LCDIF clock gate. */
     CLOCK_DisableClock(kCLOCK_LcdPixel);
     /* Set LCDIF_PRED. */

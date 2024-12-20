@@ -53,6 +53,55 @@ component:
  * BOARD_InitPeripherals functional group
  **********************************************************************************************************************/
 /***********************************************************************************************************************
+ * DMA0 initialization code
+ **********************************************************************************************************************/
+/* clang-format off */
+/* TEXT BELOW IS USED AS SETTING FOR TOOLS *************************************
+instance:
+- name: 'DMA0'
+- type: 'edma'
+- mode: 'basic'
+- custom_name_enabled: 'false'
+- type_id: 'edma_46976c94302ab714c0d335f519487c8a'
+- functional_group: 'BOARD_InitPeripherals'
+- peripheral: 'DMA0'
+- config_sets:
+  - fsl_edma:
+    - common_settings:
+      - enableMinorLoopMapping: 'true'
+      - enableContinuousLinkMode: 'false'
+      - enableHaltOnError: 'true'
+      - ERCA: 'fixedPriority'
+      - enableDebugMode: 'false'
+    - dma_table:
+      - 0: []
+      - 1: []
+      - 2: []
+      - 3: []
+    - edma_channels: []
+    - errInterruptConfig:
+      - enableErrInterrupt: 'false'
+      - errorInterrupt:
+        - IRQn: 'DMA_ERROR_IRQn'
+        - enable_interrrupt: 'enabled'
+        - enable_priority: 'false'
+        - priority: '0'
+        - enable_custom_name: 'false'
+ * BE CAREFUL MODIFYING THIS COMMENT - IT IS YAML SETTINGS FOR TOOLS **********/
+/* clang-format on */
+const edma_config_t DMA0_config = {
+  .enableContinuousLinkMode = false,
+  .enableHaltOnError = true,
+  .enableRoundRobinArbitration = false,
+  .enableDebugMode = false
+};
+
+static void DMA0_init(void) {
+  /* DMA0 minor loop mapping */
+  EDMA_EnableMinorLoopMapping(DMA0_DMA_BASEADDR, true);
+}
+
+/***********************************************************************************************************************
  * NVIC initialization code
  **********************************************************************************************************************/
 /* clang-format off */
@@ -72,6 +121,7 @@ instance:
       - 1: []
       - 2: []
       - 3: []
+      - 4: []
     - interrupts: []
  * BE CAREFUL MODIFYING THIS COMMENT - IT IS YAML SETTINGS FOR TOOLS **********/
 /* clang-format on */
@@ -360,13 +410,13 @@ instance:
         - channel: 'kGPT_InputCapture_Channel2'
         - mode: 'kGPT_InputOperation_RiseEdge'
     - output_compare_channels: []
-    - interrupt_requests: ''
-    - isInterruptEnabled: 'false'
+    - interrupt_requests: 'kGPT_InputCapture2InterruptEnable'
+    - isInterruptEnabled: 'true'
     - interrupt:
       - IRQn: 'GPT2_IRQn'
       - enable_interrrupt: 'enabled'
-      - enable_priority: 'false'
-      - priority: '0'
+      - enable_priority: 'true'
+      - priority: '2'
       - enable_custom_name: 'false'
     - EnableTimerInInit: 'true'
  * BE CAREFUL MODIFYING THIS COMMENT - IT IS YAML SETTINGS FOR TOOLS **********/
@@ -388,9 +438,294 @@ static void GPT2_init(void) {
   GPT_SetOscClockDivider(GPT2_PERIPHERAL, 1);
   GPT_SetInputOperationMode(GPT2_PERIPHERAL, kGPT_InputCapture_Channel2, kGPT_InputOperation_RiseEdge);
   /* Enable GPT interrupt sources */
-  GPT_EnableInterrupts(GPT2_PERIPHERAL, 0);
+  GPT_EnableInterrupts(GPT2_PERIPHERAL, kGPT_InputCapture2InterruptEnable);
+  /* Interrupt vector GPT2_IRQn priority settings in the NVIC. */
+  NVIC_SetPriority(GPT2_GPT_IRQN, GPT2_GPT_IRQ_PRIORITY);
+  /* Enable interrupt GPT2_IRQn request in the NVIC. */
+  EnableIRQ(GPT2_GPT_IRQN);
   /* Start the GPT timer */ 
   GPT_StartTimer(GPT2_PERIPHERAL);
+}
+
+/***********************************************************************************************************************
+ * LPSPI4 initialization code
+ **********************************************************************************************************************/
+/* clang-format off */
+/* TEXT BELOW IS USED AS SETTING FOR TOOLS *************************************
+instance:
+- name: 'LPSPI4'
+- type: 'lpspi'
+- mode: 'edma'
+- custom_name_enabled: 'false'
+- type_id: 'lpspi_6e21a1e0a09f0a012d683c4f91752db8'
+- functional_group: 'BOARD_InitPeripherals'
+- peripheral: 'LPSPI4'
+- config_sets:
+  - main:
+    - mode: 'kLPSPI_Master'
+    - clockSource: 'LpspiClock'
+    - clockSourceFreq: 'ClocksTool_DefaultInit'
+    - master:
+      - baudRate: '10000000'
+      - bitsPerFrame: '8'
+      - cpol: 'kLPSPI_ClockPolarityActiveLow'
+      - cpha: 'kLPSPI_ClockPhaseSecondEdge'
+      - direction: 'kLPSPI_MsbFirst'
+      - pcsToSckDelayInNanoSec: '1000'
+      - lastSckToPcsDelayInNanoSec: '1000'
+      - betweenTransferDelayInNanoSec: '1000'
+      - whichPcs: 'kLPSPI_Pcs0'
+      - pcsActiveHighOrLow: 'kLPSPI_PcsActiveLow'
+      - pinCfg: 'kLPSPI_SdiInSdoOut'
+      - dataOutConfig: 'kLpspiDataOutRetained'
+      - enableInputDelay: 'false'
+    - allPcsPolarityEnable: 'false'
+    - allPcsPolarity:
+      - kLPSPI_Pcs1Active: 'kLPSPI_PcsActiveLow'
+      - kLPSPI_Pcs2Active: 'kLPSPI_PcsActiveLow'
+      - kLPSPI_Pcs3Active: 'kLPSPI_PcsActiveLow'
+  - edma:
+    - channels:
+      - enableReceive: 'true'
+      - receive:
+        - uid: '1734677888361'
+        - eDMAn: '5'
+        - eDMA_source: 'kDmaRequestMuxLPSPI4Rx'
+        - enableTriggerPIT: 'false'
+        - init_channel_priority: 'false'
+        - edma_channel_Preemption:
+          - enableChannelPreemption: 'false'
+          - enablePreemptAbility: 'false'
+          - channelPriority: '0'
+        - enable_custom_name: 'false'
+      - enableTransmit: 'true'
+      - transmit:
+        - uid: '1734677888362'
+        - eDMAn: '6'
+        - eDMA_source: 'kDmaRequestMuxLPSPI4Tx'
+        - enableTriggerPIT: 'false'
+        - init_channel_priority: 'false'
+        - edma_channel_Preemption:
+          - enableChannelPreemption: 'false'
+          - enablePreemptAbility: 'false'
+          - channelPriority: '0'
+        - enable_custom_name: 'false'
+    - transfer:
+      - callback:
+        - name: ''
+        - userData: ''
+ * BE CAREFUL MODIFYING THIS COMMENT - IT IS YAML SETTINGS FOR TOOLS **********/
+/* clang-format on */
+const lpspi_master_config_t LPSPI4_config = {
+  .baudRate = 10000000UL,
+  .bitsPerFrame = 8UL,
+  .cpol = kLPSPI_ClockPolarityActiveLow,
+  .cpha = kLPSPI_ClockPhaseSecondEdge,
+  .direction = kLPSPI_MsbFirst,
+  .pcsToSckDelayInNanoSec = 1000UL,
+  .lastSckToPcsDelayInNanoSec = 1000UL,
+  .betweenTransferDelayInNanoSec = 1000UL,
+  .whichPcs = kLPSPI_Pcs0,
+  .pcsActiveHighOrLow = kLPSPI_PcsActiveLow,
+  .pinCfg = kLPSPI_SdiInSdoOut,
+  .dataOutConfig = kLpspiDataOutRetained,
+#if defined(FSL_LPSPI_DRIVER_VERSION) && (FSL_LPSPI_DRIVER_VERSION >= (MAKE_VERSION(2, 3, 0)))
+  .enableInputDelay = false,
+#endif
+};
+edma_handle_t LPSPI4_RX_Handle;
+edma_handle_t LPSPI4_TX_Handle;
+lpspi_master_edma_handle_t LPSPI4_handle;
+
+static void LPSPI4_init(void) {
+  LPSPI_MasterInit(LPSPI4_PERIPHERAL, &LPSPI4_config, LPSPI4_CLOCK_FREQ);
+  /* Set the source kDmaRequestMuxLPSPI4Rx request in the DMAMUX */
+  DMAMUX_SetSource(LPSPI4_RX_DMAMUX_BASEADDR, LPSPI4_RX_DMA_CHANNEL, LPSPI4_RX_DMA_REQUEST);
+  /* Enable the channel 5 in the DMAMUX */
+  DMAMUX_EnableChannel(LPSPI4_RX_DMAMUX_BASEADDR, LPSPI4_RX_DMA_CHANNEL);
+  /* Set the source kDmaRequestMuxLPSPI4Tx request in the DMAMUX */
+  DMAMUX_SetSource(LPSPI4_TX_DMAMUX_BASEADDR, LPSPI4_TX_DMA_CHANNEL, LPSPI4_TX_DMA_REQUEST);
+  /* Enable the channel 6 in the DMAMUX */
+  DMAMUX_EnableChannel(LPSPI4_TX_DMAMUX_BASEADDR, LPSPI4_TX_DMA_CHANNEL);
+  /* Create the eDMA LPSPI4_RX_Handle handle */
+  EDMA_CreateHandle(&LPSPI4_RX_Handle, LPSPI4_RX_DMA_BASEADDR, LPSPI4_RX_DMA_CHANNEL);
+  /* Create the eDMA LPSPI4_TX_Handle handle */
+  EDMA_CreateHandle(&LPSPI4_TX_Handle, LPSPI4_TX_DMA_BASEADDR, LPSPI4_TX_DMA_CHANNEL);
+  LPSPI_MasterTransferCreateHandleEDMA(LPSPI4_PERIPHERAL, &LPSPI4_handle, NULL, NULL, &LPSPI4_RX_Handle, &LPSPI4_TX_Handle);
+}
+
+/***********************************************************************************************************************
+ * LPI2C1 initialization code
+ **********************************************************************************************************************/
+/* clang-format off */
+/* TEXT BELOW IS USED AS SETTING FOR TOOLS *************************************
+instance:
+- name: 'LPI2C1'
+- type: 'lpi2c'
+- mode: 'master'
+- custom_name_enabled: 'false'
+- type_id: 'lpi2c_6b71962515c3208facfccd030afebc98'
+- functional_group: 'BOARD_InitPeripherals'
+- peripheral: 'LPI2C1'
+- config_sets:
+  - main:
+    - clockSource: 'Lpi2cClock'
+    - clockSourceFreq: 'ClocksTool_DefaultInit'
+  - interrupt_vector: []
+  - master:
+    - mode: 'edma'
+    - config:
+      - enableMaster: 'true'
+      - enableDoze: 'true'
+      - debugEnable: 'false'
+      - ignoreAck: 'false'
+      - pinConfig: 'kLPI2C_2PinOpenDrain'
+      - baudRate_Hz: '100000'
+      - busIdleTimeout_ns: '0'
+      - pinLowTimeout_ns: '0'
+      - sdaGlitchFilterWidth_ns: '0'
+      - sclGlitchFilterWidth_ns: '0'
+      - hostRequest:
+        - enable: 'false'
+        - source: 'kLPI2C_HostRequestExternalPin'
+        - polarity: 'kLPI2C_HostRequestPinActiveHigh'
+    - edma:
+      - channels:
+        - enableReceive: 'true'
+        - receive:
+          - uid: '1734677888363'
+          - eDMAn: '7'
+          - eDMA_source: 'kDmaRequestMuxLPI2C1'
+          - enableTriggerPIT: 'false'
+          - init_channel_priority: 'false'
+          - edma_channel_Preemption:
+            - enableChannelPreemption: 'false'
+            - enablePreemptAbility: 'false'
+            - channelPriority: '0'
+          - enable_custom_name: 'false'
+      - transfer:
+        - enable_custom_handle: 'false'
+        - callback:
+          - name: ''
+          - userData: ''
+ * BE CAREFUL MODIFYING THIS COMMENT - IT IS YAML SETTINGS FOR TOOLS **********/
+/* clang-format on */
+const lpi2c_master_config_t LPI2C1_masterConfig = {
+  .enableMaster = true,
+  .enableDoze = true,
+  .debugEnable = false,
+  .ignoreAck = false,
+  .pinConfig = kLPI2C_2PinOpenDrain,
+  .baudRate_Hz = 100000UL,
+  .busIdleTimeout_ns = 0UL,
+  .pinLowTimeout_ns = 0UL,
+  .sdaGlitchFilterWidth_ns = 0U,
+  .sclGlitchFilterWidth_ns = 0U,
+  .hostRequest = {
+    .enable = false,
+    .source = kLPI2C_HostRequestExternalPin,
+    .polarity = kLPI2C_HostRequestPinActiveHigh
+  }
+};
+edma_handle_t LPI2C1_Handle;
+lpi2c_master_edma_handle_t LPI2C1_masterHandle;
+
+static void LPI2C1_init(void) {
+  LPI2C_MasterInit(LPI2C1_PERIPHERAL, &LPI2C1_masterConfig, LPI2C1_CLOCK_FREQ);
+  /* Set the source kDmaRequestMuxLPI2C1 request in the DMAMUX */
+  DMAMUX_SetSource(LPI2C1_DMAMUX_BASEADDR, LPI2C1_DMA_CHANNEL, LPI2C1_DMA_REQUEST);
+  /* Enable the channel 7 in the DMAMUX */
+  DMAMUX_EnableChannel(LPI2C1_DMAMUX_BASEADDR, LPI2C1_DMA_CHANNEL);
+  /* Create the eDMA LPI2C1_Handle handle */
+  EDMA_CreateHandle(&LPI2C1_Handle, LPI2C1_DMA_BASEADDR, LPI2C1_DMA_CHANNEL);
+  LPI2C_MasterCreateEDMAHandle(LPI2C1_PERIPHERAL, &LPI2C1_masterHandle, &LPI2C1_Handle, &LPI2C1_Handle, NULL, NULL);
+}
+
+/***********************************************************************************************************************
+ * LPI2C3 initialization code
+ **********************************************************************************************************************/
+/* clang-format off */
+/* TEXT BELOW IS USED AS SETTING FOR TOOLS *************************************
+instance:
+- name: 'LPI2C3'
+- type: 'lpi2c'
+- mode: 'master'
+- custom_name_enabled: 'false'
+- type_id: 'lpi2c_6b71962515c3208facfccd030afebc98'
+- functional_group: 'BOARD_InitPeripherals'
+- peripheral: 'LPI2C3'
+- config_sets:
+  - main:
+    - clockSource: 'Lpi2cClock'
+    - clockSourceFreq: 'ClocksTool_DefaultInit'
+  - interrupt_vector: []
+  - master:
+    - mode: 'edma'
+    - config:
+      - enableMaster: 'true'
+      - enableDoze: 'true'
+      - debugEnable: 'false'
+      - ignoreAck: 'false'
+      - pinConfig: 'kLPI2C_2PinOpenDrain'
+      - baudRate_Hz: '400000'
+      - busIdleTimeout_ns: '0'
+      - pinLowTimeout_ns: '0'
+      - sdaGlitchFilterWidth_ns: '0'
+      - sclGlitchFilterWidth_ns: '0'
+      - hostRequest:
+        - enable: 'false'
+        - source: 'kLPI2C_HostRequestExternalPin'
+        - polarity: 'kLPI2C_HostRequestPinActiveHigh'
+    - edma:
+      - channels:
+        - enableReceive: 'true'
+        - receive:
+          - uid: '1734677888365'
+          - eDMAn: '8'
+          - eDMA_source: 'kDmaRequestMuxLPI2C3'
+          - enableTriggerPIT: 'false'
+          - init_channel_priority: 'false'
+          - edma_channel_Preemption:
+            - enableChannelPreemption: 'false'
+            - enablePreemptAbility: 'false'
+            - channelPriority: '0'
+          - enable_custom_name: 'false'
+      - transfer:
+        - enable_custom_handle: 'false'
+        - callback:
+          - name: ''
+          - userData: ''
+ * BE CAREFUL MODIFYING THIS COMMENT - IT IS YAML SETTINGS FOR TOOLS **********/
+/* clang-format on */
+const lpi2c_master_config_t LPI2C3_masterConfig = {
+  .enableMaster = true,
+  .enableDoze = true,
+  .debugEnable = false,
+  .ignoreAck = false,
+  .pinConfig = kLPI2C_2PinOpenDrain,
+  .baudRate_Hz = 400000UL,
+  .busIdleTimeout_ns = 0UL,
+  .pinLowTimeout_ns = 0UL,
+  .sdaGlitchFilterWidth_ns = 0U,
+  .sclGlitchFilterWidth_ns = 0U,
+  .hostRequest = {
+    .enable = false,
+    .source = kLPI2C_HostRequestExternalPin,
+    .polarity = kLPI2C_HostRequestPinActiveHigh
+  }
+};
+edma_handle_t LPI2C3_Handle;
+lpi2c_master_edma_handle_t LPI2C3_masterHandle;
+
+static void LPI2C3_init(void) {
+  LPI2C_MasterInit(LPI2C3_PERIPHERAL, &LPI2C3_masterConfig, LPI2C3_CLOCK_FREQ);
+  /* Set the source kDmaRequestMuxLPI2C3 request in the DMAMUX */
+  DMAMUX_SetSource(LPI2C3_DMAMUX_BASEADDR, LPI2C3_DMA_CHANNEL, LPI2C3_DMA_REQUEST);
+  /* Enable the channel 8 in the DMAMUX */
+  DMAMUX_EnableChannel(LPI2C3_DMAMUX_BASEADDR, LPI2C3_DMA_CHANNEL);
+  /* Create the eDMA LPI2C3_Handle handle */
+  EDMA_CreateHandle(&LPI2C3_Handle, LPI2C3_DMA_BASEADDR, LPI2C3_DMA_CHANNEL);
+  LPI2C_MasterCreateEDMAHandle(LPI2C3_PERIPHERAL, &LPI2C3_masterHandle, &LPI2C3_Handle, &LPI2C3_Handle, NULL, NULL);
 }
 
 /***********************************************************************************************************************
@@ -398,11 +733,19 @@ static void GPT2_init(void) {
  **********************************************************************************************************************/
 void BOARD_InitPeripherals(void)
 {
+  /* Global initialization */
+  DMAMUX_Init(DMA0_DMAMUX_BASEADDR);
+  EDMA_Init(DMA0_DMA_BASEADDR, &DMA0_config);
+
   /* Initialize components */
+  DMA0_init();
   GPIO1_init();
   GPIO2_init();
   TRNG_init();
   GPT2_init();
+  LPSPI4_init();
+  LPI2C1_init();
+  LPI2C3_init();
 }
 
 /***********************************************************************************************************************

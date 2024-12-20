@@ -41,13 +41,19 @@ void BOARD_InitBootPins(void);
  * @brief 
  *
  */
-void BOARD_InitPins(void);
+void InitPinsSys(void);
 
 /*!
  * @brief Configures pin routing and optionally pin electrical features.
  *
  */
-void InitPinsSemc(void);
+void InitPinsSdram(void);
+
+/*!
+ * @brief Configures pin routing and optionally pin electrical features.
+ *
+ */
+void InitPinsSd(void);
 
 #define INITPINSFRONTPANEL_IOMUXC_GPR_GPR26_GPIO_MUX1_GPIO_SEL_MASK 0x20000000U /*!< GPIO1 and GPIO6 share same IO MUX function, GPIO_MUX1 selects one GPIO function: affected bits mask */
 #define INITPINSFRONTPANEL_IOMUXC_GPR_GPR27_GPIO_MUX2_GPIO_SEL_MASK 0x04000000U /*!< GPIO2 and GPIO7 share same IO MUX function, GPIO_MUX2 selects one GPIO function: affected bits mask */
@@ -154,6 +160,94 @@ void InitPinsFrontPanel(void);
  *
  */
 void InitPinsImu(void);
+
+#define INITPINSGPS_IOMUXC_GPR_GPR26_GPIO_MUX1_GPIO_SEL_MASK 0x020000U /*!< GPIO1 and GPIO6 share same IO MUX function, GPIO_MUX1 selects one GPIO function: affected bits mask */
+
+/* GPIO_AD_B1_00 (coord J11), GPS_ANT_SENSE */
+/* Routed pin properties */
+#define PINS_GPS_GPS_ANT_SENSE_PERIPHERAL                                   ADC1   /*!< Peripheral name */
+#define PINS_GPS_GPS_ANT_SENSE_SIGNAL                                         IN   /*!< Signal name */
+#define PINS_GPS_GPS_ANT_SENSE_CHANNEL                                        5U   /*!< Signal channel */
+#define PINS_GPS_GPS_ANT_SENSE_PIN_NAME                            GPIO_AD_B1_00   /*!< Routed pin name */
+#define PINS_GPS_GPS_ANT_SENSE_LABEL                             "GPS_ANT_SENSE"   /*!< Label */
+#define PINS_GPS_GPS_ANT_SENSE_NAME                              "GPS_ANT_SENSE"   /*!< Identifier */
+
+/* GPIO_AD_B1_01 (coord K11), GPS_ANT_SEL */
+/* Routed pin properties */
+#define PINS_GPS_GPS_ANT_SEL_PERIPHERAL                                    GPIO1   /*!< Peripheral name */
+#define PINS_GPS_GPS_ANT_SEL_SIGNAL                                      gpio_io   /*!< Signal name */
+#define PINS_GPS_GPS_ANT_SEL_CHANNEL                                         17U   /*!< Signal channel */
+#define PINS_GPS_GPS_ANT_SEL_PIN_NAME                              GPIO_AD_B1_01   /*!< Routed pin name */
+#define PINS_GPS_GPS_ANT_SEL_LABEL                                 "GPS_ANT_SEL"   /*!< Label */
+#define PINS_GPS_GPS_ANT_SEL_NAME                                  "GPS_ANT_SEL"   /*!< Identifier */
+#define PINS_GPS_GPS_ANT_SEL_DIRECTION                  kPIN_MUX_DirectionOutput   /*!< Direction */
+
+/* Symbols to be used with GPIO driver */
+#define PINS_GPS_GPS_ANT_SEL_GPIO                                          GPIO1   /*!< GPIO peripheral base pointer */
+#define PINS_GPS_GPS_ANT_SEL_GPIO_PIN                                        17U   /*!< GPIO pin number */
+#define PINS_GPS_GPS_ANT_SEL_GPIO_PIN_MASK                           (1U << 17U)   /*!< GPIO pin mask */
+#define PINS_GPS_GPS_ANT_SEL_PORT                                          GPIO1   /*!< PORT peripheral base pointer */
+#define PINS_GPS_GPS_ANT_SEL_PIN                                             17U   /*!< PORT pin number */
+#define PINS_GPS_GPS_ANT_SEL_PIN_MASK                                (1U << 17U)   /*!< PORT pin mask */
+
+/* GPIO_AD_B1_03 (coord M12), GPS_PPS */
+/* Routed pin properties */
+#define PINS_GPS_GPS_PPS_PERIPHERAL                                         GPT2   /*!< Peripheral name */
+#define PINS_GPS_GPS_PPS_SIGNAL                                      gpt_capture   /*!< Signal name */
+#define PINS_GPS_GPS_PPS_CHANNEL                                              1U   /*!< Signal channel */
+#define PINS_GPS_GPS_PPS_PIN_NAME                                  GPIO_AD_B1_03   /*!< Routed pin name */
+#define PINS_GPS_GPS_PPS_LABEL                                         "GPS_PPS"   /*!< Label */
+#define PINS_GPS_GPS_PPS_NAME                                          "GPS_PPS"   /*!< Identifier */
+
+/* GPIO_AD_B1_10 (coord L13), UART_TO_GPS */
+/* Routed pin properties */
+#define PINS_GPS_UART_TO_GPS_PERIPHERAL                                  LPUART8   /*!< Peripheral name */
+#define PINS_GPS_UART_TO_GPS_SIGNAL                                           TX   /*!< Signal name */
+#define PINS_GPS_UART_TO_GPS_PIN_NAME                              GPIO_AD_B1_10   /*!< Routed pin name */
+#define PINS_GPS_UART_TO_GPS_LABEL                                 "UART_TO_GPS"   /*!< Label */
+#define PINS_GPS_UART_TO_GPS_NAME                                  "UART_TO_GPS"   /*!< Identifier */
+
+/* GPIO_AD_B1_11 (coord J13), UART_FROM_GPS */
+/* Routed pin properties */
+#define PINS_GPS_UART_FROM_GPS_PERIPHERAL                                LPUART8   /*!< Peripheral name */
+#define PINS_GPS_UART_FROM_GPS_SIGNAL                                         RX   /*!< Signal name */
+#define PINS_GPS_UART_FROM_GPS_PIN_NAME                            GPIO_AD_B1_11   /*!< Routed pin name */
+#define PINS_GPS_UART_FROM_GPS_LABEL                             "UART_FROM_GPS"   /*!< Label */
+#define PINS_GPS_UART_FROM_GPS_NAME                              "UART_FROM_GPS"   /*!< Identifier */
+
+/* GPIO_AD_B1_07 (coord K10), GPS_I2C_SCL */
+/* Routed pin properties */
+#define PINS_GPS_GPS_I2C_SCL_PERIPHERAL                                   LPI2C3   /*!< Peripheral name */
+#define PINS_GPS_GPS_I2C_SCL_SIGNAL                                          SCL   /*!< Signal name */
+#define PINS_GPS_GPS_I2C_SCL_PIN_NAME                              GPIO_AD_B1_07   /*!< Routed pin name */
+#define PINS_GPS_GPS_I2C_SCL_LABEL                                 "GPS_I2C_SCL"   /*!< Label */
+#define PINS_GPS_GPS_I2C_SCL_NAME                                  "GPS_I2C_SCL"   /*!< Identifier */
+
+/* GPIO_AD_B1_06 (coord J12), GPS_I2C_SDA */
+/* Routed pin properties */
+#define PINS_GPS_GPS_I2C_SDA_PERIPHERAL                                   LPI2C3   /*!< Peripheral name */
+#define PINS_GPS_GPS_I2C_SDA_SIGNAL                                          SDA   /*!< Signal name */
+#define PINS_GPS_GPS_I2C_SDA_PIN_NAME                              GPIO_AD_B1_06   /*!< Routed pin name */
+#define PINS_GPS_GPS_I2C_SDA_LABEL                                 "GPS_I2C_SDA"   /*!< Label */
+#define PINS_GPS_GPS_I2C_SDA_NAME                                  "GPS_I2C_SDA"   /*!< Identifier */
+
+/*!
+ * @brief Configures pin routing and optionally pin electrical features.
+ *
+ */
+void InitPinsGps(void);
+
+/*!
+ * @brief Configures pin routing and optionally pin electrical features.
+ *
+ */
+void InitPinsCan(void);
+
+/*!
+ * @brief Configures pin routing and optionally pin electrical features.
+ *
+ */
+void InitPinsDebug(void);
 
 #if defined(__cplusplus)
 }
