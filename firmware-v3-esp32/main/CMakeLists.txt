@@ -59,7 +59,6 @@ vfs
 eigen
 flatbuffers
 fmtlib
-geographiclib
 lvgl
 minmea
 ringbuf

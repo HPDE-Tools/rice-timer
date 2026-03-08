@@ -79,5 +79,6 @@
   "editor.formatOnSave": true,
   "editor.tabSize": 2,
   "idf.adapterTargetName": "esp32",
-  "dotnet.defaultSolution": "disable"
+  "dotnet.defaultSolution": "disable",
+  "idf.currentSetup": "/home/summivox/.espressif/release-v6.0/esp-idf"
 }

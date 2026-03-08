@@ -7,7 +7,6 @@
 #include <optional>
 
 #include "Eigen/Core"
-#include "GeographicLib/TransverseMercator.hpp"
 #include "fmt/core.h"
 #include "freertos/queue.h"
 #include "scope_guard/scope_guard.hpp"
