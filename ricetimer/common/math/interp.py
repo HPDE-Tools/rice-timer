@@ -35,7 +35,7 @@ def unwrap_uint32(xs: np.ndarray, out_dtype=np.int64) -> np.ndarray:
     [1]: https://octave.sourceforge.io/octave/function/unwrap.html
     """
     # TODO(summivox): define the threshold?
-    diffs = np.diff(xs.astype(np.uint32), prepend=0).astype(np.int32)
+    diffs = np.diff(xs.astype(np.uint32), prepend=xs[0]).astype(np.int32)
     large_diff_indices = np.argwhere(np.abs(diffs) > 4e8)
     if len(large_diff_indices) > 0:
         i = large_diff_indices[0]
