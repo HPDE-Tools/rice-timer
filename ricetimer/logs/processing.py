@@ -88,8 +88,8 @@ def resample_signal(new_timestamps: Series, signal: DataFrame, interp_method: st
         return reindexed
 
     # otherwise use scipy interpolation
-    new_timestamps_np = new_timestamps.to_numpy().astype(np.float64)
-    old_timestamps_np = signal.index.to_numpy().astype(np.float64)
+    new_timestamps_np = new_timestamps.values.astype(np.float64)
+    old_timestamps_np = signal.index.values.astype(np.float64)
     resampled_signal = DataFrame(
         index=new_timestamps, columns=signal.columns)
     for dim_i in range(len(signal.columns)):
