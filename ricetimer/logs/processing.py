@@ -82,9 +82,9 @@ def resample_signal(new_timestamps: Series, signal: DataFrame, interp_method: st
     # try to use pandas native reindex method to perform trivial resampling
     if interp_method in _SIMPLE_METHOD_DICT:
         reindexed = signal.sort_index().reindex(new_timestamps,
-                                                method=_SIMPLE_METHOD_DICT[interp_method])
-        reindexed.fillna(method='bfill', inplace=True)
-        reindexed.fillna(method='ffill', inplace=True)
+                                                method=_SIMPLE_METHOD_DICT[interp_method]).infer_objects(copy=False)
+        reindexed.bfill(inplace=True)
+        reindexed.ffill(inplace=True)
         return reindexed
 
     # otherwise use scipy interpolation
