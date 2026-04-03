@@ -69,6 +69,27 @@ def can(src_dir: Path, output_file: TextIOBase, write_header: bool, relative: bo
     click.echo(f'{count} CAN frames written.')
 
 
+@export.command()
+@click.option('-o', '--output', 'output_file', type=click.File(mode='w', encoding='utf8'))
+@click.option('--relative', is_flag=True)
+@click.argument('src_dir', type=click.Path(exists=True, file_okay=False, path_type=Path))
+def candump(src_dir: Path, output_file: TextIOBase, relative: bool):
+    count = 0
+    log_events = load_events(src_dir, use_pps=not relative)
+    for typestr, timestamp, content in tqdm(log_events):
+        if typestr != 'c':
+            continue
+        id, dlc, data = content
+        output_file.write(f'({timestamp:.6f}) vcan0 ')
+        if id < 0x7ff:
+            output_file.write(f'{id:03X}#')
+        else:
+            output_file.write(f'{id:08X}#')
+        output_file.write(f'{data.hex().upper()}\n')
+        count += 1
+    click.echo(f'{count} CAN frames written.')
+
+
 def load_events(src_dir: Path, use_pps=True):
     splits = find_log_files(src_dir)
     click.echo(f'found {len(splits)} log files in: {src_dir}')
