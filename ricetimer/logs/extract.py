@@ -1,6 +1,6 @@
 from __future__ import annotations
 from dataclasses import dataclass, astuple
-from datetime import datetime
+from datetime import datetime, timezone
 import logging
 from typing import Any
 
@@ -80,7 +80,7 @@ def extract_gnss_signals(events: list[tuple[str, float, Any]]):
 
 def extract_raw_imu_signals(events: list[tuple[str, float, Any]]):
     raw_imu_events = [
-        (datetime.utcfromtimestamp(timestamp), *payload)
+        (datetime.fromtimestamp(timestamp, tz=timezone.utc), *payload)
         for typechar, timestamp, payload in events if typechar == 'i'
     ]
     if not raw_imu_events:
@@ -121,7 +121,7 @@ def extract_can_signals(can_db: Database,
         for sig_name, sig_value in signals.items():
             try:
                 signals_data[signal_dict[sig_name]].append(
-                    (datetime.utcfromtimestamp(timestamp), sig_value))
+                    (datetime.fromtimestamp(timestamp, tz=timezone.utc), sig_value))
             except KeyError:
                 continue
 
