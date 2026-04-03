@@ -1,0 +1,21 @@
+[can]
+db = '982.dbc'
+
+[can.signals]
+'Speed.KBI_displayed_speed' = { name = 'speed_can_kph', interp = 'linear' }
+'Motor.MO_Motor_Speed' = { name = 'engine_rpm', interp = 'linear' }
+'ESP_02.ESP_Lateral_accel' = { name = 'lat_acc_can_g', interp = 'linear' }
+'ESP_02.ESP_Longitudinal_adj' = { name = 'lon_acc_can_m/s^2', interp = 'linear' }
+'Steering.LWI_Steering_angle' = { name = 'steer_angle_deg', interp = 'linear' }
+'Throttle.Throttle_Position' = { name = 'pedal_gas_%', interp = 'linear' }
+'Brakes.Brake_PressureSig352' = { name = 'brake_pressure_bar', interp = 'linear' }
+'Motor.MO_Oil_Pressure' = { name = 'oil_pressure_bar', interp = 'linear' }
+'Motor.MO_Boost_Pressure' = { name = 'boost_pressure_bar', interp = 'linear' }
+'Temps.Oil' = { name = 'oil_temp_c', interp = 'linear' }
+'Temps.Coolant' = { name = 'water_temp_c', interp = 'linear' }
+'Temps.Intake_Temp' = { name = 'intake_temp_c', interp = 'linear' }
+
+# 'PT_0F3.Gear_Num_Display_0F3' = { name = 'gear', interp = 'previous' }
+# 'VSA_STATUS.USER_BRAKE' = { name = 'brake_pressure_mpa', interp = 'linear' }
+# 'PT_0A5.Engine_Torque_Request_0A5' = { name = 'torque_request', interp = 'linear' }
+# 'PT_0A5.Engine_Torque_Estimate_0A5' = { name = 'torque_estimate', interp = 'linear' }
