@@ -39,11 +39,14 @@ def extract_gnss_signals(events: list[tuple[str, float, Any]]):
         if rmc is None:
             return
         signal = GnssSignal(last_signal)
-        signal.timestamp = rmc.datetime
-        signal.lat = rmc.latitude
-        signal.lon = rmc.longitude
-        signal.speed_kph = (rmc.spd_over_grnd or 0.0) * KPH_IN_KNOT
-        signal.course_deg = rmc.true_course or signal.course_deg or 0.0
+        try:
+            signal.timestamp = rmc.datetime
+            signal.lat = rmc.latitude
+            signal.lon = rmc.longitude
+            signal.speed_kph = (rmc.spd_over_grnd or 0.0) * KPH_IN_KNOT
+            signal.course_deg = rmc.true_course or signal.course_deg or 0.0
+        except TypeError:
+            return
         if gga:
             try:
                 signal.alt = gga.altitude
